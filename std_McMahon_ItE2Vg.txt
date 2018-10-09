@@ -1,0 +1,27 @@
+McMahon_ItE2Vg
+Element	Method	Eval Date	Mass coefficient.	Mg	Mg	Mg	Mg	Al	Al	Al	Al	Si	Si	Si	Si	P	P	P	P	S	S	S	S	Cl	Cl	Cl	Cl	K	K	K	K	Ca	Ca	Ca	Ca	Ti	Ti	Ti	Ti	Mn	Mn	Mn	Mn	Fe	Fe	Fe	Fe	Cu	Cu	Cu	Cu	Zn	Zn	Zn	Zn	Sr	Sr	Sr	Sr	Zr	Zr	Zr	Zr	Nb	Nb	Nb	Nb	Mo	Mo	Mo	Mo	Pb	Pb	Pb	Pb	
+Dimension			cm²/g	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	%	Abs. Error ( %)	Norm. Int.	%	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	µg/g	Abs. Error ( µg/g)	Norm. Int.	µg/g	
+It.E2.1.10-20.04	TQ Powders	7/19/2017 2:37:32 PM	13.0593	0.0379	0.0015	5.2233	0.014	22.52	0.05	1003.1518	0.0014	9.331	0.023	792.4592	0.0020	0.03061	0.00079	10.1776	0.0016	0.03097	0.00067	12.2913	0.00067	0.00306	0.00023	3.7174	0.00064	0.02322	0.00030	62.8569	0.00032	< 0.00021	(0.00007)	20.2849	0.00021	14760	10	15027.6646	0.1	98.0	0.5	326.6755	0.4	77580	70	46482.0763	0.1	4.4	0.8	5.4905	1.1	17.9	0.6	31.9531	0.8	14.8	0.2	128.5038	0.3	548.1	1.9	800.9043	0.1	49.5	0.7	72.6537	1.0	7.3	0.4	16.1713	1.3	10.6	0.9	21.2298	0.8	
+It.E2.2.10-20.04	TQ Powders	7/19/2017 2:51:53 PM	12.1749	0.0476	0.0019	5.4379	0.012	20.24	0.04	1072.9991	0.0013	8.256	0.020	821.8087	0.0019	0.02631	0.00066	10.8651	0.0015	0.02773	0.00061	12.7553	0.00062	0.00234	0.00021	3.4690	0.00058	0.02090	0.00028	65.2069	0.00030	< 0.0010	(0.0)	20.9094	0.00100	14330	10	16731.4885	0.1	96.0	0.5	363.9625	0.3	77880	70	53599.2753	0.1	3.7	0.8	5.0595	1.1	16.9	0.6	32.7561	0.8	14.2	0.2	134.6591	0.3	574.5	1.9	919.0679	0.1	53.1	0.7	84.2269	1.0	6.9	0.4	16.5585	1.3	12.2	0.9	26.5916	0.8	
+It.E2.3.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.4.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.1.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.2.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.3.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.4.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.1.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.2.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.3.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.4.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.1.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.2.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.3.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.4.10-20.04	TQ Powders	-	0.0000																																																																									
+It.E2.1.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.2.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.3.10-20.16	TQ Powders	-	0.0000																																																																									
+It.E2.4.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.1.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.2.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.3.10-20.16	TQ Powders	-	0.0000																																																																									
+It.N.4.10-20.16	TQ Powders	-	0.0000																																																																									
