@@ -11,10 +11,10 @@
 # Within each run, need to make a judgment as to start & stop of
 #   linear relationship between position and N_meas
 # Don't correct if change during run is < 5%?
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+setwd('C:\\Users\\Devin\\Documents\\soil_analysis')
 source('sample_ID_splitter.R')
 
-setwd('C:\\Users\\Devin\\Documents\\Soil data\\EA data')
+setwd('C:\\Users\\Devin\\Documents\\soil_analysis\\EA data')
 
 prepEAdat=function(dfr){
   if(is.element('X',names(dfr))){dfr=dfr[,-which(names(dfr)=='X')]}
@@ -156,7 +156,7 @@ alladj=alladj[,which(names(alladj)%in% names(alloth))]
 allEA=rbind(alladj,alloth)
 unique(allEA$site)
 
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+setwd('C:\\Users\\Devin\\Documents\\soil_analysis')
 source('XRF_formatting_functions.R')
 
 allEA$ID=typofixer(allEA$ID)

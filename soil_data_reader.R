@@ -1,5 +1,5 @@
 # set your working directory (or open a project containing all the files)
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+#setwd('C:\\Users\\Devin\\Documents\\Soil data')
 
 # useful packages:
 library(dplyr)

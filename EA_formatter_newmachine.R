@@ -1,4 +1,4 @@
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+#setwd('C:\\Users\\Devin\\Documents\\Soil data')
 #source('sample_ID_splitter.R')
 source('XRF_formatting_functions.R')
 

@@ -1,6 +1,6 @@
 # Soil stock analysis
 
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+#setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
 qqr=function(lmeobject){
