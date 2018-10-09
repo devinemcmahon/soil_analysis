@@ -1,0 +1,447 @@
+# set your working directory (or open a project containing all the files)
+setwd('C:\\Users\\Devin\\Documents\\Soil data')
+
+# useful packages:
+library(dplyr)
+library(lattice)
+library(nlme)
+library(reshape)
+library(RColorBrewer)
+source('xrf_formatting_functions.R')
+
+gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){
+  table(elmtcol[pvalcol<a],groupcol[pvalcol<a])*
+    table(elmtcol[tstatcol>0],groupcol[tstatcol>0])+
+    table(elmtcol[pvalcol<a],groupcol[pvalcol<a])*
+    table(elmtcol[tstatcol<0],groupcol[tstatcol<0])*-1
+}
+
+#widedats=readRDS('all_data_9-13-18.Rds')
+#widedats=readRDS('all_data_9-29-18.Rds')
+widedats=readRDS('all_data_10-4-18.Rds')
+# temporary fix: 
+#widedats$ID=as.character(widedats$ID)
+#widedats$ID[widedats$ID=='It.N.T.A.60-100.16'|
+#              widedats$ID=='It.N.TA.60-100.16']='It.N.A.5.60-100.16'
+#widedats$ID[widedats$ID=='It.N.T.B.60-100.16'|
+#              widedats$ID=='It.N.TB.60-100.16']='It.N.B.5.60-100.16'
+#widedats$ID[widedats$ID=='Vg.N.1.B.60-100.16']='Vg.N.B.1.60-100.16'
+#widedats$ID[widedats$ID=='Vg.N.2.B.60-100.16']='Vg.N.B.2.60-100.16'
+#widedats$ID[widedats$ID=='Vg.N.1.B.0-10.16']='Vg.N.B.1.0-10.16'
+#widedats$ID[widedats$ID=='Vg.N.2.B.0-10.16']='Vg.N.B.2.0-10.16'
+#widedats=strfun(widedats)
+
+widedats$CN=widedats$C/widedats$N # this ratio can be useful, or just noisy
+widedats1=widedats[,-which(names(widedats) %in% 
+                             c('stand','depth','year','site',
+                               'LU','position','rep','elt',
+                               'inc_from','inc_to','newest','oldmeas'))]#,
+                               #'P_ppm','Fe_pct','Ca_ppm',
+                               #'K_ppm','Mg_ppm'))]
+
+# replace NAs with detection limit
+widedats1=mutate(widedats1,Ca2=ifelse(is.na(Ca) & !is.na(Ca_dl),
+                                      Ca_dl,Ca),
+                 P2=ifelse(is.na(P) & !is.na(P_dl),P_dl,P),
+                 Mg2=ifelse(is.na(Mg) & !is.na(Mg_dl),Mg_dl,Mg))
+
+# seperate ppm columns are unneccessary
+# "Melt" the data frame into a long format
+dats=melt(widedats1,id.vars=c('ID','run.date','CNevalday','CNavgd',
+                              'measured_in','Method',
+                              'Eval.Date','evaldate',
+                              'xrfavgd','recent','avgBD','BDsd'),
+          na.rm=F,variable_name = 'element')
+# Restore the columns made from the ID
+dats=strfun(dats)
+dats=eltfun(dats)
+dats$stdonly=as.character(lapply(strsplit(as.character(dats$stand),'[.]'),
+                                 function(x){x[2]}))
+dats$unit=as.character(lapply(strsplit(as.character(dats$element),'_'),
+                              function(x){x[2]}))
+dats$unit[is.na(dats$unit)]='ppm'
+dats$unit[dats$element %in% 
+            c('Al','Si','C','N','N.old','C.WB','Fe')]='pct'
+dats$value[dats$element %in% 
+             c('Mg','P','Mg2','P2','Ca2','S','Cl','K','Ca')]=
+  dats$value[dats$element %in% 
+               c('Mg','P','Mg2','P2','Ca2','S','Cl','K','Ca')]*10000
+dats$value[dats$element=='Fe']= dats$value[dats$element =='Fe']/10000
+
+# Take out crazy outliers
+dats$value[dats$ID=='JP.E2.T.2.0-10.16'& 
+             dats$element %in% c('Ca','Mg','Ca2','Mg2')]=NA 
+# piece of dolomite got in here, maybe
+dats$value[dats$ID=='Eu.E1.L.2.0-10.16'& 
+             dats$element %in% c('Ca','Ca2')]=NA 
+# also one point that really changes the whole analysis
+#   probably real but not representative (chunk of fertilizer, e.g.)
+
+dats$value[dats$element=='P' & dats$value>600 & 
+             dats$stand!='Eu.E1']=NA
+dats$value[dats$element=='P2' & dats$value>600 & 
+             dats$stand!='Eu.E1']=NA
+# a little more subjective-- three points >> others in their stand 
+
+# Pit samples from Vg.E.04 were called rep 5 for XRF, rep 1 for C&N
+#  similar to other samples, probably makes no difference?
+#   Except that C is higher for 10-20 and 20-40 depths
+# Rep 1 was missing so pit used instead to get 4
+
+# Remove duplicates if just a few simple samples were analyzed 
+#   in addition to composite samples
+# group by rep; if there exist positions and no-positions for same rep and year
+#   just take the no-positions
+datspre=group_by(dats,stand,year,depth,element,rep) %>%
+  mutate(napos=sum(is.na(position[!is.na(value)])),
+         rmsimp=ifelse(napos>0 & !is.na(position),1,0))
+datspre=ungroup(datspre)
+# Average the row positions to get 4 reps per site (5 if there's a soil pit measurement)
+# This way, we aren't weighting the individual cores and the composited cores the same
+dats4=group_by(datspre[datspre$rmsimp==0,],stand,year,depth,rep,element) %>%
+#dats4=group_by(dats,stand,year,depth,rep,element) %>%
+  mutate(repval=mean(value,na.rm=T),repsd=sd(value,na.rm=T),
+         repn=n(),repwt=ifelse(rep==5,2,1))
+dats4=distinct(dats4,stand,year,depth,rep,element,.keep_all = T)
+# In future stats, maybe weight pit samples more than core samples when both taken
+# Pit samples were taken when cores dubious (i.e. contaminated with surface OM)
+
+# An analogous version with the "wide" data, mostly useful if you want to compare
+#   different elements within the same sample
+widedats4=group_by(widedats,stand,year,depth,rep,site,LU) %>%
+  summarise_if(is.numeric, mean,na.rm=T)
+
+# Calculate pseudo-tau relative to Zr (or other element) in 2004
+dats4=group_by(dats4,stand,rep,depth) %>%
+  mutate(Zrrat=ifelse(sum(!is.na(repval[element=='Zr'& year=='04']))>0 &
+                        sum(!is.na(repval[element=='Zr'& year=='16']))>0,
+                      repval[element=='Zr'&year=='16']/
+                        repval[element=='Zr'&year=='04'],NA))
+dats4=group_by(dats4,stand,rep,depth,element)%>%
+  mutate(tau=ifelse(!is.na(Zrrat),
+                    ((repval[year=='16']/repval[year=='04'])/Zrrat)-1,
+                    NA))
+
+
+##### Further analysis of different depths
+################
+# Now that we have equivalent, composited replicates in each site, run all the t-tests
+# Exclude the stands with incomplete data (Eu, JP.A)
+#   and the extra XRF data (intensity, etc.))
+ttests=group_by(droplevels(dats4[!is.element(dats4$unit,c('dl','err','int')) &
+                                   #!is.element(dats4$stand,c('Eu.N','Eu.E1','Eu.E2','JP.A'))&
+                                   !is.element(dats4$site,c('TM','Cr')) &
+                                   dats4$LU!='A' & !is.element(dats4$element,c('Mg2','P2')),]),
+                stand,depth,element,unit,site,LU) %>%
+  summarise(mn16=mean(repval[year=='16'],na.rm=T),
+            mn04=mean(repval[year=='04'],na.rm=T),
+            n16=sum(!is.na(repval[year=='16'])),
+            n04=sum(!is.na(repval[year=='04'])),
+            sd16=sd(repval[year=='16'],na.rm=T),
+            sd04=sd(repval[year=='04'],na.rm=T),
+            tstat=ifelse((n16>2 & n04 > 2),
+                         t.test(repval[year=='16'],
+                                repval[year=='04'])$statistic,NA),
+            pval=ifelse((n16>2 & n04 > 2),
+                        t.test(repval[year=='16'],
+                               repval[year=='04'])$p.value,NA))
+shorttests=droplevels(ttests[ttests$element %in% 
+                               c('C','N','P','K','Ca','Mg'),])
+
+# For ease of visualization, get a single average value per stand, depth, 
+#   year, and element
+datsmean=group_by(dats4[!is.element(dats4$unit,c('dl','err','int')),],
+                  stand,depth,year,element,unit,stdonly,site,LU,avgBD,BDsd) %>%
+  summarise(mn=mean(repval,na.rm=T),sd=sd(repval,na.rm=T),
+            taumn=mean(tau,na.rm=T),sdtau=sd(tau,na.rm=T))
+datsmnok=droplevels(datsmean[datsmean$site!='TM' &
+                               datsmean$site!='Cr'& datsmean$LU!='A',])
+
+# Use the lattice functions to visualize changes at different depths
+# Compare to the t-test tables to see what differences between years 
+#   are statistically significant
+datsmnok=datsmnok[order(datsmnok$depth),]
+
+abdatsmn=droplevels(datsmean[is.element(datsmean$site, c('TM','Cr','JP'))&
+                               !is.element(datsmean$stand,c('JP.P'))&
+                               datsmean$year==16,])
+
+# Bulk density
+#	Convert concentrations to stocks (Mg ha-1) for a given depth increment
+dats = group_by(dats,stand,depth) %>% 
+  mutate(oldBD=mean(avgBD[year=='04']),newBDsd=mean(BDsd[year=='16']),
+         BD16=mean(avgBD[year=='16']))
+
+# For JP.P, assume no BD change below 20 cm to get stocks despite
+#   inexplicably missing bulk density data
+dats$avgBD[dats$stand=='JP.P'&dats$depth>20&dats$year=='04']=
+  dats$BD16[dats$stand=='JP.P'&dats$depth>20&dats$year=='04']
+
+datsstk=group_by(dats[!is.element(dats$unit,c('dl','err','int')),],
+                 stand,inc_to,year,rep,element,
+                 site,LU,avgBD,oldBD,newBDsd) %>%
+  mutate(inc=inc_to-inc_from,  repval=mean(value,na.rm=T),repvar=var(value,na.rm=T),
+         #stock=ifelse(unit=='pct',repval*avgBD*inc,repval*avgBD*inc*.0001),
+         # Alternative: use 2016 values for everything
+         stock=ifelse(unit=='pct',repval*BD16*inc,repval*BD16*inc*.0001),
+         # stock/area = concentration of element * density of soil * depth of soil
+         #   stockunit=ifelse(unit=='pct','Mg.ha','kg.ha'),
+         stockunit='Mg/ha',
+         # variation in bulk density: an attempt at uncertainty quantification
+         # only the bulk density values from 2016 have standard deviation
+         stocklo=ifelse(unit=='pct',
+                        repval*(avgBD-newBDsd)*inc,repval*(avgBD-newBDsd)*inc*.0001),
+         stockhi=ifelse(unit=='pct',
+                        repval*(avgBD+newBDsd)*inc,repval*(avgBD+newBDsd)*inc*.0001),
+         # another way: suppose bulk density didn't change since 2004
+         oldBDstock=ifelse(unit=='pct',repval*oldBD*inc,repval*oldBD*inc*.0001))
+datsstk=distinct(datsstk,stand,inc_to,year,rep,element,.keep_all=T) # one per rep
+datsstk=group_by(datsstk,stand,inc_to,year,element) %>%
+  mutate(depmnsq=mean(repval,na.rm=T)^2,depvar=var(repval,na.rm=T),
+         stockvar=depmnsq*(depvar/depmnsq+newBDsd^2/avgBD^2))
+
+# Added 9-25-18
+datsstk5=group_by(datsstk,stand,year,element) %>%
+  mutate(maxrep=max(rep[inc_to>=60],na.rm=T),
+         pitstock=ifelse(maxrep==5,
+                         stock[rep==5 & inc_to==60]+stock[rep==5 & inc_to==100],
+                         NA))
+dats2deps=group_by(datsstk5[!is.element(datsstk5$site,c('TM','Cr'))&
+                             datsstk5$stand!='JP.A',],stand,year,rep,
+                   element,site,LU,unit,stockunit) %>% 
+  summarise(ndeps20=length(unique(inc_to[inc_to<=20])),
+            stock20=ifelse(ndeps20==2,sum(stock[inc_to<=20]),NA),
+            stocklo20=ifelse(ndeps20==2,sum(stocklo[inc_to<=20]),NA),
+            stockhi20=ifelse(ndeps20==2,sum(stockhi[inc_to<=20]),NA),
+            oldBDstock20=ifelse(ndeps20==2,sum(oldBDstock[inc_to<=20]),NA),
+            #conc20=ifelse(ndeps20==2,
+            #              sum(repval[inc_to<=20]*inc[inc_to<=20]*avgBD[inc_to<=20])/
+            #                sum(inc[inc_to<=20]*avgBD[inc_to<=20]),NA),
+            conc20=ifelse(ndeps20==2,
+                          sum(repval[inc_to<=20]*inc[inc_to<=20]*BD16[inc_to<=20])/
+                            sum(inc[inc_to<=20]*BD16[inc_to<=20]),NA),
+            # weight concentrations by mass of soil in each layer
+            # to get average density of the whole 1-m block of soil
+            BD20=ifelse(ndeps20==2,
+                        sum(avgBD[inc_to<=20]*inc[inc_to<=20])/
+                          sum(inc[inc_to<=20]),NA),
+            #BDsd20=ifelse(ndeps20==2,
+            #           sum(BDsd[inc_to<=20]*inc[inc_to<=20])/
+            #             sum(inc[inc_to<=20]),NA),
+            BDsd20=ifelse(ndeps20==2,sqrt(sum(BDsd[inc_to<=20])^2),NA),
+            stocksd20=ifelse(ndeps20==2,sqrt(sum(stockvar[inc_to<=20])),NA),
+            # Variance of sum = sum of variances; check how best to do this
+            ndeps100=length(unique(inc_to)),
+            stock100=ifelse(ndeps100==5,sum(stock),NA),
+                            #ifelse(maxrep==5 & year=='16',
+                            #       sum(stock[inc_to<=40])+sum(stock),NA)),
+            
+            stocklo100=ifelse(ndeps100==5,sum(stocklo),NA),
+            stockhi100=ifelse(ndeps100==5,sum(stockhi),NA),
+            oldBDstock100=ifelse(ndeps100==5,sum(oldBDstock),NA),
+            #conc100=ifelse(ndeps100==5,
+            #               sum(repval*inc*avgBD)/sum(inc*avgBD),NA),
+            conc100=ifelse(ndeps100==5,
+                          sum(repval*inc*BD16)/sum(inc*BD16),NA),
+            conc60to100=mean(repval[inc_to==100],na.rm=T),
+            BD100=ifelse(ndeps100==5,sum(avgBD*inc)/sum(inc),NA),
+            #BDsd100=ifelse(ndeps100==5,sqrt(sum(BDsd^2)),NA),
+            # weight by inc
+            suminc=sum(inc),
+            BDsd100=ifelse(ndeps100==5,sqrt(sum((BDsd^2)*inc)/sum(inc)),NA),
+            stocksd100=ifelse(ndeps100==5,sqrt(sum(stockvar*inc)/sum(inc)),NA),
+            stockratio=stock20/stock100,concratio=conc20/conc100,
+            concrat2=conc20/conc60to100)
+
+
+# More t-tests, but on stocks rather than each depth
+# creating a lot of columns again
+tstock=group_by(dats2deps,stand,element,unit,stockunit,site,LU) %>%
+  summarise(stock100_16=mean(stock100[year=='16'],na.rm=T),
+            stock100_04=mean(stock100[year=='04'],na.rm=T),
+            oldBDstock100_16=mean(oldBDstock100[year=='16'],na.rm=T),
+            oldBDstock100_04=mean(oldBDstock100[year=='04'],na.rm=T),
+            BD100_16=mean(BD100[year=='16'],na.rm=T),
+            BD100_04=mean(BD100[year=='04'],na.rm=T),
+            BD20_16=mean(BD20[year=='16'],na.rm=T),
+            BD20_04=mean(BD20[year=='04'],na.rm=T),
+            BDsd20=mean(BDsd20[year=='16'],na.rm=T),
+            BDsd100=mean(BDsd100[year=='16'],na.rm=T),
+            stock20_16=mean(stock20[year=='16'],na.rm=T),
+            stock20_04=mean(stock20[year=='04'],na.rm=T),
+            conc100_16=mean(conc100[year=='16'],na.rm=T),
+            conc100_04=mean(conc100[year=='04'],na.rm=T),
+            conc20_16=mean(conc20[year=='16'],na.rm=T),
+            conc20_04=mean(conc20[year=='04'],na.rm=T),
+            n100_16=sum(!is.na(stock100[year=='16'])),
+            n100_04=sum(!is.na(stock100[year=='04'])),
+            sd100_16=sd(stock100[year=='16'],na.rm=T),
+            sd100_04=sd(stock100[year=='04'],na.rm=T),
+            #sd100_16=mean(stocksd100[year=='16'],na.rm=T),
+            #sd100_04=mean(stocksd100[year=='04'],na.rm=T),
+            n20_16=sum(!is.na(stock20[year=='16'])),
+            n20_04=sum(!is.na(stock20[year=='04'])),
+            sd20_16=sd(stock20[year=='16'],na.rm=T),
+            sd20_04=sd(stock20[year=='04'],na.rm=T),
+            # within-profile variance not relevant here
+            #sd20_16=mean(stocksd20[year=='16'],na.rm=T),
+            #sd20_04=mean(stocksd20[year=='04'],na.rm=T),
+            sdc100_16=sd(conc100[year=='16'],na.rm=T),#fix these later; weight by mass of soil
+            sdc100_04=sd(conc100[year=='04'],na.rm=T),
+            sdc20_16=sd(conc20[year=='16'],na.rm=T),
+            sdc20_04=sd(conc20[year=='04'],na.rm=T),
+            tstat100=ifelse((n100_16>2 & n100_04 > 2),
+                            t.test(stock100[year=='16'],
+                                   stock100[year=='04'])$statistic,NA),
+            pval100=ifelse((n100_16>2 & n100_04 > 2),
+                           t.test(stock100[year=='16'],
+                                  stock100[year=='04'])$p.value,NA),
+            tstat20=ifelse((n20_16>2 & n20_04 > 2),
+                           t.test(stock20[year=='16'],
+                                  stock20[year=='04'])$statistic,NA),
+            pval20=ifelse((n20_16>2 & n20_04 > 2),
+                          t.test(stock20[year=='16'],
+                                 stock20[year=='04'])$p.value,NA),
+            tstatc20=ifelse((n20_16>2 & n20_04 > 2),
+                            t.test(conc20[year=='16'],
+                                   conc20[year=='04'])$statistic,NA),
+            pvalc20=ifelse((n20_16>2 & n20_04 > 2),
+                           t.test(conc20[year=='16'],
+                                  conc20[year=='04'])$p.value,NA),
+            tstatc100=ifelse((n100_16>2 & n100_04 > 2),
+                             t.test(conc100[year=='16'],
+                                    conc100[year=='04'])$statistic,NA),
+            pvalc100=ifelse((n100_16>2 & n100_04 > 2),
+                            t.test(conc100[year=='16'],
+                                   conc100[year=='04'])$p.value,NA),
+            tstatrat=ifelse((n100_16>2 & n100_04 > 2),
+                            t.test(stockratio[year=='16'],
+                                   stockratio[year=='04'])$statistic,NA),
+            pvalrat=ifelse((n100_16>2 & n100_04 > 2),
+                           t.test(stockratio[year=='16'],
+                                  stockratio[year=='04'])$p.value,NA),
+            tstatcrat=ifelse((n100_16>2 & n100_04 > 2),
+                             t.test(concratio[year=='16'],
+                                    concratio[year=='04'])$statistic,NA),
+            pvalcrat=ifelse((n100_16>2 & n100_04 > 2),
+                            t.test(concratio[year=='16'],
+                                   concratio[year=='04'])$p.value,NA),
+            rat_16=mean(stockratio[year=='16'],na.rm=T),
+            rat_04=mean(stockratio[year=='04'],na.rm=T),
+            sdrat_16=sd(stockratio[year=='16'],na.rm=T),
+            sdrat_04=sd(stockratio[year=='04'],na.rm=T),
+            ratc_16=mean(concratio[year=='16'],na.rm=T),
+            ratc_04=mean(concratio[year=='04'],na.rm=T),
+            sdratc_16=sd(concratio[year=='16'],na.rm=T),
+            sdratc_04=sd(concratio[year=='04'],na.rm=T))
+
+shorttstk=droplevels(tstock[tstock$element %in% 
+                              c('C','N','P2','K','Ca2','Mg2','Fe','S','Al',
+                                'Cl','Nb','Zr'),])# &
+#  !is.element(tstock$stand,
+#             c('Eu.N','Eu.E1','Eu.E2','JP.A')),])
+
+shorttstk$element=as.character(shorttstk$element)
+shorttstk$element[shorttstk$element=='P2']='P'
+shorttstk$element[shorttstk$element=='Ca2']='Ca'
+shorttstk$element[shorttstk$element=='Mg2']='Mg'
+
+budgets=read.csv('nutrient_budget_summary.csv')
+shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
+                 by.y=c('Stand','Nutrient'))
+
+
+yrdiffstockplot100_LU=function(sub_ttests){
+  par(mar=c(5,5,2,2))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  plot(stock100_16~stock100_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*1.05))
+  abline(0,1)
+  legend('topleft',bty='n',#cex=1.8,
+         legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-100 cm',
+                      sep=' '))
+  # Replace std devs by std errors
+  segments(sub_ttests$stock100_04,sub_ttests$stock100_16-2*sub_ttests$sd100_16/sqrt(3),
+           sub_ttests$stock100_04,sub_ttests$stock100_16+2*sub_ttests$sd100_16/sqrt(3),
+           col='gray60',lwd=2)
+  segments(sub_ttests$stock100_04-2*sub_ttests$sd100_04/sqrt(3),sub_ttests$stock100_16,
+           sub_ttests$stock100_04+2*sub_ttests$sd100_04/sqrt(3),sub_ttests$stock100_16,
+           col='gray60',lwd=2)
+  points(stock100_16~stock100_04,data=sub_ttests,col=LU,
+         pch=as.numeric(site)+19,cex=2,bg=LU)
+  #legend('bottomright',pch=c(16,17,15),bty='n',
+  #       legend=c('Eucalyptus','Native vegetation','Pasture'))
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
+
+yrdiffstockplot20_LU=function(sub_ttests){
+  par(mar=c(5,5,2,2))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  plot(stock20_16~stock20_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05))
+  abline(0,1)
+  legend('topleft',bty='n',#cex=1.8,
+         legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
+                      sep=' '))
+  # Replace std devs by std errors
+  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-2*sub_ttests$sd20_16/sqrt(3),
+           sub_ttests$stock20_04,sub_ttests$stock20_16+2*sub_ttests$sd20_16/sqrt(3),
+           col='gray60',lwd=2)
+  segments(sub_ttests$stock20_04-2*sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           sub_ttests$stock20_04+2*sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           col='gray60',lwd=2)
+  points(stock20_16~stock20_04,data=sub_ttests,col=LU,
+         pch=as.numeric(site)+19,cex=2,bg=LU)
+  #legend('bottomright',pch=c(16,17,15),bty='n',
+  #       legend=c('Eucalyptus','Native vegetation','Pasture'))
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
+
+
+yrdiffratplot_LU=function(sub_ttests){
+  par(mar=c(5,5,2,2))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  plot(rat_16~rat_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$rat_04,sub_ttests$rat_16),na.rm=T)*.9,
+              max(c(sub_ttests$rat_04,sub_ttests$rat_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$rat_04,sub_ttests$rat_16),na.rm=T)*.9,
+              max(c(sub_ttests$rat_04,sub_ttests$rat_16),na.rm=T)*1.05))
+  abline(0,1)
+  abline(h=0.2,lty=3)
+  abline(v=0.2,lty=3)
+  legend('topleft',bty='n',cex=1.5,
+         legend=unique(sub_ttests$element))
+  # Replace std devs by std errors
+  segments(sub_ttests$rat_04,sub_ttests$rat_16-sub_ttests$sdrat_16/sqrt(3),
+           sub_ttests$rat_04,sub_ttests$rat_16+sub_ttests$sdrat_16/sqrt(3),
+           col='gray60',lwd=2)
+  segments(sub_ttests$rat_04-sub_ttests$sdrat_04/sqrt(3),sub_ttests$rat_16,
+           sub_ttests$rat_04+sub_ttests$sdrat_04/sqrt(3),sub_ttests$rat_16,
+           col='gray60',lwd=2)
+  points(rat_16~rat_04,data=sub_ttests,col=LU,
+         pch=as.numeric(site)+19,cex=2,bg=LU)
+  #legend('bottomright',pch=c(16,17,15),bty='n',
+  #       legend=c('Eucalyptus','Native vegetation','Pasture'))
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
