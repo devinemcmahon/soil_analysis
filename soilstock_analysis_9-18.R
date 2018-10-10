@@ -14,6 +14,13 @@ xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 
+xyplot(depth~mn*10|stand,groups=year,type='l',ylab='Depth (cm)',
+        data=datsmnok[datsmnok$element=='N' ,],
+        ylim=c(90,0),xlab='N (g / kg)',as.table=T,
+        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+# With separate correction for JP.E2, N increases at depth there as well
+
 xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
        data=datsmnok[datsmnok$element=='Ca2' ,],
        ylim=c(90,0),xlim=c(-.2,1.2),xlab='Ca (g / kg)',as.table=T,
@@ -56,6 +63,12 @@ xyplot(depth~value/1000|stand,groups=rep,type='p',ylab='Depth (cm)',
 # also very slightly depleted in top 10 cm?
 
 
+gen_ttable(ttests[ttests$element=='N',]$depth,
+           ttests[ttests$element=='N',]$stand,
+           ttests[ttests$element=='N',]$pval,
+           ttests[ttests$element=='N',]$tstat,0.05)
+
+
 # Across all sites, does C accumulate over time?
 allC20.lme=lme(stock20~year,random=~1|site/stand,
                data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
@@ -66,7 +79,7 @@ plot(resid(allC20.lme)~dats2deps$stock20[dats2deps$element=='C' &
 # residuals still highest at highest C
 plot(resid(allC20.lme)~dats2deps$year[dats2deps$element=='C' &
                                         !is.na(dats2deps$stock20)])
-# more spread in 04?
+# more spread in 04? nah
 qqnorm(resid(allC20.lme))
 qqline(resid(allC20.lme)) # upper tail off but probably ok
 
@@ -75,7 +88,7 @@ allC20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
                  data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
 summary(allC20LU.lme) # yes, increases, but not in pasture
 # now marginal increase (p=0.065), no difference in pasture (itrxn p=0.10)
-# with fixed BD, increase overall, decrease in pasture, p < 0.02
+# with fixed BD, increase overall (.052), decrease in pasture, p = 0.024
 qqnorm(resid(allC20LU.lme))
 qqline(resid(allC20LU.lme)) # probably ok? upper tail quite off
 plot(resid(allC20LU.lme)~dats2deps$year[dats2deps$element=='C' &
@@ -110,14 +123,18 @@ AIC(allC100LUsite.lme,allC100LUstd.lme,allC100LU.lme)
 # both = lowest, but almost identical to site alone
 # fix this to take out It.E1 and It.N
 
+#allN100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
+#                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
 allN100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
-                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
+                  data=test2deps[test2deps$element=='N',],na.action = na.omit)
 summary(allN100LU.lme) 
 # 20 cm: increases only in natveg (signif intrxn);
 #   within site not stand, both natveg and interaction signif
 # 100 cm within site, only intrxn signif again
-# with Eu, now increase is significant and larger in N
+# with Eu, now increase is significant and larger in N 
 # should these be proportional increases?
+#  now still signif increase, but decrease in P, no change in N,
+#   with or without It.E1 and N
 qqnorm(resid(allN20LU.lme))
 qqline(resid(allN20LU.lme)) # nice
 qqnorm(resid(allN100LU.lme))
@@ -203,10 +220,40 @@ Krat100LU2.lme=lme(stockratio~year*LU,random=~1|site/stand,
                                    dats2deps$site!='Bp',],na.action = na.omit)
 summary(Krat100LU2.lme) # same deal
 
+dats2deps=mutate(dats2deps,biome=ifelse(site %in% c('BO','Vg','Eu'),'AF','Cer'))
+
+
+allC20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+#allC20bm.lme=lme(stock20~year*LU*biome,random=~1|site/stand,
+             data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
+summary(allC20bm.lme) # decreases in AF, increases in Cerrado
+# probably not enough data for LU*biome to be very credible
+# difference in what vegetation is in each biome
+# Just keep eucs and nats?
+
+qqr(allC20bm.lme)
+plot(resid(allC20bm.lme)~dats2deps$year[dats2deps$element=='C' &
+                                          !is.na(dats2deps$stock20)]) 
+# bigger spread in 16
+plot(resid(allC20bm.lme)~dats2deps$biome[dats2deps$element=='C' &
+                                        !is.na(dats2deps$stock20)])
+allC20bmen.lme=lme(stock20~year*biome*LU,random=~1|site/stand,
+                 data=dats2deps[dats2deps$element=='C' &
+                                  dats2deps$LU!='P',],na.action = na.omit)
+summary(allC20bmen.lme) # increases in Cerrado, esp in native
+
+allC20bmen2.lme=lme(stock20~year*biome*LU,random=~1|site/stand,
+                   data=test2deps[test2deps$element=='C' &
+                                    test2deps$LU!='P',],na.action = na.omit)
+summary(allC20bmen2.lme) 
+# still increases in 16 in Cerrado, but nothing else is significant
+
+
+                                        
 # Repeat analysis with just eucs
-#euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
+euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
 test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
-euc2deps=droplevels(test2deps[test2deps$LU=='E',]) 
+euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
 eucC100.lme=lme(stock100~year,data=euc2deps[euc2deps$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucC100.lme) # increases (but only with It.E1)
@@ -222,6 +269,7 @@ summary(eucN100.lme) # increases quite a bit, p = 0.0041 # nope
 # With 2016 BD in both years and no It.E1, N increases (p=.0003)
 qqnorm(resid(eucN100.lme))
 qqline(resid(eucN100.lme)) # tails way off; ok without It.E1 and fixed BD?
+# something changed when I copied everything over for version control...
 
 # P: no change, p=0.10 (increasing tendency, when using P2)
 #     but that's the crazy outlier?
@@ -236,17 +284,18 @@ summary(eucCa100.lme) # increases at p < 0.0001
 
 # just-euc ratios
 Crat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                  data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
+                  data=euc2deps2[euc2deps2$element=='C',],na.action = na.omit)
 summary(Crat100euc.lme) # no change
 qqr(Crat100euc.lme) # a few outliers, esp at upper tail (log no help)
 Nrat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                   data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
+                   data=euc2deps2[euc2deps2$element=='N',],na.action = na.omit)
 summary(Nrat100euc.lme) # decrease, p=.0304 #now no change
 # residuals less bad
 Krat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                   data=euc2deps[euc2deps$element=='K',],na.action = na.omit)
+                   data=euc2deps2[euc2deps2$element=='K',],na.action = na.omit)
 # marginally shallower, p=.0612; tails also far off; log no help
 # with 16 densities, p=.074 increase
+# now it's .066, with version control and redone N content. Why the change???
 Krat100euc2.lme=lme(stockratio~year,random=~1|site/stand,
                    data=euc2deps[euc2deps$element=='K'&
                                    euc2deps$site!='Bp',],na.action = na.omit)
@@ -261,8 +310,9 @@ summary(eucC20.lme)
 # when It.E1 included, marginal increase (p=.071); without, p=.678 
 # increase at surface would not be due to OM falling down core--real?
 # drive by surface bulk density change--is that real?
-# Without bulk density change, significant increase (p=.007)
-qqr(eucC20.lme) 
+# Without bulk density change, significant increase (p=.007, now .03)
+#   but .18 without It.E1
+qqr(eucC20.lme) # upper tail still off
 # No change in N at all
 # P = weird residual with or without log
 # Ca increases with log

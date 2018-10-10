@@ -110,13 +110,14 @@ plot(C.16~C.04,data=eawbs[eawbs$C.16<1,]) #ok
 #######
 
 Cmethod.lm=lm(C.16~C.04,data=eawbs)
-summary(Cmethod.lm) # R-sq .93, slope = 1.09
+summary(Cmethod.lm) # R-sq .93 (now .94), slope = 1.09
 Cbetas=summary(Cmethod.lm)$coef[,1]
 
 
 Nmethod.lm=lm(Nadj~N.04,data=eawbs)
 summary(Nmethod.lm) # slope is 1.3 instead of 1.1 for C
 Nbetas=summary(Nmethod.lm)$coef[,1]
+
 
 
 ## More visualization (can skip this)
@@ -139,6 +140,15 @@ abline(0,1) # correction makes it worse for JP.E2, better for the others
 # apply same correction to all for now, look at results from JP.E2
 #   and check later if correcting them differently changes anything.
 #########
+#Nmethodlow.lm=lm(Nadj~N.04,data=eawbs[eawbs$N.04<0.1,])
+#summary(Nmethodlow.lm) # much worse fit than for all data, Rsq .56 vs .91
+Nmethodlow.lm=lm(Nadj~N.04,data=eawbs[eawbs$stand=='JP.E2',])
+summary(Nmethodlow.lm) # Rsq of .70, slope of .77
+Nbetaslow=summary(Nmethodlow.lm)$coef[,1]
+Nmethodhi.lm=lm(Nadj~N.04,data=eawbs[eawbs$stand!='JP.E2',])
+summary(Nmethodhi.lm) # slope 1.2, Rsq .91
+Nbetashi=summary(Nmethodhi.lm)$coef[,1]
+
 
 CN04$measured_in=rep('04')
 CN16$measured_in=rep('16')

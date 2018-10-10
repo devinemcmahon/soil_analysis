@@ -19,6 +19,9 @@ gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){
 #widedats=readRDS('all_data_9-13-18.Rds')
 #widedats=readRDS('all_data_9-29-18.Rds')
 widedats=readRDS('all_data_10-4-18.Rds')
+#widedats=readRDS('all_data_10-10-18.Rds') # separate N correction for JP.E2
+# Makes a really big N stock change
+# Go with consistent conversion for all stands (all_data_10-4)
 # temporary fix: 
 #widedats$ID=as.character(widedats$ID)
 #widedats$ID[widedats$ID=='It.N.T.A.60-100.16'|
@@ -55,6 +58,8 @@ dats=melt(widedats1,id.vars=c('ID','run.date','CNevalday','CNavgd',
 # Restore the columns made from the ID
 dats=strfun(dats)
 dats=eltfun(dats)
+# Add a biome column (Atlantic Forest or Cerrado)
+dats=mutate(dats,biome=ifelse(site %in% c('BO','Vg','Eu'),'AF','Cer'))
 dats$stdonly=as.character(lapply(strsplit(as.character(dats$stand),'[.]'),
                                  function(x){x[2]}))
 dats$unit=as.character(lapply(strsplit(as.character(dats$element),'_'),
