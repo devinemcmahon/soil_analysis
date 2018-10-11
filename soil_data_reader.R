@@ -7,6 +7,7 @@ library(lattice)
 library(nlme)
 library(reshape)
 library(RColorBrewer)
+library(MASS)
 source('xrf_formatting_functions.R')
 
 gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){
@@ -15,6 +16,12 @@ gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){
     table(elmtcol[pvalcol<a],groupcol[pvalcol<a])*
     table(elmtcol[tstatcol<0],groupcol[tstatcol<0])*-1
 }
+
+qqr=function(lmeobject){
+  qqnorm(resid(lmeobject),main=lmeobject$call)
+  qqline(resid(lmeobject))
+}
+
 
 #widedats=readRDS('all_data_9-13-18.Rds')
 #widedats=readRDS('all_data_9-29-18.Rds')
@@ -156,7 +163,7 @@ shorttests=droplevels(ttests[ttests$element %in%
 # For ease of visualization, get a single average value per stand, depth, 
 #   year, and element
 datsmean=group_by(dats4[!is.element(dats4$unit,c('dl','err','int')),],
-                  stand,depth,year,element,unit,stdonly,site,LU,avgBD,BDsd) %>%
+                  stand,depth,year,element,unit,stdonly,site,LU,biome,avgBD,BDsd) %>%
   summarise(mn=mean(repval,na.rm=T),sd=sd(repval,na.rm=T),
             taumn=mean(tau,na.rm=T),sdtau=sd(tau,na.rm=T))
 datsmnok=droplevels(datsmean[datsmean$site!='TM' &
@@ -184,7 +191,7 @@ dats$avgBD[dats$stand=='JP.P'&dats$depth>20&dats$year=='04']=
 
 datsstk=group_by(dats[!is.element(dats$unit,c('dl','err','int')),],
                  stand,inc_to,year,rep,element,
-                 site,LU,avgBD,oldBD,newBDsd) %>%
+                 site,LU,biome,avgBD,oldBD,newBDsd) %>%
   mutate(inc=inc_to-inc_from,  repval=mean(value,na.rm=T),repvar=var(value,na.rm=T),
          #stock=ifelse(unit=='pct',repval*avgBD*inc,repval*avgBD*inc*.0001),
          # Alternative: use 2016 values for everything
@@ -213,7 +220,7 @@ datsstk5=group_by(datsstk,stand,year,element) %>%
                          NA))
 dats2deps=group_by(datsstk5[!is.element(datsstk5$site,c('TM','Cr'))&
                              datsstk5$stand!='JP.A',],stand,year,rep,
-                   element,site,LU,unit,stockunit) %>% 
+                   element,site,LU,biome,unit,stockunit) %>% 
   summarise(ndeps20=length(unique(inc_to[inc_to<=20])),
             stock20=ifelse(ndeps20==2,sum(stock[inc_to<=20]),NA),
             stocklo20=ifelse(ndeps20==2,sum(stocklo[inc_to<=20]),NA),
@@ -259,9 +266,13 @@ dats2deps=group_by(datsstk5[!is.element(datsstk5$site,c('TM','Cr'))&
             concrat2=conc20/conc60to100)
 
 
+euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
+test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
+euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
+
 # More t-tests, but on stocks rather than each depth
 # creating a lot of columns again
-tstock=group_by(dats2deps,stand,element,unit,stockunit,site,LU) %>%
+tstock=group_by(dats2deps,stand,element,unit,stockunit,site,LU,biome) %>%
   summarise(stock100_16=mean(stock100[year=='16'],na.rm=T),
             stock100_04=mean(stock100[year=='04'],na.rm=T),
             oldBDstock100_16=mean(oldBDstock100[year=='16'],na.rm=T),

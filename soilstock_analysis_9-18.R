@@ -3,10 +3,8 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
-qqr=function(lmeobject){
-  qqnorm(resid(lmeobject),main=lmeobject$call)
-  qqline(resid(lmeobject))
-}
+trellis.par.set(strip.background = list(col = 'grey80'),
+                par.strip.text=list(cex=.8))
 
 xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
        data=datsmnok[datsmnok$element=='C' ,],
@@ -20,6 +18,7 @@ xyplot(depth~mn*10|stand,groups=year,type='l',ylab='Depth (cm)',
         par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
         auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 # With separate correction for JP.E2, N increases at depth there as well
+# Don't use that
 
 xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
        data=datsmnok[datsmnok$element=='Ca2' ,],
@@ -62,6 +61,19 @@ xyplot(depth~value/1000|stand,groups=rep,type='p',ylab='Depth (cm)',
 # Huge spatial variation in K in the high-K sites
 # also very slightly depleted in top 10 cm?
 
+xyplot(depth~value|stand,groups=year,type='p',ylab='Depth (cm)',
+       data=dats[dats$element=='S' ,],
+       ylim=c(90,0),xlab='S (mg / kg)',as.table=T,
+       par.settings = list(superpose.points = list(col = c(2,4))),
+       auto.key=list(space='top', columns=2,lines=F, points=T))
+
+xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
+       data=datsmnok[datsmnok$element=='S' ,],
+       ylim=c(90,0),xlab='S (g / kg)',as.table=T,
+       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+
+plot(P~S,data=widedats4) # no apparent relationship
 
 gen_ttable(ttests[ttests$element=='N',]$depth,
            ttests[ttests$element=='N',]$stand,
@@ -220,7 +232,7 @@ Krat100LU2.lme=lme(stockratio~year*LU,random=~1|site/stand,
                                    dats2deps$site!='Bp',],na.action = na.omit)
 summary(Krat100LU2.lme) # same deal
 
-dats2deps=mutate(dats2deps,biome=ifelse(site %in% c('BO','Vg','Eu'),'AF','Cer'))
+#dats2deps=mutate(dats2deps,biome=ifelse(site %in% c('BO','Vg','Eu'),'AF','Cer'))
 
 
 allC20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
@@ -242,45 +254,95 @@ allC20bmen.lme=lme(stock20~year*biome*LU,random=~1|site/stand,
                                   dats2deps$LU!='P',],na.action = na.omit)
 summary(allC20bmen.lme) # increases in Cerrado, esp in native
 
-allC20bmen2.lme=lme(stock20~year*biome*LU,random=~1|site/stand,
+allC20bmen2.lme=lme(log(stock20)~year*biome*LU,random=~1|site/stand,
                    data=test2deps[test2deps$element=='C' &
                                     test2deps$LU!='P',],na.action = na.omit)
 summary(allC20bmen2.lme) 
 # still increases in 16 in Cerrado, but nothing else is significant
-
+# log transform with the residuals
+plot(resid(allC20bmen2.lme)~as.factor(test2deps$biome[test2deps$element=='C' &
+                                              test2deps$LU!='P'&
+                                           !is.na(test2deps$stock20)])) 
+# No patterns by biome, land use, or C stock
 
                                         
 # Repeat analysis with just eucs
-euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
-test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
-euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
-eucC100.lme=lme(stock100~year,data=euc2deps[euc2deps$element=='C',],
+# Subset data frames now make in soil_data_reader
+#euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
+#test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
+#euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
+
+eucC20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                    data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
+summary(eucC20bm.lme) # increase in Cerrado only (also if using euc2deps2)
+qqr(eucC20bm.lme) # again, log tranform helps a bit, increases significance
+
+eucN20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
+summary(eucN20bm.lme) # no change
+qqr(eucN20bm.lme)
+
+eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
+qqr(eucCa20bm.lme)
+summary(eucCa20bm.lme) # maybe increase in AF (p=.07), increase in Cer (.0005)
+
+eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='K'&
+                                  euc2deps$site!='Bp',],na.action = na.omit)
+qqr(eucK20bm.lme)
+summary(eucK20bm.lme) # increases in AF only
+
+eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucC100.lme) # increases (but only with It.E1)
+# now also increases without It.E1 (p=.03)
 qqnorm(resid(eucC100.lme))
 qqline(resid(eucC100.lme)) # upper tail still off (not bad without It.E1)
-plot(resid(eucC100.lme)~euc2deps$year[euc2deps$element=='C' &
-                                           !is.na(euc2deps$stock100)])
+plot(resid(eucC100.lme)~euc2deps2$year[euc2deps2$element=='C' &
+                                           !is.na(euc2deps2$stock100)])
 # smaller IQR in 2016; just 40 obs/yr # ok without It.E1
 
-eucN100.lme=lme(stock100~year,data=euc2deps[euc2deps$element=='N',],
+eucN100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='N',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucN100.lme) # increases quite a bit, p = 0.0041 # nope
-# With 2016 BD in both years and no It.E1, N increases (p=.0003)
+# With 2016 BD in both years and no It.E1, N increases (p=.0003. now .0004?)
 qqnorm(resid(eucN100.lme))
 qqline(resid(eucN100.lme)) # tails way off; ok without It.E1 and fixed BD?
 # something changed when I copied everything over for version control...
 
 # P: no change, p=0.10 (increasing tendency, when using P2)
-#     but that's the crazy outlier?
-# K decreases with Bp in, increases without K (p = .027, increase is small)
+#     but that's the crazy outlier? residuals horrible
+# K decreases with Bp in, increases without (p = .027, increase is small)
 # No change in P, or K without Bp
 # no consistent trend in Ca; residual distrib has crazy tails
-eucCa100.lme=lme(log(stock100)~year,data=euc2deps[euc2deps$element=='Ca2',],
+eucCa100.lme=lme(log(stock100)~year,data=euc2deps2[euc2deps2$element=='Ca2',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucCa100.lme) # increases at p < 0.0001
 # residuals normal with log transform
 # with fixed bulk denisity, no change at 20 cm, but increase if Eu removed
+eucK100bm.lme=lme(log(stock100)~year*biome,
+                data=euc2deps2[euc2deps2$element=='K'&euc2deps2$site!='Bp',],
+                 random=~1|site/stand,na.action=na.omit)
+qqr(eucK100bm.lme)
+summary(eucK100bm.lme) # increases in AF, maybe decreases in Cerrado
+
+eucC100bm.lme=lme(stock100~year*biome,data=euc2deps2[euc2deps2$element=='C',],
+                random=~1|site/stand,na.action=na.omit)
+qqr(eucC100bm.lme)
+summary(eucC100bm.lme) # increases in Cerrado only (p=.035)
+
+eucCa100bm.lme=lme(log(stock100)~year*biome,
+                   data=euc2deps2[euc2deps2$element=='Ca2',],
+                 random=~1|site/stand,na.action=na.omit)
+summary(eucCa100bm.lme) # increases at p < 0.0001 in Cerrado only
+
+eucN100bm.lme=lme(stock100~year*biome,
+                   data=euc2deps2[euc2deps2$element=='N',],
+                   random=~1|site/stand,na.action=na.omit)
+summary(eucN100bm.lme) # increases in AF, less in Cerrado
+
+
 
 # just-euc ratios
 Crat100euc.lme=lme(stockratio~year,random=~1|site/stand,
@@ -462,9 +524,9 @@ summary(BD20LU.lme) # lower in N, increases in P, ok
 
 
 
-#yrdiffstockplot100_LU(tstock[tstock$element=='N',])
-yrdiffstockplot100_LU(tstock[tstock$element=='N' & 
-                               !is.element(tstock$stand,c('It.E1','It.N')),])
+yrdiffstockplot100_LU(tstock[tstock$element=='N',])
+#yrdiffstockplot100_LU(tstock[tstock$element=='N' & 
+#                               !is.element(tstock$stand,c('It.E1','It.N')),])
 legend('bottomright',pch=16,bty='n',#cex=1.6,
        col=c('blue3','springgreen','darkgoldenrod1'),
        legend=c('Eucalyptus','Native vegetation','Pasture'))
@@ -499,6 +561,7 @@ yrdiffstockplot20_LU(tstock[tstock$element=='Ca2' &
                               !is.element(tstock$stand,c('Eu.E1','Eu.E2')),])
 yrdiffstockplot20_LU(tstock[tstock$element=='Ca2' &tstock$stock20_04<.5 &
                               tstock$stock20_16<.5,])
+yrdiffstockplot20_LU(tstock[tstock$element=='S',])
 
 
 # Mean stocks
@@ -570,8 +633,10 @@ stkchgs=group_by(droplevels(shorterstk),stand,element)%>%
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
             chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04),
             budget=Budget/1000)
-stkchgs[stkchgs$stand=='It.E1',]
+stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 
 palette(rainbow(9))
 plot(chg100~budget,data=stkchgs[stkchgs$element=='N',],
@@ -624,6 +689,40 @@ text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
      col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)
+
+
+# Plots showing average change for different nutrients?
+tapply(stkchgs$chgrt100,stkchgs$element,mean) # each stand gets weight of 1
+tapply(stkchgs$chgrt20,stkchgs$element,mean)
+barplot(tapply(stkchgs2$chgln20,stkchgs2$element,mean))
+sds20=tapply(stkchgs2$chgln20,stkchgs2$element,function(x){sd(x,na.rm=T)})
+
+plot(unique(as.numeric(as.factor(stkchgs2$element))),
+     tapply(stkchgs2$chgln20,stkchgs2$element,mean), ylim=c(-.4,2),
+     las=1,xaxt='n',xlab='Element',ylab='Change in 20 cm stock (log ratio)')
+segments(x0=seq(1,length(unique(stkchgs2$element))),
+         y0=tapply(stkchgs2$chgln20,stkchgs2$element,mean)-
+           tapply(stkchgs2$chgln20,stkchgs2$element,sefun),
+         y1=tapply(stkchgs2$chgln20,stkchgs2$element,mean)+
+           tapply(stkchgs2$chgln20,stkchgs2$element,sefun))
+abline(h=0,lty=2)
+axis(side=1,at=seq(1,length(unique(stkchgs2$element))),
+     labels = unique(stkchgs2$element))
+
+sefun=function(x){sd(x)/sqrt(length(x)-1)}
+
+plot(unique(as.numeric(as.factor(stkchgs2$element))),
+     tapply(stkchgs2$chgln100,stkchgs2$element,mean), ylim=c(-0.5,1.5),
+     las=1,xaxt='n',xlab='Element',ylab='Change in 100 cm stock (log ratio)')
+segments(x0=seq(1,length(unique(stkchgs2$element))),
+         y0=tapply(stkchgs2$chgln100,stkchgs2$element,mean)-
+           tapply(stkchgs2$chgln100,stkchgs2$element,sefun),
+         y1=tapply(stkchgs2$chgln100,stkchgs2$element,mean)+
+           tapply(stkchgs2$chgln100,stkchgs2$element,sefun))
+abline(h=0,lty=2)
+axis(side=1,at=seq(1,length(unique(stkchgs2$element))),
+     labels = unique(stkchgs2$element))
+
 
 
 # Power tests
