@@ -461,3 +461,34 @@ yrdiffratplot_LU=function(sub_ttests){
   palette('default')
   par(mar=c(4,4,2,2))
 }
+
+# Needs work:
+yrdiffstockplot20_bmLU=function(sub_ttests){
+  par(mar=c(5,5,2,2))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$biome=factor(sub_ttests$biome,levels=c('AF','Cer'))
+  plot(bmstock20_16~bmstock20_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$bmstock20_04,sub_ttests$bmstock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$bmstock20_04,sub_ttests$bmstock20_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$bmstock20_04,sub_ttests$bmstock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$bmstock20_04,sub_ttests$bmstock20_16),na.rm=T)*1.05))
+  abline(0,1)
+  legend('topleft',bty='n',#cex=1.8,
+         legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
+                      sep=' '))
+  # Replace std devs by std errors
+  segments(sub_ttests$bmstock20_04,sub_ttests$bmstock20_16-2*sub_ttests$sd20_16/sqrt(sub_ttests$ngrp-1),
+           sub_ttests$bmstock20_04,sub_ttests$bmstock20_16+2*sub_ttests$sd20_16/sqrt(sub_ttests$ngrp-1),
+           col='gray60',lwd=2)
+  segments(sub_ttests$bmstock20_04-2*sub_ttests$sd20_04/sqrt(sub_ttests$ngrp-1),sub_ttests$bmstock20_16,
+           sub_ttests$bmstock20_04+2*sub_ttests$sd20_04/sqrt(sub_ttests$ngrp-1),sub_ttests$bmstock20_16,
+           col='gray60',lwd=2)
+  points(bmstock20_16~bmstock20_04,data=sub_ttests,col=LU,
+         pch=as.numeric(biome)+14,cex=2,bg=LU)
+  #legend('bottomright',pch=c(16,17,15),bty='n',
+  #       legend=c('Eucalyptus','Native vegetation','Pasture'))
+  palette('default')
+  par(mar=c(4,4,2,2))
+}

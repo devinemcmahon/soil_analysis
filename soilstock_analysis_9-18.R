@@ -3,6 +3,7 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
+# Plots by year and depth in each stand
 trellis.par.set(strip.background = list(col = 'grey80'),
                 par.strip.text=list(cex=.8))
 
@@ -75,10 +76,18 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
 
 plot(P~S,data=widedats4) # no apparent relationship
 
+# Where did a given element change? T-tests by stand and depth, n=4 per year
 gen_ttable(ttests[ttests$element=='N',]$depth,
            ttests[ttests$element=='N',]$stand,
            ttests[ttests$element=='N',]$pval,
            ttests[ttests$element=='N',]$tstat,0.05)
+
+# Do the unlikely changes in JP.N come out significant?
+gen_ttable(ttests[ttests$stand=='JP.N',]$depth,
+           ttests[ttests$stand=='JP.N',]$element,
+           ttests[ttests$stand=='JP.N',]$pval,
+           ttests[ttests$stand=='JP.N',]$tstat,0.05)
+# Yes, especially N, S, Fe, Zr, Nb, Mo (things that shouldn't change)
 
 
 # Across all sites, does C accumulate over time?
@@ -265,6 +274,27 @@ plot(resid(allC20bmen2.lme)~as.factor(test2deps$biome[test2deps$element=='C' &
                                            !is.na(test2deps$stock20)])) 
 # No patterns by biome, land use, or C stock
 
+# Group tstock by biome to get one obs per stand and calc SE off that
+tstock=mutate(tstock,LU2=ifelse(LU=='E','E','O'))
+
+bmstock=group_by(tstock,element,LU,biome) %>%
+  summarise(bmstock100_16=mean(stock100_16),
+            bmstock100_04=mean(stock100_04),
+            bmstock20_16=mean(stock20_16),
+            bmstock20_04=mean(stock20_04),
+            sd100_16=sd(stock100_16),
+            sd100_04=sd(stock100_04),
+            sd20_16=sd(stock20_16),
+            sd20_04=sd(stock20_04),
+            ngrp=n())
+# standard errors are huge
+
+shortbmstk=droplevels(bmstock[bmstock$element %in% 
+                              c('C','N','P2','K','Ca2','Mg2','Fe','S','Al',
+                                'Cl','Nb','Zr'),])
+yrdiffstockplot20_bmLU(bmstock[bmstock$element=='N',])
+# no that's no good. standard errors huge.
+
                                         
 # Repeat analysis with just eucs
 # Subset data frames now make in soil_data_reader
@@ -384,8 +414,10 @@ eucK20.lme=lme(log(stock20)~year,data=euc2deps[euc2deps$element=='K' &
 # nice residual distrib with log; increase at p=.035
 
 allN20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
-                 data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
+                 data=dats2deps[dats2deps$element=='N' & 
+                               dats2deps$stand!='JP.N',],na.action = na.omit)
 summary(allN20LU.lme) # no change with fixed BD
+# excluding JP.N, natveg N term p = .1, but still no change 
 qqr(allN20LU.lme) # pretty good
 
 
@@ -396,19 +428,23 @@ qqr(allCa20LU.lme) # really normal with log
 summary(allCa20LU.lme)
 # significant increase with time in euc/ overall 
 # smaller increase in pasture (which was more to start at p=.05) at p=.08
-# decrease in native 
+# no change in native (p <.0001, coefficient opposite to yr16 coef)
+# same results (qualitatively) if JP.N removed
 allCa20LU2.lme=lme(log(stock20)~year*LU,random=~1|site/stand,
                    data=dats2deps[dats2deps$element=='Ca2' &
                         dats2deps$site!='Eu',],na.action = na.omit)
 summary(allCa20LU2.lme) # same deal, but lower p-values
 
 allP20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
-                  data=dats2deps[dats2deps$element=='P2',],
+                  data=dats2deps[dats2deps$element=='P2',],# &
+                                #   dats2deps$stand!='JP.N',],
                   na.action = na.omit)
 qqr(allP20LU.lme) # no good with or without log
+# no change with or without JP.N
 
 allK20LU.lme=lme(log(stock20)~year*LU,random=~1|site/stand,
                   data=dats2deps[dats2deps$element=='K' &
+                                    #  dats2deps$stand!='JP.N'&
                                    dats2deps$site!='Bp',],
                   na.action = na.omit)
 # without Bp, upper tail off a bit but not so bad with log
@@ -722,6 +758,30 @@ segments(x0=seq(1,length(unique(stkchgs2$element))),
 abline(h=0,lty=2)
 axis(side=1,at=seq(1,length(unique(stkchgs2$element))),
      labels = unique(stkchgs2$element))
+
+bwplot(chgln100~element,data=stkchgs2)
+
+simp2deps=droplevels(dats2deps[dats2deps$stand %in% 
+                                c('BO.E','BO.P','Vg.E','Vg.N',
+                                  'JP.E1','JP.N','It.E1','It.N'),])
+simp2deps=mutate(simp2deps,LU2=ifelse(LU=='E','E','O'))
+
+simpstks=droplevels(shorttstk[shorttstk$stand %in% 
+                                 c('BO.E','BO.P','Vg.E','Vg.N',
+                                   'JP.E1','JP.N','It.E1','It.N'),])
+simpstks=mutate(simpstks,LU2=ifelse(LU=='E','E','O'))
+
+
+simpchgs=group_by(simpstks,stand,LU2,element)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04))
+
+bwplot(chgln20~element|LU2,data=simpchgs)
+bwplot(chgln20~LU2|element,data=simpchgs) # neither very informative
 
 
 

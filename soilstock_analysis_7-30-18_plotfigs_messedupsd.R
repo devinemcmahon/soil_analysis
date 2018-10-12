@@ -430,7 +430,7 @@ abdatsmn=droplevels(datsmean[is.element(datsmean$site, c('TM','Cr','JP'))&
                                datsmean$year==16,])
 xyplot(depth~mn|site,groups=stdonly,type='l',ylab='Depth (cm)',
        data=abdatsmn[abdatsmn$element=='C' ,],
-       ylim=c(90,0),xlab='C (g / 100 g)',as.table=T,
+       ylim=c(90,0),xlab='C (g / 100 g)',as.table=T,layout=c(3,1),
        par.settings = list(superpose.line = list(col = c(2,2,2,4,4,4,3),
                                                  lwd = 2)),
        auto.key=list(space='top', columns=3,lines=T, points=F))
