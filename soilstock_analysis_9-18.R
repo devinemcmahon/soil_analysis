@@ -294,8 +294,15 @@ shortbmstk=droplevels(bmstock[bmstock$element %in%
                                 'Cl','Nb','Zr'),])
 yrdiffstockplot20_bmLU(bmstock[bmstock$element=='N',])
 # no that's no good. standard errors huge.
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',])
+legend('bottomright',pch=c(15,15,15,17,16),bty='n',#cex=1.6,
+       col=c('blue3','springgreen','darkgoldenrod1','gray50','gray50'),
+       legend=c('Eucalyptus','Native vegetation','Pasture',
+                'Atlantic Forest','Cerrado'))
 
                                         
+
+
 # Repeat analysis with just eucs
 # Subset data frames now make in soil_data_reader
 #euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
