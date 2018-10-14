@@ -493,7 +493,7 @@ yrdiffstockplot20_bmLU=function(sub_ttests){
   par(mar=c(4,4,2,2))
 }
 
-yrdiffstockplot20_bmLUall=function(sub_ttests){
+yrdiffstockplot20_bmLUall=function(sub_ttests,label=T,fulllegend=F){
   par(mar=c(5,5,2,2))
   palette(c('darkgoldenrod1','blue3','springgreen'))
   sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
@@ -505,9 +505,9 @@ yrdiffstockplot20_bmLUall=function(sub_ttests){
        ylim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
               max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05))
   abline(0,1)
-  legend('topleft',bty='n',#cex=1.8,
+  if(label==T){legend('topleft',bty='n',#cex=1.8,
          legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
-                      sep=' '))
+                      sep=' '))}
   # Replace std devs by std errors
   segments(sub_ttests$stock20_04,sub_ttests$stock20_16-2*sub_ttests$sd20_16/sqrt(3),
            sub_ttests$stock20_04,sub_ttests$stock20_16+2*sub_ttests$sd20_16/sqrt(3),
@@ -517,9 +517,42 @@ yrdiffstockplot20_bmLUall=function(sub_ttests){
            col='gray60',lwd=2)
   points(stock20_16~stock20_04,data=sub_ttests,col=LU,
          pch=as.numeric(biome)+15,cex=2,bg=LU)
-  #legend('bottomright',pch=c(16,17,15),bty='n',
-  #       legend=c('Eucalyptus','Native vegetation','Pasture'))
+  if(fulllegend==T){legend('bottomright',pch=c(15,15,15,17,16),bty='n',#cex=1.6,
+         col=c('blue3','springgreen','darkgoldenrod1','gray50','gray50'),
+         legend=c('Eucalyptus','Native vegetation','Pasture',
+                  'Atlantic Forest','Cerrado'))}
   palette('default')
   par(mar=c(4,4,2,2))
 }
 
+yrdiffstockplot100_bmLUall=function(sub_ttests,label=T,fulllegend=F){
+  par(mar=c(5,5,2,2))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$biome=factor(sub_ttests$biome,levels=c('Cer','AF'))
+  plot(stock100_16~stock100_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock100_04,sub_ttests$stock100_16),na.rm=T)*1.05))
+  abline(0,1)
+  if(label==T){legend('topleft',bty='n',#cex=1.8,
+                      legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-100 cm',
+                                   sep=' '))}
+  # Replace std devs by std errors
+  segments(sub_ttests$stock100_04,sub_ttests$stock100_16-2*sub_ttests$sd100_16/sqrt(3),
+           sub_ttests$stock100_04,sub_ttests$stock100_16+2*sub_ttests$sd100_16/sqrt(3),
+           col='gray60',lwd=2)
+  segments(sub_ttests$stock100_04-2*sub_ttests$sd100_04/sqrt(3),sub_ttests$stock100_16,
+           sub_ttests$stock100_04+2*sub_ttests$sd100_04/sqrt(3),sub_ttests$stock100_16,
+           col='gray60',lwd=2)
+  points(stock100_16~stock100_04,data=sub_ttests,col=LU,
+         pch=as.numeric(biome)+15,cex=2,bg=LU)
+  if(fulllegend==T){legend('bottomright',pch=c(15,15,15,17,16),bty='n',#cex=1.6,
+                           col=c('blue3','springgreen','darkgoldenrod1','gray50','gray50'),
+                           legend=c('Eucalyptus','Native vegetation','Pasture',
+                                    'Atlantic Forest','Cerrado'))}
+  palette('default')
+  par(mar=c(4,4,2,2))
+}

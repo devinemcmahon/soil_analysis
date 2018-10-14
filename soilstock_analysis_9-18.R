@@ -294,14 +294,13 @@ shortbmstk=droplevels(bmstock[bmstock$element %in%
                                 'Cl','Nb','Zr'),])
 yrdiffstockplot20_bmLU(bmstock[bmstock$element=='N',])
 # no that's no good. standard errors huge.
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',])
-legend('bottomright',pch=c(15,15,15,17,16),bty='n',#cex=1.6,
-       col=c('blue3','springgreen','darkgoldenrod1','gray50','gray50'),
-       legend=c('Eucalyptus','Native vegetation','Pasture',
-                'Atlantic Forest','Cerrado'))
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = T)
+yrdiffstockplot100_bmLUall(tstock[tstock$element=='C',],fulllegend = T)
 
-                                        
-
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2',],label=F,fulllegend = T)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 
 # Repeat analysis with just eucs
 # Subset data frames now make in soil_data_reader
@@ -671,7 +670,7 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 # Bioturbation?? Leaching in lame stands?
 
 # looking at the data to compare to budgets
-stkchgs=group_by(droplevels(shorterstk),stand,element)%>%
+stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
@@ -722,6 +721,21 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
      col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)
+
+palette('default')
+plot(chg20~budget,data=stkchgs,type='n', 
+     xlab='Fertilizer - harvest, Mg ha-1',
+     ylab='Observed change in stocks to 20 cm',las=1)
+rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+     col=as.numeric(as.factor(stkchgs$biome))+2)
+legend('bottomright',pch=15,col=c(3,4),
+       legend=c('Atlantic Forest','Cerrado'),bty='n')
+
+
 
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 plot(chg100~budget,data=stkchgs,type='n', 
