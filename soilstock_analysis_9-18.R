@@ -41,6 +41,12 @@ xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 
+xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
+        data=datsmnok[datsmnok$element=='Zr' ,],
+        ylim=c(90,0),xlab='Zr (g / kg)',as.table=T,
+        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+
 xyplot(depth~value*10|stand,groups=year,type='p',ylab='Depth (cm)',
        data=dats[dats$element=='N' ,],
        ylim=c(90,0),xlab='N (g / kg)',as.table=T,
@@ -149,27 +155,29 @@ AIC(allC100LUsite.lme,allC100LUstd.lme,allC100LU.lme)
 allN100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
                   data=test2deps[test2deps$element=='N',],na.action = na.omit)
 summary(allN100LU.lme) 
+allN20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
+                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
+qqr(allN20LU.lme) #ok
+summary(allN20LU.lme)
 # 20 cm: increases only in natveg (signif intrxn);
 #   within site not stand, both natveg and interaction signif
+# no change with constant bulk density
 # 100 cm within site, only intrxn signif again
 # with Eu, now increase is significant and larger in N 
 # should these be proportional increases?
 #  now still signif increase, but decrease in P, no change in N,
 #   with or without It.E1 and N
-qqnorm(resid(allN20LU.lme))
-qqline(resid(allN20LU.lme)) # nice
-qqnorm(resid(allN100LU.lme))
-qqline(resid(allN100LU.lme)) # tails way off, one crazy outlier
-# log isn't better
+qqr(allN100LU.lme)# tails way off, even with log
+
 plot(resid(allN20LU.lme)~dats2deps$year[dats2deps$element=='N' &
                                           !is.na(dats2deps$stock20)]) #ok
 plot(resid(allN20LU.lme)~dats2deps$LU[dats2deps$element=='N' &
                                         !is.na(dats2deps$stock20)]) #eh
-plot(resid(allN100LU.lme)~dats2deps$year[dats2deps$element=='N' &
-                                          !is.na(dats2deps$stock100)]) 
+plot(resid(allN100LU.lme)~test2deps$year[test2deps$element=='N' &
+                                          !is.na(test2deps$stock100)])#ok
 # different means, similar spreads
-plot(resid(allN100LU.lme)~dats2deps$LU[dats2deps$element=='N' &
-                                        !is.na(dats2deps$stock100)]) 
+plot(resid(allN100LU.lme)~test2deps$LU[test2deps$element=='N' &
+                                        !is.na(test2deps$stock100)]) 
 # how to get around the difference in the unbalanced land uses?
 plot(resid(allN100LU.lme)~dats2deps$stand[dats2deps$element=='N' &
                                             !is.na(dats2deps$stock100)])
@@ -189,13 +197,15 @@ summary(allP100LU.lme)
 # residuals ugly, log no help
 
 allK100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
-                  data=dats2deps[dats2deps$element=='K' &
-                                   dats2deps$site!='Bp',],na.action = na.omit)
+                  data=test2deps[test2deps$element=='K' &
+                                   test2deps$site!='Bp' &
+                                   test2deps$stand!='JP.N',],na.action = na.omit)
 summary(allK100LU.lme) # with Bp: decreases in 2016, 
 # but nearly increases in native veg in 2016
 # without: increases overall (fixed BD: no change), more (only) in native veg
 # residuals not as bad as some others, but still a big outlier
 # lower AIC with stand within site vs just stand
+# no change without JP.N (down to 11 stands)
 
 allCa100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
                   data=dats2deps[dats2deps$element=='Ca2',],na.action = na.omit)
@@ -328,6 +338,20 @@ eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                                   euc2deps$site!='Bp',],na.action = na.omit)
 qqr(eucK20bm.lme)
 summary(eucK20bm.lme) # increases in AF only
+
+eucS20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='S',],na.action = na.omit)
+qqr(eucS20bm.lme) # tails way off; bimodal distribution of S?
+summary(eucS20bm.lme) # Cerrado starts lower, increases (p=.053)
+eucS100bm.lme=lme(log(stock100)~year*biome,random=~1|site/stand,
+                  data=euc2deps2[euc2deps2$element=='S',],na.action = na.omit)
+# tails still off, esp. upper; same result but lower p-vals as for 20 cm
+
+eucZn20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='Zn',],na.action = na.omit)
+qqr(eucZn20bm.lme) # upper tail off
+summary(eucZn20bm.lme) # increases in Cerrado (also to 100 cm)
+
 
 eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
@@ -592,8 +616,13 @@ unique(widedats$ID[widedats$stand=='Bp.E2'&
 # values for the two positions pretty close to those for composite, good
 # some of the CN data are missing: reps 2-4 of 40-60 and rep 1 of 20-40
 #   the four samples for 40-60 are all the positions of rep 1, oops
+# fixed as of October 4
 # Also missing rep 1 of 2004 for 40-60 and rep 4 for 60-100
 # reps 1 and 4 have way more C than 2 and 3, which are close to 2004 values
+plot(value~depth,data=dats[dats$stand=='Bp.E1'&dats$element=='K',],
+     col=rep,pch=as.numeric(as.factor(elt)))
+# reps, not row positions, are variable (row positions similar within a rep)
+# also true for E2
 
 yrdiffstockplot20_LU(tstock[tstock$element=='K'&tstock$site!='Bp',])
 yrdiffstockplot20_LU(tstock[tstock$element=='N',])
@@ -711,8 +740,8 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
      col=as.numeric(stkchgs$stand))
 
 plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Fertilizer - harvest, Mg ha-1',
-     ylab='Observed change in stocks to 20 cm',las=1,
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1,
      xlim=c(-.2,.5),ylim=c(-.2,.5))
 abline(h=0,lty=3)
 abline(v=0,lty=3)
@@ -724,8 +753,8 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
 
 palette('default')
 plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Fertilizer - harvest, Mg ha-1',
-     ylab='Observed change in stocks to 20 cm',las=1)
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 abline(h=0,lty=3)
 abline(v=0,lty=3)
@@ -895,3 +924,13 @@ Ceucrat.lme=lme(log(concratio)~year,random=~1|site/stand,
               na.action = na.omit)
 summary(Ceucrat.lme) # no change
 
+simple20=droplevels(dats2deps[dats2deps$stand %in% 
+                                c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                                  'JP.E2','JP.P','It.E1','It.N'),])
+simple20=mutate(simple20,LU2=ifelse(LU=='E','E','O'))
+# for this analysis, O = "other"
+table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
+# Not balanced--rep 5
+Ccsimp.lme=lme(conc20~year*LU2,random=~1|site,
+               data=simple20[simple20$element=='C',], na.action=na.omit)
+summary(Ccsimp.lme) # nothing is significant 
