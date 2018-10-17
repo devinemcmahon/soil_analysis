@@ -619,10 +619,123 @@ unique(widedats$ID[widedats$stand=='Bp.E2'&
 # fixed as of October 4
 # Also missing rep 1 of 2004 for 40-60 and rep 4 for 60-100
 # reps 1 and 4 have way more C than 2 and 3, which are close to 2004 values
+
+
+# Spatial heterogeneity
 plot(value~depth,data=dats[dats$stand=='Bp.E1'&dats$element=='K',],
      col=rep,pch=as.numeric(as.factor(elt)))
 # reps, not row positions, are variable (row positions similar within a rep)
 # also true for E2
+plot(value~as.numeric(elt),data=dats[dats$depth==5&dats$element=='K'&
+                                       dats$elt %in% c('E','L','T'),],
+     col=stand,pch=rep)
+plot(value~as.numeric(elt),data=dats[dats$depth==5&dats$element=='K'&
+                                       dats$elt %in% c('E','L','T') &
+                                       dats$site!='Bp',],
+     col=stand,pch=rep)
+xyplot(value~as.numeric(elt)|stand,groups=rep,
+       data=dats[dats$depth==5&dats$element=='K'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T') &dats$site!='Bp',],
+       ylim=c(0,600),pch=15)
+xyplot(value~as.numeric(elt)|stand,groups=rep,
+       data=dats[dats$depth==5&dats$element=='P'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),],ylim=c(0,600),pch=19)
+elt.lme=lme(log(value)~elt, random=~1|element/stand,
+            data=dats[dats$depth==5 & dats$year=='16' &
+                        dats$elt %in% c('E','L','T') &
+                        dats$element %in% c('C','N','P2','Ca2','K'),],na.action=na.omit)
+# No way that distribution of residuals will be normal
+Celt.lme=lme(log(value)~elt, random=~1|stand,
+            data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                        dats$element =='C',],na.action=na.omit)
+qqr(Celt.lme) # Nice (with log) 
+summary(Celt.lme) # L significantly less than E
+xyplot(value~as.numeric(elt)|stand,groups=rep,
+       data=dats[dats$depth==5&dats$element=='C'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),],pch=19)
+Celtbm.lme=lme(log(value)~elt*biome, random=~1|stand,
+             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                         dats$element =='C',],na.action=na.omit)
+summary(Celtbm.lme) # difference with L is only in Cerrado; I think driven by It.E1
+# where L is substantially < T for 2 of 4 reps
+Celtbm15.lme=lme(log(value)~elt*biome, random=~1|stand,
+                 data=dats[dats$depth==15 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                             dats$element =='C',],na.action=na.omit)
+summary(Celtbm15.lme) # from 10-20 cm, L > E in AF only (represented only by Eu.E2)
+# Cerrado*L term is significant and opposite 
+# no general pattern
+xyplot(value~as.numeric(elt)|stand,groups=rep,
+       data=dats[dats$depth==15&dats$element=='C'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),],pch=19)
+Cdepeltbm.lme=lme(log(value)~elt*biome, random=~1|stand/depth,
+               data=dats[dats$year=='16' & dats$elt %in% c('E','L','T') &
+                           dats$element =='C',],na.action=na.omit)
+qqr(Cdepeltbm.lme) # not as good
+summary(Cdepeltbm.lme) # still difference is just in L and Cerrado; driven by top 5 cm
+# best to just look at that layer
+xyplot(value~depth|stand,groups=elt,
+       data=dats[dats$element=='C'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),],pch=19)
+plot(value~depth,data=dats[dats$element=='C'& dats$year=='16' & dats$stand=='It.E1' &
+                             dats$elt %in% c('E','L','T') &dats$depth<30,],
+     col=as.numeric(elt)-2,pch=rep+14)
+
+
+
+Nelt.lme=lme(value~elt, random=~1|stand,
+             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                         dats$element =='N',],na.action=na.omit) # log makes qqr worse
+summary(Nelt.lme) # L lower again at p=.06
+Neltbm.lme=lme(value~elt*biome, random=~1|stand,
+               data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                           dats$element =='N',],na.action=na.omit)
+summary(Neltbm.lme) # L < E for Cerrado at p=.028; T < E at .072
+
+
+Kelt.lme=lme(log(value)~elt, random=~1|stand,
+              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                          dats$element =='K',],na.action=na.omit)
+qqr(Kelt.lme)
+summary(Kelt.lme) # no difference
+Pelt.lme=lme(value~elt, random=~1|stand,
+             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                         dats$element =='P2',],na.action=na.omit)
+qqr(Pelt.lme) # still not very good (log worse)
+summary(Pelt.lme) # no difference
+
+Caelt.lme=lme(log(value)~elt, random=~1|stand,
+             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                         dats$element =='Ca2',],na.action=na.omit)
+qqr(Caelt.lme)
+summary(Caelt.lme) # no difference
+# Spatial heterogeneity overall:
+depcvs=group_by(dats4,stand,LU,biome,depth,element,year) %>%
+  summarise(CV=sd(repval,na.rm=T)/mean(repval,na.rm=T))
+tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$LU,summary)
+tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$depth,summary)
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])$element,summary)
+dep16cvs=group_by(droplevels(dats[dats$position %in% c('Ee1','Ee2','L','T') &
+                                    dats$LU!='A' & dats$year=='16',]),
+                  stand,LU,biome,depth,element) %>%
+  summarise(CV=sd(value,na.rm=T)/mean(value,na.rm=T))
+tapply(droplevels(dep16cvs[dep16cvs$element %in% c('C','N','P2','Ca2','K'),])$CV,
+       droplevels(dep16cvs[dep16cvs$element %in% c('C','N','P2','Ca2','K'),])$element,summary)
+
+plot(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
+plot(CV~LU,data=depcvs[depcvs$element=='C',])
+plot(CV~depth,data=depcvs[depcvs$element=='C' & depcvs$LU!='A',],col=LU,pch=5,cex=2)
+
+bwplot(CV~LU|element,data=depcvs[depcvs$element %in% c('C','N','K') &
+                                   depcvs$LU!='A',])
+bwplot(CV~as.factor(depth)|LU,data=depcvs[depcvs$element %in% c('C','N','K') &
+                                            depcvs$stand!='It.E1'&depcvs$stand!='It.N'&
+                                            depcvs$LU!='A',])
+# CV doesn't change a lot with depth; IQR actually larger at deeper depths
+#   maybe due to influence of pit samples? Yes, less of an effect without It.E1
+cvaov=aov(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
+summary(cvaov)
+qqr(cvaov) # nooo
 
 yrdiffstockplot20_LU(tstock[tstock$element=='K'&tstock$site!='Bp',])
 yrdiffstockplot20_LU(tstock[tstock$element=='N',])
@@ -649,8 +762,34 @@ tapply(shortE$stock100_16,shortE$element,
        function(x){mean(x,na.rm=T)})
 tapply(shortE$stock100_16,shortE$element,
        function(x){sd(x,na.rm=T)})
+tapply(shortE$rat_16,shortE$element,
+       function(x){mean(x,na.rm=T)})
+tapply(shortE$rat_16,shortE$element,
+       function(x){sd(x,na.rm=T)})
 mean(shortE$BD100_16[shortE$element=='C'])
 sd(shortE$BD100_16[shortE$element=='C'])
+
+mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element %in% shortE$element,]),
+                 stand,LU,element,biome)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04))
+mrstkE=mrstkchgs[mrstkchgs$LU=='E' & mrstkchgs$stand!='It.E1',]
+mrstkO=mrstkchgs[mrstkchgs$LU!='E' & mrstkchgs$stand!='It.N'&
+                   mrstkchgs$stand!='JP.N',]
+
+tapply(mrstkE$chgrt100,mrstkE$element,mean)            
+tapply(mrstkE$chgrt100,mrstkE$element,median)            
+tapply(mrstkE$chgrt100,mrstkE$element,sd) 
+
+tapply(mrstkO$chgrt100,mrstkO$element,mean)            
+tapply(mrstkO$chgrt100,mrstkO$element,median)            
+tapply(mrstkO$chgrt100,mrstkO$element,sd) 
+plot(chgrt100~LU,data=mrstkchgs[mrstkchgs$element=='C',])
+
 tapply(shorttstk$stock100_16[shorttstk$LU=='N'&
                                shorttstk$site!='It'],
        shortE$element[shorttstk$LU=='N'&
@@ -926,11 +1065,90 @@ summary(Ceucrat.lme) # no change
 
 simple20=droplevels(dats2deps[dats2deps$stand %in% 
                                 c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                                  'JP.E2','JP.P','It.E1','It.N'),])
+                                  'JP.E2','JP.N','It.E1','It.N'),])
 simple20=mutate(simple20,LU2=ifelse(LU=='E','E','O'))
 # for this analysis, O = "other"
+
+simple20_2=dats2deps
+simple20_2$site=as.character(simple20_2$site)
+simple20_2=mutate(simple20_2,site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                  LU2=ifelse(LU=='E','E','O'))
+simple20_2=droplevels(simple20_2[simple20_2$stand %in% 
+                                c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                                  'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),])
+
 table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
 # Not balanced--rep 5
-Ccsimp.lme=lme(conc20~year*LU2,random=~1|site,
+Csimp.lme=lme(stock20~year*LU2,random=~1|site,
                data=simple20[simple20$element=='C',], na.action=na.omit)
-summary(Ccsimp.lme) # nothing is significant 
+qqr(Csimp.lme) # wavery, but not so bad
+summary(Csimp.lme) # nothing is significant
+
+Csimp.lme2=lme(stock20~year*LU2,random=~1|site2,
+              data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
+qqr(Csimp.lme2) # tails off, mostly ok?
+summary(Csimp.lme2) # C increases between years if JP.E1 and E2 both included
+
+Nsimp.lme=lme(stock20~year*LU2,random=~1|site,
+              data=simple20[simple20$element=='N',], na.action=na.omit)
+qqr(Nsimp.lme) # nice
+summary(Nsimp.lme) # N initially higher in other, doesn't increase without JP.E1
+Nsimp.aov=aov(stock20~year*LU2,data=simple20[simple20$element=='N',])
+qqr(Nsimp.aov) # tails off
+summary(Nsimp.aov) # not correct I think
+Nsimp.lme2=lme(stock20~year*LU2,random=~1|site,
+              data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
+qqr(Nsimp.lme2) # nice
+summary(Nsimp.lme2) # same deal
+
+Ksimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
+              data=simple20[simple20$element=='K',], na.action=na.omit)
+qqr(Ksimp.lme) # some outliers
+summary(Ksimp.lme) # no significant terms; increase in euc when JP excluded
+
+xyplot(stock20~year|site,groups=LU2,data=simple20[simple20$element=='K',])
+# different trends for euc and non-euc veg, but not consistent among sites
+# For C, apparent increases in euc in most sites and other in It,
+#   but decreases in JP.N, Vg.N, BO.P, and Eu.N
+
+xyplot(stock20~year|site,groups=LU2,data=simple20[simple20$element=='N',],
+       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
+       ylab='N stock to 20 cm (Mg ha-1)',xlab='Sampling year')
+
+xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='C',],
+       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
+       ylab='C stock to 20 cm (Mg ha-1)',xlab='Sampling year')
+
+xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='C',])
+
+
+Casimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
+              data=simple20[simple20$element=='Ca2',], na.action=na.omit)
+qqr(Casimp.lme) # good with log
+summary(Casimp.lme) # increase in euc, barely in other when JP.P included (p=.047)
+
+Psimp.lme=lme(stock20~year*LU2,random=~1|site,
+               data=simple20[simple20$element=='P2',], na.action=na.omit)
+qqr(Psimp.lme) # upper tail off
+summary(Psimp.lme) # no signif changes as you might expect
+
+Zrsimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
+               data=simple20[simple20$element=='Zr',], na.action=na.omit)
+qqr(Zrsimp.lme) 
+summary(Zrsimp.lme) # starts lower in other, marginally increases there (p=.07)
+# increase significant when JP.P included (p=.045)
+
+Casimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
+               data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
+qqr(Casimp.lme2) # good with log
+summary(Casimp.lme2) # increase in euc but not in other
+
+Psimp.lme2=lme(stock20~year*LU2,random=~1|site2,
+              data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
+qqr(Psimp.lme2) # upper tail off
+summary(Psimp.lme2) # no signif changes as you might expect
+
+Zrsimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
+               data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
+qqr(Zrsimp.lme2) 
+summary(Zrsimp.lme2) # minor increase in other (p=.052)
