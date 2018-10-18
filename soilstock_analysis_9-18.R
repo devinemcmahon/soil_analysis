@@ -1210,7 +1210,8 @@ Ksimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
 Casimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
 qqr(Casimp.lme2) # good with log
-summary(Casimp.lme2) # increase in euc but not in other
+summary(Casimp.lme2) # increase in euc but not in other (opposite sign)
+
 
 Psimp.lme2=lme(stock20~year*LU2,random=~1|site2,
               data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
@@ -1222,41 +1223,98 @@ Zrsimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
 qqr(Zrsimp.lme2) 
 summary(Zrsimp.lme2) # minor increase in other (p=.052)
 
+# is it appropriate to group pasture with native veg? 
+Casimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
+qqr(Casimp.lme3) # good with log
+summary(Casimp.lme3) # ca starts higher under P, increases as under E
+# starts same under N, does not increase
+# Probably better to keep the three types separate
+
+# But how to show which are different?
+Casimp.aov=aov(log(stock20)~year*LU,
+               data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
+qqr(Casimp.aov)
+summary(Casimp.aov)
+TukeyHSD(Casimp.aov) # none of these are actually different
+# except N < P and 16 > 04 at p=.058
+# I don't want all the year/veg comparisons, just year within veg
+# Dunnett test?
+
+Csimp.aov=aov(stock20~year*LU,
+               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
+qqr(Csimp.aov) # tails way off, opposite direction from usual
+summary(Csimp.aov) # marginal LU effect
+
+
+Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
+qqr(Csimp.lme3) # tails off, mostly ok? Log is better
+summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
+# But decreases in pasture,; no change in native?
+exp(0.161)
+exp(0.161-.191)
+
+Nsimp.lme3=lme(stock20~year*LU,random=~1|site,
+               data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
+qqr(Nsimp.lme3) # nice
+summary(Nsimp.lme3) # with all sites included, starts higher in N, no change
+
+Ksimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+               data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
+# no differences between types or years
+
+Psimp.lme3=lme(stock20~year*LU,random=~1|site2,
+               data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
+qqr(Psimp.lme3) # both tails off
+summary(Psimp.lme3) # no signif changes as you might expect
+
+Zrsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+                data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
+qqr(Zrsimp.lme3) 
+summary(Zrsimp.lme3) # minor increase in other (p=.052)
+# when separated by veg type, P starts with more Zr, N with less; 
+# increases in native 
+
+
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
-Ksimp100.lme=lme(log(stock100)~year*LU2,random=~1|site,
+Ksimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
               data=simp100[simp100$element=='K',], na.action=na.omit)
 qqr(Ksimp100.lme) # mostly ok
 summary(Ksimp100.lme) # excluding JP2 and It, 
-#   increase overall and euc starts higher than noneuc, but no intrxn 
+#   increase overall and both noneuc start higher than euc, but no intrxn 
 
-Krat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='K',],
                         na.action = na.omit,family='quasibinomial')
 qqr(Krat100simp.pql) # ok? upper tail off
 summary(Krat100simp.pql) # ratio starts bigger in noneuc (p=.053)
 #   and decreases (p=.027)
 # without It and JP2 (i.e. native Cerrado), no significant changes
+# Native (just AF) almost higher with 3 separate LUs (p=.097)
 
-Crat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+Crat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='C',],
                         na.action = na.omit,family='quasibinomial')
 qqr(Crat100simp.pql) # ok
 summary(Crat100simp.pql) # no change
 
-Nrat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+Nrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='N',],
                         na.action = na.omit,family='quasibinomial')
-qqr(Nrat100simp.pql) # tails quite off
+qqr(Nrat100simp.pql) # tails quite off; ok without Cerr nat
 summary(Nrat100simp.pql) # with JP2 and It, decreases overall
 # without, no change
 
-Carat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+Carat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='Ca',],
                         na.action = na.omit,family='quasibinomial')
 qqr(Carat100simp.pql) 
 summary(Carat100simp.pql) # marginal increase in euc, decrease in non
 # starts higher in non
+# without Cerr nat, same deal, but changes are signif only for pasture
+# (marginally higher starting value p=.083 and decrease p=.067 in nat)
 
 Prat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
                          data=simp100[simp100$element=='P',],
