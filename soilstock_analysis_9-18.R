@@ -233,12 +233,14 @@ summary(allNcratLU2.lme) # barely decreases, p=.054 (now it's .011, why?)
 
 
 Nrat100LU.lme=lme(stockratio~year*LU,random=~1|site/stand,
-                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
+#                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
+  data=test2deps[test2deps$element=='N',],na.action = na.omit)
 summary(Nrat100LU.lme) # residuals normalish
 # proportion in top 20 cm decreases between years (p=.047); no LU effects
+# no change without It.E1 and N
 
 Crat100LU.lme=lme(stockratio~year*LU,random=~1|site/stand,
-                  data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
+                  data=test2deps[test2deps$element=='C',],na.action = na.omit)
 summary(Crat100LU.lme) # gets shallower in pasture, maybe
 Prat100LU.lme=lme(stockratio~year*LU,random=~1|site/stand,
                   data=dats2deps[dats2deps$element=='P',],na.action = na.omit)
@@ -311,6 +313,9 @@ yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2',],label=F,fulllegend = T)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+
+# Ratios for analyzing change in different vegetation types
+
 
 # Repeat analysis with just eucs
 # Subset data frames now make in soil_data_reader
@@ -418,9 +423,11 @@ Krat100euc.lme=lme(stockratio~year,random=~1|site/stand,
 # marginally shallower, p=.0612; tails also far off; log no help
 # with 16 densities, p=.074 increase
 # now it's .066, with version control and redone N content. Why the change???
+# no change with euc2deps2?
 Krat100euc2.lme=lme(stockratio~year,random=~1|site/stand,
                    data=euc2deps[euc2deps$element=='K'&
                                    euc2deps$site!='Bp',],na.action = na.omit)
+# this is p=.03
 
 # Ca: no change but residuals look pretty normal
 # When using Ca2, large increase (makes sense), p=0.0005
@@ -517,12 +524,15 @@ summary(Zrrat100LU.lme) # gets deeper in N because of weird JP probably
 qqr(Carat100LU.lme) # nice
 # Wait, these are proportion data and don't come from normal distributions
 # Try generalized mixed models
-library(MASS)
+#library(MASS)
 Krat100LU2.pql=glmmPQL(stockratio~year*LU,random=~1|site/stand,
                        data=test2deps[test2deps$element=='K' &
                                         test2deps$site!='Bp',],
                        na.action = na.omit,family='quasibinomial')
 summary(Krat100LU2.pql) # same deal as lme
+Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site2,
+                       data=simple20[simple20$element=='K',],
+                       na.action = na.omit,family='quasibinomial')
 Crat100LU.pql=glmmPQL(stockratio~year*LU,random=~1|site/stand,
                        data=test2deps[test2deps$element=='C',],
                        na.action = na.omit,family='quasibinomial')
@@ -769,8 +779,12 @@ tapply(shortE$rat_16,shortE$element,
 mean(shortE$BD100_16[shortE$element=='C'])
 sd(shortE$BD100_16[shortE$element=='C'])
 
+shorttstk$site=as.character(shorttstk$site)
+shorttstk=mutate(shorttstk,
+                 site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                  LU2=ifelse(LU=='E','E','O'))
 mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element %in% shortE$element,]),
-                 stand,LU,element,biome)%>%
+                 stand,site,LU,site2,LU2,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
@@ -780,6 +794,43 @@ mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element %in% shortE$element,])
 mrstkE=mrstkchgs[mrstkchgs$LU=='E' & mrstkchgs$stand!='It.E1',]
 mrstkO=mrstkchgs[mrstkchgs$LU!='E' & mrstkchgs$stand!='It.N'&
                    mrstkchgs$stand!='JP.N',]
+mrstkcomp=merge(mrstkE,mrstkO,by=c('biome','site2','element'),
+                suffixes = c('_E','_O'),all=F)
+mrstkE2=mrstkchgs[mrstkchgs$LU=='E',]
+mrstkO2=mrstkchgs[mrstkchgs$LU!='E',]
+mrstkcomp2=merge(mrstkE2,mrstkO2,by=c('biome','site2','element'),
+                suffixes = c('_E','_O'),all=F)
+
+t.test(mrstkcomp$chgln20_E[mrstkcomp$element=='C'],
+       mrstkcomp$chgln20_O[mrstkcomp$element=='C'],
+       paired=T) # p = .019, the log ratios are not the same
+t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='C'],
+       mrstkcomp2$chgln20_O[mrstkcomp2$element=='C'],
+       paired=T) # p = .235, the log ratios are the same
+hist(mrstkchgs$chgln20[mrstkchgs$element=='C']) 
+# There isn't a lot of data here
+# Probably best to focus on the pairs
+# but maybe do the lmes because that way you can see 
+#   increase or decrease for each vegetation type
+# or:
+t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='C'])
+t.test(mrstkcomp2$chgln20_O[mrstkcomp2$element=='C'])
+# no significant change between years in either
+
+t.test(mrstkcomp$chgln20_E[mrstkcomp$element=='P'],
+       mrstkcomp$chgln20_O[mrstkcomp$element=='P'],
+       paired=T) # no difference for N, P, K, yes for Ca
+t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='P'],
+       mrstkcomp2$chgln20_O[mrstkcomp2$element=='P'],
+       paired=T) # no: N, P, K yes: Ca
+hist(mrstkchgs$chgln20[mrstkchgs$element=='P']) 
+qqnorm(mrstkchgs$chgln20[mrstkchgs$element=='P']) 
+# ok for Ca, 2 weird K outliers, P still weird
+
+t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='P']) 
+#p=.08 for N, .04 for Ca, no for K and P
+t.test(mrstkcomp2$chgln20_O[mrstkcomp2$element=='P'])
+# no change in N, Ca, K, P
 
 tapply(mrstkE$chgrt100,mrstkE$element,mean)            
 tapply(mrstkE$chgrt100,mrstkE$element,median)            
@@ -789,6 +840,18 @@ tapply(mrstkO$chgrt100,mrstkO$element,mean)
 tapply(mrstkO$chgrt100,mrstkO$element,median)            
 tapply(mrstkO$chgrt100,mrstkO$element,sd) 
 plot(chgrt100~LU,data=mrstkchgs[mrstkchgs$element=='C',])
+
+simpstkchgs=mrstkchgs[mrstkchgs$stand %in% simple20_2$stand,]
+simpstkchgs$site=as.character(simpstkchgs$site)
+simpstkchgs=mutate(simpstkchgs,site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                  LU2=ifelse(LU=='E','E','O'))
+Cyrrat.lme=lme(chgln20~LU2,random=~1|site2,
+               data=simpstkchgs[simpstkchgs$element=='C',])
+qqr(Cyrrat.lme)
+summary(Cyrrat.lme) # no signif effect
+# just reformat the data and do a paired t-test
+
+
 
 tapply(shorttstk$stock100_16[shorttstk$LU=='N'&
                                shorttstk$site!='It'],
@@ -1119,7 +1182,9 @@ xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='C',],
        auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
        ylab='C stock to 20 cm (Mg ha-1)',xlab='Sampling year')
 
-xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='C',])
+xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='K',],
+       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
+       ylab='K stock to 20 cm (Mg ha-1)',xlab='Sampling year')
 
 
 Casimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
@@ -1138,6 +1203,10 @@ qqr(Zrsimp.lme)
 summary(Zrsimp.lme) # starts lower in other, marginally increases there (p=.07)
 # increase significant when JP.P included (p=.045)
 
+Ksimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
+               data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
+
+
 Casimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
 qqr(Casimp.lme2) # good with log
@@ -1152,3 +1221,51 @@ Zrsimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
                data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
 qqr(Zrsimp.lme2) 
 summary(Zrsimp.lme2) # minor increase in other (p=.052)
+
+simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
+
+Ksimp100.lme=lme(log(stock100)~year*LU2,random=~1|site,
+              data=simp100[simp100$element=='K',], na.action=na.omit)
+qqr(Ksimp100.lme) # mostly ok
+summary(Ksimp100.lme) # excluding JP2 and It, 
+#   increase overall and euc starts higher than noneuc, but no intrxn 
+
+Krat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                        data=simp100[simp100$element=='K',],
+                        na.action = na.omit,family='quasibinomial')
+qqr(Krat100simp.pql) # ok? upper tail off
+summary(Krat100simp.pql) # ratio starts bigger in noneuc (p=.053)
+#   and decreases (p=.027)
+# without It and JP2 (i.e. native Cerrado), no significant changes
+
+Crat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                        data=simp100[simp100$element=='C',],
+                        na.action = na.omit,family='quasibinomial')
+qqr(Crat100simp.pql) # ok
+summary(Crat100simp.pql) # no change
+
+Nrat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                        data=simp100[simp100$element=='N',],
+                        na.action = na.omit,family='quasibinomial')
+qqr(Nrat100simp.pql) # tails quite off
+summary(Nrat100simp.pql) # with JP2 and It, decreases overall
+# without, no change
+
+Carat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                        data=simp100[simp100$element=='Ca',],
+                        na.action = na.omit,family='quasibinomial')
+qqr(Carat100simp.pql) 
+summary(Carat100simp.pql) # marginal increase in euc, decrease in non
+# starts higher in non
+
+Prat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                         data=simp100[simp100$element=='P',],
+                         na.action = na.omit,family='quasibinomial')
+qqr(Prat100simp.pql) 
+summary(Prat100simp.pql) # shallower under non-euc, no change
+
+Alrat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+                        data=simp100[simp100$element=='Al',],
+                        na.action = na.omit,family='quasibinomial')
+qqr(Alrat100simp.pql) 
+summary(Alrat100simp.pql) # gets deeper in euc but not in other
