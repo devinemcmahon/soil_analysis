@@ -557,6 +557,9 @@ Nrateuc2.pql=glmmPQL(stockratio~year,random=~1|site/stand,
                      na.action = na.omit,family='quasibinomial')
 summary(Nrateuc2.pql)
 
+Crat100bm.aov=aov(stockratio~biome*LU,
+                      data=test2deps[test2deps$element=='C',],na.action = na.omit)
+
 # variance vs mean
 plot(I(sdrat_16^2)~rat_16,data=tstock[tstock$element=='C',])
 # No real patterns except for P and P2
@@ -1251,9 +1254,40 @@ Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
 qqr(Csimp.lme3) # tails off, mostly ok? Log is better
 summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
-# But decreases in pasture,; no change in native?
+# But decreases in pasture; no change in native?
 exp(0.161)
 exp(0.161-.191)
+library(sjPlot) # download failed
+# this makes nice plots of coefficients of models,
+#   but would probably not be good for visualizing many elements at once
+fakedat=data.frame(site2=rep(unique(simple20_2$site2),2,each=2),
+                   year=rep(c('04','16'),12),
+                   LU=c(rep('E',12),rep(c('P','N','N','P','N','N'),each=2)))
+fakefix=data.frame(year=rep(c('04','16'),3),LU=rep(c('E','P','N'),each=2))
+Csimp20fix=summary(Csimp.lme3)$tTable
+Csimp20preds=predict(Csimp.lme3,newdata=fakedat)
+fakedat$C20=predict(Csimp.lme3,newdata=fakedat)
+fakedatgr=group_by(fakedat,year,LU)%>%mutate(mnC20=mean(C20))
+plot(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
+     col=as.numeric(as.factor(year))*2,pch=16, xaxt='n',xlim=c(.5,3.5),
+     las=1,ylab='Predicted C stock to 20 cm',xlab='')
+axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
+text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
+#points(seq(1,3),rep(35,3), pch=c(3,NA,4),cex=c(1.5,1,1))
+legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'))
+
+simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
+plot(stock20~as.numeric(as.factor(LU)),data=simple20_2[simple20_2$element=='C',],
+     col=as.numeric(as.factor(year))*2, xaxt='n',xlim=c(.5,3.5),
+     las=1,ylab='Predicted C stock to 20 cm',xlab='')
+axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
+text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
+points(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
+     col=as.numeric(as.factor(year))*2,pch=18,cex=2)
+     
+#points(seq(1,3),rep(3.5,3), pch=c(3,NA,4),cex=c(1.5,1,1))
+legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'))
+
 
 Nsimp.lme3=lme(stock20~year*LU,random=~1|site,
                data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
@@ -1284,6 +1318,17 @@ Ksimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
 qqr(Ksimp100.lme) # mostly ok
 summary(Ksimp100.lme) # excluding JP2 and It, 
 #   increase overall and both noneuc start higher than euc, but no intrxn 
+Nsimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
+                 data=simp100[simp100$element=='N',], na.action=na.omit)
+qqr(Nsimp100.lme) # ok
+summary(Nsimp100.lme)
+Csimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
+                  data=simp100[simp100$element=='C',], na.action=na.omit)
+qqr(Csimp100.lme)
+summary(Csimp100.lme) # now increase in euc isn't signif, 
+#   but decreases in native and pasture are! 
+# don't do log transform for P (in which nothing changes)
+
 
 Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='K',],
@@ -1316,14 +1361,14 @@ summary(Carat100simp.pql) # marginal increase in euc, decrease in non
 # without Cerr nat, same deal, but changes are signif only for pasture
 # (marginally higher starting value p=.083 and decrease p=.067 in nat)
 
-Prat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
-                         data=simp100[simp100$element=='P',],
+Prat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
+                         data=simp100[simp100$element=='P2',],
                          na.action = na.omit,family='quasibinomial')
 qqr(Prat100simp.pql) 
-summary(Prat100simp.pql) # shallower under non-euc, no change
+summary(Prat100simp.pql) # shallower under non-euc (if using P not P2), no change
 
-Alrat100simp.pql=glmmPQL(stockratio~year*LU2,random=~1|site,
+Alrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='Al',],
                         na.action = na.omit,family='quasibinomial')
 qqr(Alrat100simp.pql) 
-summary(Alrat100simp.pql) # gets deeper in euc but not in other
+summary(Alrat100simp.pql) # gets deeper in euc but not in native, shallower in pasture

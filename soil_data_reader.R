@@ -18,7 +18,7 @@ gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){
 }
 
 qqr=function(lmeobject){
-  qqnorm(resid(lmeobject),main=lmeobject$call)
+  qqnorm(resid(lmeobject),main=lmeobject$call,cex.main=.8)
   qqline(resid(lmeobject))
 }
 
