@@ -314,6 +314,10 @@ legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='Zn' & tstock$stock20_16<.1,])
+tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn incr
+
+
 # Ratios for analyzing change in different vegetation types
 
 
@@ -357,6 +361,16 @@ eucZn20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
 qqr(eucZn20bm.lme) # upper tail off
 summary(eucZn20bm.lme) # increases in Cerrado (also to 100 cm)
 
+eucCu20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Cu',],na.action = na.omit)
+qqr(eucCu20bm.lme) # lower tail off
+summary(eucCu20bm.lme) # no change
+
+eucMn20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Mn',],na.action = na.omit)
+qqr(eucMn20bm.lme) # both tails off, log possibly worse
+summary(eucMn20bm.lme) # increases in Cerrado (Bp stands, also in JP.N)
+#tstock$stand[tstock$element=='Mn' & tstock$stock20_16>.3]
 
 eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
@@ -693,7 +707,22 @@ plot(value~depth,data=dats[dats$element=='C'& dats$year=='16' & dats$stand=='It.
                              dats$elt %in% c('E','L','T') &dats$depth<30,],
      col=as.numeric(elt)-2,pch=rep+14)
 
-
+plot(value~depth,data=dats[dats$element=='Ca2'& dats$year=='16' & dats$stand=='It.E1' &
+                             dats$elt %in% c('E','L','T') &dats$depth<30,],
+     col=as.numeric(elt)-2,pch=rep+14) 
+legend('topright',bty='n',pch=15,col=as.numeric(unique(
+  dats$elt[dats$elt %in% c('E','L','T')]))-2,
+  legend=unique(dats$elt[dats$elt %in% c('E','L','T')])) # more Ca in linha, less in toco
+# In Bp.E1, more Ca in E--one super high value at surface
+# Bp.E2 has more in T; one rep has very high Ca in T at surface
+# Eu.E2 mixed, maybe lower for E, smaller spread for L and some high T
+# Eu.E1? maybe higher in L 
+plot(value~depth,data=dats[dats$element=='Ca2'& dats$year=='04' & dats$stand=='Eu.E1',],
+      col=rep,pch=18) # 1 and 3 are ~E (30 cm from planting line) and
+#   2 and 4 are ~T (60 cm); 4 has highest value at surface and 2 second
+#   below 20 cm, though, 4 has highest and 3 second-highest
+# For C, 1 and 2 are similar, 4 has highest values at surface
+# 
 
 Nelt.lme=lme(value~elt, random=~1|stand,
              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
@@ -904,6 +933,12 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 # Bioturbation?? Leaching in lame stands?
 
 # looking at the data to compare to budgets
+#budgets=mutate(budgets,inoutrat=In_kgha/Out_kgha)
+# usually close except for P and Mg
+# a change in either input or output should affect obs-predicted agreement
+plot(Concentration~Nutrient,data=budgets)
+
+
 stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
@@ -911,8 +946,13 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             chgrt20=(stock20_16-stock20_04)/stock20_04,
             chgln100=log(stock100_16/stock100_04),
             chgln20=log(stock20_16/stock20_04),
-            budget=Budget/1000)
+            budget=Budget/1000,
+            conc=mean(Concentration))
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
+t.test(stkchgs$chg20,stkchgs$budget,paired=T) # for all elements, p=.069
+t.test(stkchgs$chg20[stkchgs$element=='N'],
+       stkchgs$budget[stkchgs$element=='N'],paired=T)
+# Ca sort of differs at p=.091, NPK don't 
 
 palette(rainbow(9))
 plot(chg100~budget,data=stkchgs[stkchgs$element=='N',],
@@ -938,11 +978,23 @@ text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
 
 
 plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Fertilizer - harvest, Mg ha-1',
-     ylab='Observed change in stocks to 20 cm',las=1)
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+     cex=stkchgs$conc*1000,
      col=as.numeric(stkchgs$stand))
+# Concentration matters? Higher estimated wood associated with larger N increases
+#   than expected (lower concs would make expected losses less in Vg.E and Eu.E2)
+# And lower N conc in BO.E could be associated with underestimated expected losses?
+#   Number of harvests/harvested volume more important
+# but large observed Ca losses in Eu.E2 associated with high Ca concs 
+#       (i.e. estimated losses should be large, too)
+# High Ca concs in Bp.E1 and It.E1 also should offset large expected increases,
+#     but expected still >> observed
+# Low Ca concs in JP associated with larger-than-predicted Ca increases
+#   so again concentration doesn't seem to be the main driver. Harvested biomass, yes?
+# Or maybe they left the bark onsite in JP so increases > expected?
 
 plot(chg20~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
