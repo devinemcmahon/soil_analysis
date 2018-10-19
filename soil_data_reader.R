@@ -362,10 +362,36 @@ shorttstk$element[shorttstk$element=='P2']='P'
 shorttstk$element[shorttstk$element=='Ca2']='Ca'
 shorttstk$element[shorttstk$element=='Mg2']='Mg'
 
-budgets=read.csv('nutrient_budget_summary.csv')
+#budgets=read.csv('nutrient_budget_summary.csv')
+budgets=read.csv('nutrient_budgets_linked.csv')
+pagano=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,
+                               0.001193941,0.000128281,0.00000841287,0.000077024),
+                  Nutrient=c('N','P','K','Ca','Mg','B','S'))
+budgets=merge(budgets,pagano,by='Nutrient')
+budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                 Concentration*511)/1000,
+               stdconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                              Egrandconc*511)/1000,
+               denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                             Egrandconc*560)/1000,
+               lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                Egrandconc*460)/1000
+)
 shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
                  by.y=c('Stand','Nutrient'))
 
+stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04),
+            #budget=Budget/1000,
+            budget=budget,
+            stdconcbudg=stdconcbudg, denserbudg=denserbudg,
+            lessdensebudg=lessdensebudg,conc=Concentration)
+stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 
 yrdiffstockplot100_LU=function(sub_ttests){
   par(mar=c(5,5,2,2))

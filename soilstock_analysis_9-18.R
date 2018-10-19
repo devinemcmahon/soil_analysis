@@ -938,6 +938,39 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 # a change in either input or output should affect obs-predicted agreement
 plot(Concentration~Nutrient,data=budgets)
 
+pagano=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,
+                    0.001193941,0.000128281,0.00000841287,0.000077024),
+                  Nutrient=c('N','P','K','Ca','Mg','B','S'))
+budgets=merge(budgets,pagano,by='Nutrient')
+budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                 Concentration*511)/1000,
+                 stdconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                Egrandconc*511)/1000,
+                 denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                              Egrandconc*560)/1000,
+                 lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                             Egrandconc*460)/1000
+               )
+
+plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
+abline(0,1)
+# K and N vary a lot; one very low Ca value = BO.E (no bark measured)
+# My measured N is almost always lower than Pagano estimate
+# So if using their estimate, even larger N decreases would be predicted
+budgets$Stand[budgets$Concentration<.0008 & budgets$Nutrient=='Ca']
+plot(budget~stdconcbudg,data=budgets,pch=as.character(Nutrient),col=Nutrient)
+abline(0,1)
+# N and sometimes K influence the budget a lot.
+plot(denserbudg~lessdensebudg,data=budgets,
+     pch=as.character(Nutrient),col=Nutrient)
+abline(0,1) # pretty close; only matters for C and N
+
+# variation in percent bark could also be important
+
+
+
+shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
+                 by.y=c('Stand','Nutrient'))
 
 stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
@@ -946,13 +979,15 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             chgrt20=(stock20_16-stock20_04)/stock20_04,
             chgln100=log(stock100_16/stock100_04),
             chgln20=log(stock20_16/stock20_04),
-            budget=Budget/1000,
-            conc=mean(Concentration))
+            #budget=Budget/1000,
+            budget=budget,
+            stdconcbudg=stdconcbudg, denserbudg=denserbudg,
+            lessdensebudg=lessdensebudg,conc=Concentration)
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 t.test(stkchgs$chg20,stkchgs$budget,paired=T) # for all elements, p=.069
 t.test(stkchgs$chg20[stkchgs$element=='N'],
        stkchgs$budget[stkchgs$element=='N'],paired=T)
-# Ca sort of differs at p=.091, NPK don't 
+# Ca sort of differs at p=.1, NPK don't 
 
 palette(rainbow(9))
 plot(chg100~budget,data=stkchgs[stkchgs$element=='N',],
@@ -1004,6 +1039,7 @@ abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
 text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+     cex=stkchgs$conc*2000,
      col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)
