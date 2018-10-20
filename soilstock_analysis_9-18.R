@@ -949,7 +949,10 @@ budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                  denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                               Egrandconc*560)/1000,
                  lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                             Egrandconc*460)/1000
+                             Egrandconc*460)/1000,
+                 lessrotbudg=(In_kgha_1+In_kgha_2*Past_harvests_known-
+                                (Wood_m3_1+Wood_m3_2*Past_harvests_known)*
+                                Egrandconc*511)/1000
                )
 
 plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
@@ -1016,9 +1019,10 @@ plot(chg20~budget,data=stkchgs,type='n',
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
      ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-     cex=stkchgs$conc*1000,
-     col=as.numeric(stkchgs$stand))
+#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+#text(stkchgs$stdconcbudg,stkchgs$chg20,labels=stkchgs$element,
+text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
+      cex=stkchgs$conc*1000, col=as.numeric(stkchgs$stand))
 # Concentration matters? Higher estimated wood associated with larger N increases
 #   than expected (lower concs would make expected losses less in Vg.E and Eu.E2)
 # And lower N conc in BO.E could be associated with underestimated expected losses?
@@ -1030,16 +1034,21 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 # Low Ca concs in JP associated with larger-than-predicted Ca increases
 #   so again concentration doesn't seem to be the main driver. Harvested biomass, yes?
 # Or maybe they left the bark onsite in JP so increases > expected?
+# Changing the concentrations to the literature values I cited for E. grandis
+#   improves Ca in BO.E, but doesn't help much with other nutrients
+
+# taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
 
 plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1 (lessrot)',
      ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1,
      xlim=c(-.2,.5),ylim=c(-.2,.5))
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-     cex=stkchgs$conc*2000,
+#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
+          cex=stkchgs$conc*2000,
      col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)

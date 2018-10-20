@@ -375,7 +375,10 @@ budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                              Egrandconc*560)/1000,
                lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                                Egrandconc*460)/1000
+                                Egrandconc*460)/1000,
+               lessrotbudg=(In_kgha_1+In_kgha_2*Past_harvests_known-
+                              (Wood_m3_1+Wood_m3_2*Past_harvests_known)*
+                              Concentration*511)/1000
 )
 shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
                  by.y=c('Stand','Nutrient'))
@@ -390,6 +393,7 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             #budget=Budget/1000,
             budget=budget,
             stdconcbudg=stdconcbudg, denserbudg=denserbudg,
+            lessrotbudg=lessrotbudg,
             lessdensebudg=lessdensebudg,conc=Concentration)
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 
