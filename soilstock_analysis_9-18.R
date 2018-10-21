@@ -960,6 +960,7 @@ abline(0,1)
 # K and N vary a lot; one very low Ca value = BO.E (no bark measured)
 # My measured N is almost always lower than Pagano estimate
 # So if using their estimate, even larger N decreases would be predicted
+# Plantar data has much less N, more K than my estimates
 budgets$Stand[budgets$Concentration<.0008 & budgets$Nutrient=='Ca']
 plot(budget~stdconcbudg,data=budgets,pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)
@@ -1017,12 +1018,25 @@ text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
 
 plot(chg20~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',
+     #ylim=c(-1,1.8),
+     las=1)
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+         col=as.numeric(stkchgs$stand))
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20/sqrt(3),
+         y1=stkchgs$chg20+stkchgs$sdchg20/sqrt(3),
+         col=as.numeric(stkchgs$stand))
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 #text(stkchgs$stdconcbudg,stkchgs$chg20,labels=stkchgs$element,
-text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
-      cex=stkchgs$conc*1000, col=as.numeric(stkchgs$stand))
+#text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
+      #cex=stkchgs$conc*1000, 
+      col=as.numeric(stkchgs$stand))
+legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
+       legend=levels(stkchgs$stand),bty='n',ncol=2)
 # Concentration matters? Higher estimated wood associated with larger N increases
 #   than expected (lower concs would make expected losses less in Vg.E and Eu.E2)
 # And lower N conc in BO.E could be associated with underestimated expected losses?
@@ -1046,12 +1060,15 @@ plot(chg20~budget,data=stkchgs,type='n',
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+         col=as.factor(stkchgs$stand))
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20/sqrt(3),
+         y1=stkchgs$chg20+stkchgs$sdchg20/sqrt(3),
+         col=as.factor(stkchgs$stand))
+text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+#text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
           cex=stkchgs$conc*2000,
      col=as.numeric(stkchgs$stand))
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n',ncol=2)
 
 palette('default')
 plot(chg20~budget,data=stkchgs,type='n', 
