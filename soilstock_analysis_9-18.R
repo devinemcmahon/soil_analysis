@@ -1024,8 +1024,8 @@ plot(chg20~budget,data=stkchgs,type='n',
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
          col=as.numeric(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20/sqrt(3),
-         y1=stkchgs$chg20+stkchgs$sdchg20/sqrt(3),
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
+         y1=stkchgs$chg20+stkchgs$sdchg20,
          col=as.numeric(stkchgs$stand))
 abline(h=0,lty=3)
 abline(v=0,lty=3)
@@ -1054,7 +1054,7 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
 # taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
 
 plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1 (lessrot)',
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
      ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1,
      xlim=c(-.2,.5),ylim=c(-.2,.5))
 abline(h=0,lty=3)
@@ -1062,8 +1062,8 @@ abline(v=0,lty=3)
 abline(0,1)
 segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
          col=as.factor(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20/sqrt(3),
-         y1=stkchgs$chg20+stkchgs$sdchg20/sqrt(3),
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
+         y1=stkchgs$chg20+stkchgs$sdchg20,
          col=as.factor(stkchgs$stand))
 text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 #text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
@@ -1078,10 +1078,43 @@ rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+         col=as.numeric(as.factor(stkchgs$biome))+2)
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
+         y1=stkchgs$chg20+stkchgs$sdchg20,
+         col=as.numeric(as.factor(stkchgs$biome))+2)
 text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
      col=as.numeric(as.factor(stkchgs$biome))+2)
 legend('bottomright',pch=15,col=c(3,4),
        legend=c('Atlantic Forest','Cerrado'),bty='n')
+
+
+plot(chg100~budget,data=stkchgs,type='n', 
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='Observed change in stocks to 100 cm, Mg ha-1',las=1,
+     ylim=c(-3,5.5))
+     #xlim=c(-.2,.5),ylim=c(-.2,.5))
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg100,
+         col=as.numeric(as.factor(stkchgs$biome))+2)
+segments(x0=stkchgs$budget,y0=stkchgs$chg100-stkchgs$sdchg100,
+         y1=stkchgs$chg100+stkchgs$sdchg100,
+         col=as.numeric(as.factor(stkchgs$biome))+2)
+text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
+     col=as.numeric(as.factor(stkchgs$biome))+2)
+legend('bottomright',pch=15,col=c(3,4),
+       legend=c('Atlantic Forest','Cerrado'),bty='n')
+
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg100,
+         col=as.factor(stkchgs$stand))
+segments(x0=stkchgs$budget,y0=stkchgs$chg100-stkchgs$sdchg100,
+         y1=stkchgs$chg100+stkchgs$sdchg100,
+         col=as.factor(stkchgs$stand))
+text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
+     col=as.numeric(stkchgs$stand))
+
 
 
 

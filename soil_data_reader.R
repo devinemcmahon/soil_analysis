@@ -113,7 +113,7 @@ datspre=ungroup(datspre)
 dats4=group_by(datspre[datspre$rmsimp==0,],stand,year,depth,rep,element) %>%
 #dats4=group_by(dats,stand,year,depth,rep,element) %>%
   mutate(repval=mean(value,na.rm=T),repsd=sd(value,na.rm=T),
-         repn=n(),repwt=ifelse(rep==5,2,1))
+         repn=sum(!is.na(value)),repwt=ifelse(rep==5,2,1))
 dats4=distinct(dats4,stand,year,depth,rep,element,.keep_all = T)
 # In future stats, maybe weight pit samples more than core samples when both taken
 # Pit samples were taken when cores dubious (i.e. contaminated with surface OM)
@@ -398,8 +398,9 @@ shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
 stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
-            sdchg20=sqrt(sd20_04^2+sd20_16^2),
-            sdchg100=sqrt(sd100_04^2+sd100_16^2),
+            sdchg20=sqrt(sd20_04^2+sd20_16^2)/2, 
+            # = sqrt(sd04^2/n04+sd16^2/n16), assuming n=4
+            sdchg100=sqrt(sd100_04^2+sd100_16^2)/2,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
             chgrt20=(stock20_16-stock20_04)/stock20_04,
             chgln100=log(stock100_16/stock100_04),
