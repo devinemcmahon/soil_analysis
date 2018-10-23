@@ -1,14 +1,17 @@
+# Source: 
+#https://toddjobe.blogspot.com/2009/09/power-analysis-for-mixed-effect-models.html
+
 Model <- function(x = cobblebars,
                   type = c("normal","log","logit")){
   ## Transforms
   if (type[1] == "log")
-    x$prop.woody <- log(x$prop.woody)
+    x$stock20 <- log(x$stock20)
   else if (type[1] == "logit")
-    x$prop.woody <- log(x$prop.woody / (1 - x$prop.woody))
+    x$stock20 <- log(x$stock20 / (1 - x$stock20))
   
-  mod <- lme(prop.woody ~ year,
+  mod <- lme(stock20 ~ year,
              data = x,
-             random = ~ 1 | cobblebar/transect,
+             random = ~ 1 | site/stand,
              na.action = na.omit,
              control = lmeControl(opt = "optim",
                                   maxIter = 800, msMaxIter = 800)
@@ -21,7 +24,7 @@ Model <- function(x = cobblebars,
 # test a simple model:
 eucC20.lme=lme(stock20~year,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
-
+mod=Model(euc2deps[euc2deps$element=='C',],type='normal')
 
 GetHyperparam<-function(x,b=NULL){
   ## Get the hyperparameters from the mixed effect model
@@ -42,9 +45,10 @@ GetHyperparam<-function(x,b=NULL){
   return(hp)
 }
 
+fixef(allC20LU.lme)
+VarCorr(allC20LU.lme)
 hps=GetHyperparam(allC20LU.lme)
 
-hps
 fakeModWithRestarts <- function(m.o, n = 100,  ...){
   ## A Fake Model
   withCallingHandlers({
@@ -87,12 +91,29 @@ dt.power <- function (m, n.sims = 1000, alpha=0.05, ...){
   return(power)
 }
 
-testpow=dt.power(eucC20.lme)
+testpow=dt.power(euc20.lme) #.184. so not great. (again: .187)
 
-factoredDesign <- function(Elevs = 0.2/c(1,5,10,20),
-                           Nlevs = seq(2, 10, by = 2),
-                           Jlevs = seq(4, 10, by = 2),
-                           Klevs = c(3, 5, 7), ...){
+eucN=Model(euc2deps[euc2deps$element=='N',],type='log')
+summary(budgets$Budget[budgets$Nutrient=='N'])
+# N budgets (estimated) range from about -.25 to +.25 Mg ha-1
+
+dt.power(eucN,b=.25) #.941--easily detect largest changes
+dt.power(eucN,b=.025) # .061
+dt.power(eucN) #.16
+# 15-20% chance of detecting a real change on the order of that expected
+# also 5% chance of detecting a fake change
+
+summary(budgets$Budget[budgets$Nutrient=='Ca'])
+eucCa=Model(euc2deps[euc2deps$element=='Ca2',],type='log')
+
+dt.power(eucCa,b=.4) #(median change)
+dt.power(eucCa,b=.04)
+
+
+factoredDesign <- function(Elevs = 0.25/c(.5,1,2,5,10),
+                           Nlevs = 2,
+                           Jlevs = seq(2, 10, by = 2),
+                           Klevs = c(1,2), ...){
   ## Generates factored series of sampling designs for simulation
   ## of data that follow a particular model.
   ## Inputs:
@@ -115,6 +136,17 @@ factoredDesign <- function(Elevs = 0.2/c(1,5,10,20),
   N <- rep(rep(Nlevs, each = lJ*lK), times = lE)
   J <- rep(rep(Jlevs, each = lK), times = lE*lN)
   K <- rep(Klevs, times = lE*lN*lJ)
+  # This isn't what I want to test--what about samples per transect?
+  # His nesting scheme is not the same as mine: 
+  #   more like resampling individual reps in a stand
+  # Need to modify this code to estimate power with different no. samples
+  # Even then, hyperparameters constrained by variances in limited sampling
+  # Changing no. samples within a stand won't change the power of my lme?
+  #   No, it should reduce the residual variance
+  # In paper, address/focus on detection of changes within-stand (t-test)
+  #   as will be useful for companies? Or maybe they want to know how multiple
+  #   stands are changing on average, too.
+
   
   return(data.frame(E, N, J, K))
 }
@@ -125,6 +157,7 @@ fake <- function(N = 2, J = 6, K = 2, b = NULL, m.orig = mod,
   ## N = Number of years
   ## J = Number of sites
   ## K = Number of stands within sites
+  # How do I make this reflect samples within stands?
   year <- rep(0:(N-1), each = J*K)
   site <- factor(rep(rep(1:J, each = K), times = N))
   stand <- factor(rep(1:K, times = N*J))
@@ -141,12 +174,12 @@ fake <- function(N = 2, J = 6, K = 2, b = NULL, m.orig = mod,
   if (transform){
     if (m.orig$type == "normal"){
       y <- eta
-      y[y > 1] <- 1 # Fix any boundary problems.
-      y[y < 0] <- 0
+      #y[y > 1] <- 1 # Fix any boundary problems.
+      #y[y < 0] <- 0
     }
     else if (m.orig$type == "log"){
       y <- exp(eta)
-      y[y > 1] <- 1
+      #y[y > 1] <- 1
     }
     else if (m.orig$type == "logit")
       y <- exp(eta) / (1 + exp(eta))
@@ -185,6 +218,10 @@ powerAnalysis <- function(parallel = T, ...){
   return(dat)
 }
 
+powsN=powerAnalysis(parallel = F,m=eucN)
+# Yes, that takes ages to run
+#saveRDS(powsN,'powsn.Rds')
+
 plotPower <- function(dt){
   xyplot(power~N|J*K, data = dt, groups = E,
          panel = function(...){panel.xyplot(...)
@@ -197,3 +234,4 @@ plotPower <- function(dt){
          auto.key = T
   )
 }
+plotPower(powsN)

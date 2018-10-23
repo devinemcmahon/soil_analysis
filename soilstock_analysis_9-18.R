@@ -751,18 +751,22 @@ Caelt.lme=lme(log(value)~elt, random=~1|stand,
 qqr(Caelt.lme)
 summary(Caelt.lme) # no difference
 # Spatial heterogeneity overall:
-depcvs=group_by(dats4,stand,LU,biome,depth,element,year) %>%
+depcvs=group_by(droplevels(dats4[dats4$site!='TM'&dats4$site!='Cr'&
+                                   dats4$LU!='A',]),
+                stand,LU,biome,depth,element,year) %>%
   summarise(CV=sd(repval,na.rm=T)/mean(repval,na.rm=T))
 tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$LU,summary)
 tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$depth,summary)
-tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])$CV,
-       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])$element,summary)
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn'),])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn'),])$element,summary)
 dep16cvs=group_by(droplevels(dats[dats$position %in% c('Ee1','Ee2','L','T') &
                                     dats$LU!='A' & dats$year=='16',]),
                   stand,LU,biome,depth,element) %>%
   summarise(CV=sd(value,na.rm=T)/mean(value,na.rm=T))
-tapply(droplevels(dep16cvs[dep16cvs$element %in% c('C','N','P2','Ca2','K'),])$CV,
-       droplevels(dep16cvs[dep16cvs$element %in% c('C','N','P2','Ca2','K'),])$element,summary)
+tapply(droplevels(dep16cvs[dep16cvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn'),])$CV,
+       droplevels(dep16cvs[dep16cvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn'),])$element,summary)
 
 plot(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
 plot(CV~LU,data=depcvs[depcvs$element=='C',])
@@ -778,6 +782,22 @@ bwplot(CV~as.factor(depth)|LU,data=depcvs[depcvs$element %in% c('C','N','K') &
 cvaov=aov(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
 summary(cvaov)
 qqr(cvaov) # nooo
+
+
+Ccvaov=aov(log(CV)~LU,depcvs[depcvs$element=='C',])
+qqr(Ccvaov) # nice with log
+summary(Ccvaov) # yes, signif effect of LU
+TukeyHSD(Ccvaov)
+
+stockcvs=group_by(dats2deps,stand,LU,biome,element,year) %>%
+  summarise(CV20=sd(stock20,na.rm=T)/mean(stock20,na.rm=T),
+            CV100=sd(stock100,na.rm=T)/mean(stock100,na.rm=T))
+tapply(droplevels(stockcvs[stockcvs$element %in% c('C','N','P2',
+                                                 'Ca2','K','S','Zn'),])$CV20,
+       droplevels(stockcvs[stockcvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn'),])$element,
+       summary)
+
 
 yrdiffstockplot20_LU(tstock[tstock$element=='K'&tstock$site!='Bp',])
 yrdiffstockplot20_LU(tstock[tstock$element=='N',])
@@ -974,7 +994,6 @@ abline(0,1)
 # variation in percent bark could also be important
 
 
-
 shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
                  by.y=c('Stand','Nutrient'))
 
@@ -990,6 +1009,9 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             stdconcbudg=stdconcbudg, denserbudg=denserbudg,
             lessdensebudg=lessdensebudg,conc=Concentration)
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
+
+tapply(stkchgs$chgrt20,stkchgs$element,mean)
+
 t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) # for all elements, p=.069
 # now it's .11 with stkchgs, .14 with stkchgs2
 t.test(stkchgs$chg20[stkchgs$element=='N'],
