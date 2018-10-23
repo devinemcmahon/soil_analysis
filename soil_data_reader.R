@@ -363,14 +363,16 @@ shorttstk$element[shorttstk$element=='Ca2']='Ca'
 shorttstk$element[shorttstk$element=='Mg2']='Mg'
 
 #budgets=read.csv('nutrient_budget_summary.csv')
-budgets=read.csv('nutrient_budgets_linked.csv')
+budgets=read.csv('nutrient_budgets_linked_bark.csv')
 otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941,
                                0.000128281,0.00000841287,0.000077024, NA, NA),
                       Plconc=c(0.000599674, 0.0000700706,0.000845645,
                                0.001126018,0.000192921,0.00000573683,
                                0.000256473,0.00000234058,0.00000458012),
                   Nutrient=c('N','P','K','Ca','Mg','B','S','Cu','Zn'))
-# E. grandis from "Pagano 2013", Pl from Plantar data
+# E. grandis from "Pagano 2013", 
+# Pl from Plantar data (NUTREEcalc 2015 for Itacambira)
+# Missing bark values (BO and Eu) filled with Plantar bark values
 budgets=merge(budgets,otherconcs,by='Nutrient')
 budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                                  Concentration*511)/1000,
@@ -390,7 +392,13 @@ budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                                Concentration*511)/1000,
                moreharvbudg=(In_kgha_1+In_kgha_2*Past_harvests_known-
                                (Wood_m3_1*1.5+Wood_m3_2*Past_harvests_known)*
-                               Concentration*511)/1000
+                               Concentration*511)/1000,
+               woodonlybudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                             Conc_wood*511)/1000,
+               bark20budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                               (Conc_wood*.8+Conc_bark*.2)*511)/1000,
+               bark5budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                            (Conc_wood*.95+Conc_bark*.05)*511)/1000
 )
 shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
                  by.y=c('Stand','Nutrient'))
@@ -411,10 +419,14 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             denserbudg=denserbudg, lessrotbudg=lessrotbudg,
             lessdensebudg=lessdensebudg,conc=Concentration,
             lessharvbudg=lessharvbudg,moreharvbudg=moreharvbudg,
+            woodonlybudg=woodonlybudg,bark5budg=bark5budg,
+            bark20budg=bark20budg,
             minbudg=min(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
-                        lessrotbudg,lessharvbudg,moreharvbudg,budget),
+                        lessrotbudg,lessharvbudg,moreharvbudg,
+                        woodonlybudg,bark5budg,bark20budg,budget),
             maxbudg=max(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
-                        lessrotbudg,lessharvbudg,moreharvbudg,budget))
+                        lessrotbudg,lessharvbudg,moreharvbudg,
+                        woodonlybudg,bark5budg,bark20budg,budget))
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 
 yrdiffstockplot100_LU=function(sub_ttests){

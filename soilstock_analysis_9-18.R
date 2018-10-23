@@ -968,7 +968,9 @@ abline(0,1)
 plot(denserbudg~lessdensebudg,data=budgets,
      pch=as.character(Nutrient),col=Nutrient)
 abline(0,1) # pretty close; only matters for C and N
-
+plot(bark20budg~bark5budg,data=budgets,
+     pch=as.character(Nutrient),col=Nutrient)
+abline(0,1)
 # variation in percent bark could also be important
 
 
@@ -988,10 +990,16 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
             stdconcbudg=stdconcbudg, denserbudg=denserbudg,
             lessdensebudg=lessdensebudg,conc=Concentration)
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
-t.test(stkchgs$chg20,stkchgs$budget,paired=T) # for all elements, p=.069
+t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) # for all elements, p=.069
+# now it's .11 with stkchgs, .14 with stkchgs2
 t.test(stkchgs$chg20[stkchgs$element=='N'],
        stkchgs$budget[stkchgs$element=='N'],paired=T)
 # Ca sort of differs at p=.1, NPK don't 
+t.test(stkchgs$chg20,stkchgs$lessrotbudg,paired=T) 
+t.test(stkchgs$chg20,stkchgs$woodonlybudg,paired=T) # p=.059
+# 
+t.test(stkchgs$bark20budg,stkchgs$woodonlybudg,paired=T) 
+# those are different, good
 
 palette(rainbow(9))
 plot(chg100~budget,data=stkchgs[stkchgs$element=='N',],
@@ -1014,6 +1022,10 @@ abline(h=0,lty=3)
 abline(v=0,lty=3)
 text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
      col=as.numeric(stkchgs$stand))
+
+
+segments(x0=stkchgs$bark20budg,x1=stkchgs$woodonlybudg,y0=stkchgs$chg20,
+         col=as.numeric(stkchgs$stand))
 
 
 plot(chg20~budget,data=stkchgs,type='n', 
