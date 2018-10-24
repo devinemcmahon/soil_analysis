@@ -24,7 +24,7 @@ Model <- function(x = cobblebars,
 # test a simple model:
 eucC20.lme=lme(stock20~year,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
-mod=Model(euc2deps[euc2deps$element=='C',],type='normal')
+#mod=Model(euc2deps[euc2deps$element=='C',],type='normal')
 
 GetHyperparam<-function(x,b=NULL){
   ## Get the hyperparameters from the mixed effect model
@@ -45,9 +45,9 @@ GetHyperparam<-function(x,b=NULL){
   return(hp)
 }
 
-fixef(allC20LU.lme)
-VarCorr(allC20LU.lme)
-hps=GetHyperparam(allC20LU.lme)
+fixef(eucC20.lme)
+VarCorr(eucC20.lme)
+hps=GetHyperparam(eucC20.lme)
 
 fakeModWithRestarts <- function(m.o, n = 100,  ...){
   ## A Fake Model
@@ -96,19 +96,56 @@ testpow=dt.power(euc20.lme) #.184. so not great. (again: .187)
 eucN=Model(euc2deps[euc2deps$element=='N',],type='log')
 summary(budgets$Budget[budgets$Nutrient=='N'])
 # N budgets (estimated) range from about -.25 to +.25 Mg ha-1
+# mean is -.04
+# mean change in ln(value) = ln(N16/N04) = .093
+# expected change in ln(value)
+tapply(stkchgs$efs20,stkchgs$element,mean)
+tapply(stkchgs$budget,stkchgs$element,mean) # budget effect size
+tapply(stkchgs$efs20,stkchgs$element,median) # log budget effect size
+tapply(stkchgs$chgln20,stkchgs$element,median) # log observed effect size
+tapply(stkchgs$chg20,stkchgs$element,median) # observed effect size
 
-dt.power(eucN,b=.25) #.941--easily detect largest changes
-dt.power(eucN,b=.025) # .061
+# N: .0005 (median .023)
+
+dt.power(eucN,b=.023) # .061
+GetHyperparam(eucN) #b=.07
+dt.power(eucN,b=.093) #.247
+dt.power(eucN,b=.0005) #0.05
 dt.power(eucN) #.16
-# 15-20% chance of detecting a real change on the order of that expected
-# also 5% chance of detecting a fake change
+# expected effect
+# 15-25% chance of detecting a real change on the order of that observed
+# 5-6% change of detecting change on order of that expected
+eucC=Model(euc2deps[euc2deps$element=='C',],type='normal')
+
+median(abs(shorttstk$stock20_16[shorttstk$element=='C' & shorttstk$LU=='E']-
+         shorttstk$stock20_04[shorttstk$element=='C'& shorttstk$LU=='E']))
+# 6.086 w/o abs, 8.553 with
+dt.power(eucC,b=6.086) # .407
+dt.power(eucC) # .197. hm. Is this really testing what I want it to?
+# Yes, because I'm looking for an overall effect, so opposing effects cancel
+#   even if the change is large in a given stand
 
 summary(budgets$Budget[budgets$Nutrient=='Ca'])
 eucCa=Model(euc2deps[euc2deps$element=='Ca2',],type='log')
 
 dt.power(eucCa,b=.4) #(median change)
+# no, with log, median change is 1.97
+dt.power(eucCa,b=1.97) #1
 dt.power(eucCa,b=.04)
+dt.power(eucCa)
+dt.power(eucCa,b=1.883)
 
+eucP=Model(euc2deps[euc2deps$element=='P2',])
+dt.power(eucP)
+dt.power(eucP,b=.039) #median observed change
+dt.power(eucP,b=.075) # median budget change--should be mean? that's .070
+
+eucK=Model(euc2deps[euc2deps$element=='K'&
+                      euc2deps$site!='Bp',],type='log')
+qqr(eucK) # tails still off with Bp--without Bp, nice with log
+dt.power(eucK)
+dt.power(eucK,b=.092) #median observed change (ln)
+dt.power(eucK,b=.232) # median budget (close to mean)
 
 factoredDesign <- function(Elevs = 0.25/c(.5,1,2,5,10),
                            Nlevs = 2,
@@ -235,3 +272,12 @@ plotPower <- function(dt){
   )
 }
 plotPower(powsN)
+
+
+# other power tests
+power.t.test(n=9,delta=mean(stkchgs$chg20[stkchgs$element=='N']),
+             sd=mean(stkchgs$sdchg20[stkchgs$element=='N']),
+             sig.level = .05,type='paired') # power=.488
+power.t.test(n=9,delta=mean(stkchgs$budget[stkchgs$element=='N']),
+             sd=mean(stkchgs$sdchg20[stkchgs$element=='N']),
+             sig.level = .05,type='paired') # .058

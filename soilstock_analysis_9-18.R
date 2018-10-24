@@ -337,6 +337,13 @@ eucN20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
 summary(eucN20bm.lme) # no change
 qqr(eucN20bm.lme)
 
+eucP20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='P2'&
+                                 euc2deps$site!='Eu',],na.action = na.omit)
+qqr(eucP20bm.lme) # tails off without Eu, but much less bad
+summary(eucP20bm.lme) # when excluding Eu, increase (p=.01) due to Vg;
+# p=.08 for opposite sign year-Cerrado interaction
+
 eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
 qqr(eucCa20bm.lme)
@@ -757,8 +764,37 @@ depcvs=group_by(droplevels(dats4[dats4$site!='TM'&dats4$site!='Cr'&
   summarise(CV=sd(repval,na.rm=T)/mean(repval,na.rm=T))
 tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$LU,summary)
 tapply(depcvs[depcvs$element=='C',]$CV,depcvs[depcvs$element=='C',]$depth,summary)
-tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn'),])$CV,
-       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn'),])$element,summary)
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='E',])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='E',])$element,summary)
+
+xyplot(CV~depth|element,data=depcvs[depcvs$year=='16' &depcvs$element %in% 
+                                         c('C','N','P2','Ca2','K','S','Zn'),],
+       groups=stand,type='l',ylim=c(0,1)) #ugly
+
+# paired sites, by land use
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='E' & 
+                           depcvs$stand %in% c('BO.E','BO.P','Vg.E','Vg.N',
+                                               'Eu.E2','Eu.N','JP.E2','JP.N',
+                                               'It.E1','It.N'),])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='E'& 
+                           depcvs$stand %in% c('BO.E','BO.P','Vg.E','Vg.N',
+                                               'Eu.E2','Eu.N','JP.E2','JP.N',
+                                               'It.E1','It.N'),])$element,summary)
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='N' & 
+                           depcvs$stand %in% c('BO.E','BO.P','Vg.E','Vg.N',
+                                               'Eu.E2','Eu.N','JP.E2','JP.N',
+                                               'It.E1','It.N'),])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
+                           depcvs$LU=='N'& 
+                           depcvs$stand %in% c('BO.E','BO.P','Vg.E','Vg.N',
+                                               'Eu.E2','Eu.N','JP.E2','JP.N',
+                                               'It.E1','It.N'),])$element,summary)
+
 dep16cvs=group_by(droplevels(dats[dats$position %in% c('Ee1','Ee2','L','T') &
                                     dats$LU!='A' & dats$year=='16',]),
                   stand,LU,biome,depth,element) %>%
@@ -777,6 +813,10 @@ bwplot(CV~LU|element,data=depcvs[depcvs$element %in% c('C','N','K') &
 bwplot(CV~as.factor(depth)|LU,data=depcvs[depcvs$element %in% c('C','N','K') &
                                             depcvs$stand!='It.E1'&depcvs$stand!='It.N'&
                                             depcvs$LU!='A',])
+bwplot(CV~as.factor(depth)|LU*element,data=depcvs[depcvs$year=='16' &depcvs$element %in% 
+                                      c('C','N','P2','Ca2','K','S','Zn'),],
+       type='l',ylim=c(0,1)) #too much
+
 # CV doesn't change a lot with depth; IQR actually larger at deeper depths
 #   maybe due to influence of pit samples? Yes, less of an effect without It.E1
 cvaov=aov(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
@@ -792,11 +832,12 @@ TukeyHSD(Ccvaov)
 stockcvs=group_by(dats2deps,stand,LU,biome,element,year) %>%
   summarise(CV20=sd(stock20,na.rm=T)/mean(stock20,na.rm=T),
             CV100=sd(stock100,na.rm=T)/mean(stock100,na.rm=T))
-tapply(droplevels(stockcvs[stockcvs$element %in% c('C','N','P2',
-                                                 'Ca2','K','S','Zn'),])$CV20,
+tapply(droplevels(stockcvs[stockcvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn')&
+                             stockcvs$LU=='E',])$CV20,
        droplevels(stockcvs[stockcvs$element %in% 
-                             c('C','N','P2','Ca2','K','S','Zn'),])$element,
-       summary)
+                             c('C','N','P2','Ca2','K','S','Zn')&
+                             stockcvs$LU=='E',])$element,summary)
 
 
 yrdiffstockplot20_LU(tstock[tstock$element=='K'&tstock$site!='Bp',])
@@ -958,22 +999,6 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 # a change in either input or output should affect obs-predicted agreement
 plot(Concentration~Nutrient,data=budgets)
 
-pagano=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,
-                    0.001193941,0.000128281,0.00000841287,0.000077024),
-                  Nutrient=c('N','P','K','Ca','Mg','B','S'))
-budgets=merge(budgets,pagano,by='Nutrient')
-budgets=mutate(budgets,budget=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                 Concentration*511)/1000,
-                 stdconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                                Egrandconc*511)/1000,
-                 denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                              Egrandconc*560)/1000,
-                 lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                             Egrandconc*460)/1000,
-                 lessrotbudg=(In_kgha_1+In_kgha_2*Past_harvests_known-
-                                (Wood_m3_1+Wood_m3_2*Past_harvests_known)*
-                                Egrandconc*511)/1000
-               )
 
 plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)
@@ -981,36 +1006,28 @@ abline(0,1)
 # My measured N is almost always lower than Pagano estimate
 # So if using their estimate, even larger N decreases would be predicted
 # Plantar data has much less N, more K than my estimates
+plot(Concentration~SantanaMG,data=budgets,pch=as.character(Nutrient),col=Nutrient)
+# More N and Ca than Egrand; more of everything than my measurements
 budgets$Stand[budgets$Concentration<.0008 & budgets$Nutrient=='Ca']
-plot(budget~stdconcbudg,data=budgets,pch=as.character(Nutrient),col=Nutrient)
+plot(budget~plconcbudg,data=budgets,pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)
 # N and sometimes K influence the budget a lot.
 plot(denserbudg~lessdensebudg,data=budgets,
      pch=as.character(Nutrient),col=Nutrient)
 abline(0,1) # pretty close; only matters for C and N
+
+# variation in percent bark could also be important
 plot(bark20budg~bark5budg,data=budgets,
      pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)
-# variation in percent bark could also be important
-
-
-shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
-                 by.y=c('Stand','Nutrient'))
-
-stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
-  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
-            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
-            chgrt100=(stock100_16-stock100_04)/stock100_04,
-            chgrt20=(stock20_16-stock20_04)/stock20_04,
-            chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04),
-            #budget=Budget/1000,
-            budget=budget,
-            stdconcbudg=stdconcbudg, denserbudg=denserbudg,
-            lessdensebudg=lessdensebudg,conc=Concentration)
-stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
+abline(v=0,lty=3)
+abline(h=0,lty=3)# but not that important? mostly matters for K, sometimes Ca
 
 tapply(stkchgs$chgrt20,stkchgs$element,mean)
+tapply(stkchgs$chgln20,stkchgs$element,mean)
+tapply(stkchgs$budget,stkchgs$element,mean)
+tapply(stkchgs$efs20,stkchgs$element,mean)
+log(abs(tapply(stkchgs$budget,stkchgs$element,mean)))
 
 t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) # for all elements, p=.069
 # now it's .11 with stkchgs, .14 with stkchgs2
@@ -1056,8 +1073,9 @@ plot(chg20~budget,data=stkchgs,type='n',
      #ylim=c(-1,1.8),
      las=1)
 rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
          col=as.numeric(stkchgs$stand))
+# Much cleaner with conc
 segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
          y1=stkchgs$chg20+stkchgs$sdchg20,
          col=as.numeric(stkchgs$stand))
@@ -1094,7 +1112,7 @@ plot(chg20~budget,data=stkchgs,type='n',
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
          col=as.factor(stkchgs$stand))
 segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
          y1=stkchgs$chg20+stkchgs$sdchg20,
@@ -1103,6 +1121,8 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 #text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
           cex=stkchgs$conc*2000,
      col=as.numeric(stkchgs$stand))
+# What is a realistic range of bark? How to present sensitivities?
+# Table of ratios of budget to its variations?
 
 palette('default')
 plot(chg20~budget,data=stkchgs,type='n', 
@@ -1433,7 +1453,7 @@ summary(Csimp.aov) # marginal LU effect
 
 Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
-qqr(Csimp.lme3) # tails off, mostly ok? Log is better
+qqr(Csimp.lme3) # tails off, mostly ok? Log pretty good, but 1 outlier each end
 summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
 # But decreases in pasture; no change in native?
 exp(0.161)
@@ -1449,6 +1469,12 @@ Csimp20fix=summary(Csimp.lme3)$tTable
 Csimp20preds=predict(Csimp.lme3,newdata=fakedat)
 fakedat$C20=predict(Csimp.lme3,newdata=fakedat)
 fakedatgr=group_by(fakedat,year,LU)%>%mutate(mnC20=mean(C20))
+distC20=distinct(fakedatgr,mnC20,.keep_all=T)
+distC20$mnC20
+distC20$LU
+
+
+
 plot(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
      col=as.numeric(as.factor(year))*2,pch=16, xaxt='n',xlim=c(.5,3.5),
      las=1,ylab='Predicted C stock to 20 cm',xlab='')
