@@ -82,6 +82,11 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
 
 plot(P~S,data=widedats4) # no apparent relationship
 
+plot(Al~C,data=widedats4,col=site) # within a site, more C or N = less Al
+# Makes sense--OM displaces minerals
+# Not so much for Fe
+# Fe and Al tend to co-occur, esp at low values, but inverse to Si, ok
+
 # Where did a given element change? T-tests by stand and depth, n=4 per year
 gen_ttable(ttests[ttests$element=='N',]$depth,
            ttests[ttests$element=='N',]$stand,
@@ -355,13 +360,47 @@ eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
 qqr(eucK20bm.lme)
 summary(eucK20bm.lme) # increases in AF only
 
+eucMg20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Mg2',],na.action = na.omit)
+qqr(eucMg20bm.lme) # tails way off even with log
+summary(eucMg20bm.lme) # no change
+
+
+eucAl20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Al',],na.action = na.omit)
+qqr(eucAl20bm.lme)
+summary(eucAl20bm.lme) # decreases (p=0.030), no biome effect
+# Note that there is more Al in top 20 cm under eucalyptus than native veg
+#   and most in pasture
+boxplot(stock20~LU,data=droplevels(dats2deps[dats2deps$element=='Al',]),
+        varwidth=T,las=1,xlab='Vegetation',ylab='Al stock, 0-20 cm (Mg ha-1)')
+bwplot(stock20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
+        varwidth=T,las=1,xlab='Vegetation',ylab='Al stock, 0-20 cm (Mg ha-1)')
+bwplot(conc20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
+       varwidth=T,las=1,xlab='Vegetation',ylab='Al concentration, 0-20 cm (%)')
+# Much more variable and overlapping
+# Greater density increases stocks in pasture
+bwplot(BD20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
+       varwidth=T,las=1,xlab='Vegetation',ylab='Bulk density, g cm-3')
+
+#AlLUaov=aov(stock20~LU,data=simple20) # see this later in script
+
+eucZr20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Zr',],na.action = na.omit)
+qqr(eucZr20bm.lme) # lower tail still off
+summary(eucZr20bm.lme) # marginal decrease (p=.083); no biome effect
+eucFe20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Fe',],na.action = na.omit)
+qqr(eucFe20bm.lme) # nice without log
+summary(eucFe20bm.lme) # significant decrease (p=.008); no biome effect
+
 eucS20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='S',],na.action = na.omit)
 qqr(eucS20bm.lme) # tails way off; bimodal distribution of S?
 summary(eucS20bm.lme) # Cerrado starts lower, increases (p=.053)
 eucS100bm.lme=lme(log(stock100)~year*biome,random=~1|site/stand,
                   data=euc2deps2[euc2deps2$element=='S',],na.action = na.omit)
-# tails still off, esp. upper; same result but lower p-vals as for 20 cm
+# tails still off, esp. upper; same result as for 20 cm but lower p-vals 
 
 eucZn20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='Zn',],na.action = na.omit)
@@ -378,6 +417,12 @@ eucMn20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
 qqr(eucMn20bm.lme) # both tails off, log possibly worse
 summary(eucMn20bm.lme) # increases in Cerrado (Bp stands, also in JP.N)
 #tstock$stand[tstock$element=='Mn' & tstock$stock20_16>.3]
+
+eucMo20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Mo',],na.action = na.omit)
+qqr(eucMo20bm.lme) # low outlier but pretty ok with log
+summary(eucMo20bm.lme) # no change
+
 
 eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
@@ -1346,6 +1391,43 @@ simple20_2=droplevels(simple20_2[simple20_2$stand %in%
 
 table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
 # Not balanced--rep 5
+Alaov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Al',])
+qqr(Alaov) # one outlier
+summary(Alaov)
+TukeyHSD(Alaov) # all different, P > E >> N
+Zraov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Zr',])
+qqr(Zraov) # mostly ok, but tails off
+summary(Zraov) # no difference
+Tiaov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Ti',])
+qqr(Tiaov) # lower tail quite off
+# Ti is different at p=.035
+TukeyHSD(Tiaov) # same order as Al--but with simple20_2 (incl JP.P),
+#   only difference is N < E
+# is BD different?
+BDaov=aov(BD20~LU,data=simple20_2[simple20_2$element=='C',])
+qqr(BDaov) # tails off a bit
+summary(BDaov) # p=.0388 (with 20_2, .0001)
+TukeyHSD(BDaov) # N < P at p=.0585, ok
+# or P ~> E (p=.055) > N when including both pastures 
+# Maybe comparisons w/o year should be in concentrations?
+Alaovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='Al',])
+qqr(Alaovc) # tails a bit off
+summary(Alaovc) # no difference
+bwplot(BD20~LU|year,data=droplevels(simple20_2[simple20_2$element=='Al',]),
+       varwidth=T,las=1,xlab='Vegetation',ylab='Bulk density, g cm-3')
+# But this includes 2004 data (kept as legacy, not used in stocks)
+# Was it used to weight concentrations?
+# Makes sense that BD controls Al stocks; Al is like 15-20% of the soil
+Tiaovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='Ti',])
+qqr(Tiaovc) # tails a bit off
+summary(Tiaovc) # no difference, ok
+Caovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='C',])
+qqr(Caovc) # lower tail a bit off, mostly ok
+summary(Caovc) # that is different, good
+TukeyHSD(Caovc) # N > P at p= .0019; at alpha=.11, N > E > P
+
+
+
 Csimp.lme=lme(stock20~year*LU2,random=~1|site,
                data=simple20[simple20$element=='C',], na.action=na.omit)
 qqr(Csimp.lme) # wavery, but not so bad
@@ -1579,3 +1661,28 @@ Alrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         na.action = na.omit,family='quasibinomial')
 qqr(Alrat100simp.pql) 
 summary(Alrat100simp.pql) # gets deeper in euc but not in native, shallower in pasture
+
+Zrrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
+                         data=simp100[simp100$element=='Zr',],
+                         na.action = na.omit,family='quasibinomial')
+qqr(Zrrat100simp.pql) 
+summary(Zrrat100simp.pql) # no significant anything, good
+Znrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
+                         data=simp100[simp100$element=='Zn',],
+                         na.action = na.omit,family='quasibinomial')
+qqr(Znrat100simp.pql) # 3 outliers at upper tail
+summary(Znrat100simp.pql) # also nothing
+cor(widedats4$C,widedats4$Al,method='pear',use='pair') #.38
+# why is this positive? because lots of C and Al in Vg and It?
+# because C is on clay
+AlC.lme=lme(log(C)~Al,random=~1|site/stand,na.action=na.omit,
+            data=widedats4[widedats4$site!='TM'& widedats4$site!='Cr'&
+                             widedats4$LU!='A',])
+qqr(AlC.lme) # pretty good with log, some outliers
+summary(AlC.lme) # yeah, negative, p < 10-4
+
+
+yrdiffstockplot20_LU(tstock[tstock$element=='C'&tstock$stand %in%
+                              unique(simple20_2$stand),])
+points(stock20_16~stock20_04,pch=18,cex=1.5,col='white',
+       data=tstock[tstock$element=='C'&tstock$stand %in% c('JP.E2','JP.N'),])
