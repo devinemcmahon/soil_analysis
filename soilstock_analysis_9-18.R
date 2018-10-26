@@ -899,6 +899,9 @@ yrdiffstockplot20_LU(tstock[tstock$element=='S',])
 # Mean stocks
 tapply(shorttstk$stock100_16,shorttstk$element,
        function(x){mean(x,na.rm=T)})
+tapply(shorttstk$stock100_04,shorttstk$element,
+       function(x){mean(x,na.rm=T)})
+
 tapply(shorttstk$stock100_16,shorttstk$element,
        function(x){sd(x,na.rm=T)})
 mean(shorttstk$BD100_16[shorttstk$element=='C'])
@@ -916,6 +919,25 @@ tapply(shortE$rat_16,shortE$element,
        function(x){sd(x,na.rm=T)})
 mean(shortE$BD100_16[shortE$element=='C'])
 sd(shortE$BD100_16[shortE$element=='C'])
+
+tapply(shortE$stock100_16[shortE$element=='C'],
+       shortE$biome[shortE$element=='C'],
+       function(x){mean(x,na.rm=T)}) 
+
+Cstks=group_by(shorttstk[shorttstk$element=='C',],
+               LU,biome) %>%
+  summarise(stk20_16=mean(stock20_16),
+            stk100_16=mean(stock100_16),
+            se20_16=sd(stock20_16)/sqrt(n()),
+            se100_16=sd(stock100_16)/sqrt(n()),
+            stk20_04=mean(stock20_04),
+            stk100_04=mean(stock100_04),
+            se20_04=sd(stock20_04)/sqrt(n()),
+            se100_04=sd(stock100_04)/sqrt(n()),
+            chgrat20=mean(stk20_16/stk20_04),
+            chgrat100=mean(stk100_16/stk100_04),
+            nstands=n())
+Cstks
 
 shorttstk$site=as.character(shorttstk$site)
 shorttstk=mutate(shorttstk,
@@ -1556,7 +1578,6 @@ distC20$mnC20
 distC20$LU
 
 
-
 plot(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
      col=as.numeric(as.factor(year))*2,pch=16, xaxt='n',xlim=c(.5,3.5),
      las=1,ylab='Predicted C stock to 20 cm',xlab='')
@@ -1566,16 +1587,40 @@ text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
 legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'))
 
 simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
-plot(stock20~as.numeric(as.factor(LU)),data=simple20_2[simple20_2$element=='C',],
-     col=as.numeric(as.factor(year))*2, xaxt='n',xlim=c(.5,3.5),
-     las=1,ylab='Predicted C stock to 20 cm',xlab='')
-axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
+
+boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C',],varwidth=T,
+        names=c('Eucalyptus','Native','Pasture'),las=1,
+        ylab='Carbon stock (Mg ha-1), 0-20 cm')
+#plot(stock20~as.numeric(as.factor(LU)),data=simple20_2[simple20_2$element=='C',],
+#     col=as.numeric(as.factor(year))*2, xaxt='n',xlim=c(.5,3.5),
+#     las=1,ylab='Predicted C stock to 20 cm',xlab='')
+#axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
 text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
 points(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
      col=as.numeric(as.factor(year))*2,pch=18,cex=2)
      
 #points(seq(1,3),rep(3.5,3), pch=c(3,NA,4),cex=c(1.5,1,1))
-legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'))
+legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'),
+       title='Fixed effects predictions',bty='n')
+
+boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C' &
+                                     simple20_2$year=='04',],
+        varwidth=T,at=c(.6,2.6,4.6),xlim=c(.25,5.75),las=1,
+        ylab='Carbon stock (Mg ha-1), 0-20 cm',col='transparent',
+        border=2,boxwex=.5,xaxt='n')
+boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C' &
+                                     simple20_2$year=='16',],
+        varwidth=T,at=c(1.3,3.3,5.3),xlim=c(0,6),las=1,col='transparent',
+        border=4,boxwex=.5,xaxt='n',add=T)
+axis(side=1,at=c(1,3,5),labels=c('Eucalyptus','Native','Pasture'))
+points(c(.6,2.6,4.6),exp(unique(fakedatgr$mnC20[fakedatgr$year=='04'])),
+       col=2,pch=18,cex=2)
+points(c(1.3,3.3,5.3),exp(unique(fakedatgr$mnC20[fakedatgr$year=='16'])),
+       col=4,pch=18,cex=2)
+legend('topright',pch=18,col=c(2,4),legend=c('2004','2016'),
+       title='Fixed effects predictions',bty='n')
+text(c(.95,2.95,4.95),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
+
 
 
 Nsimp.lme3=lme(stock20~year*LU,random=~1|site,
@@ -1684,5 +1729,5 @@ summary(AlC.lme) # yeah, negative, p < 10-4
 
 yrdiffstockplot20_LU(tstock[tstock$element=='C'&tstock$stand %in%
                               unique(simple20_2$stand),])
-points(stock20_16~stock20_04,pch=18,cex=1.5,col='white',
+points(stock20_16~stock20_04,pch=16,col='white',
        data=tstock[tstock$element=='C'&tstock$stand %in% c('JP.E2','JP.N'),])
