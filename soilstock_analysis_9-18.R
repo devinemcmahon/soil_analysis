@@ -5,7 +5,14 @@ source('soil_data_reader.R')
 
 # Plots by year and depth in each stand
 trellis.par.set(strip.background = list(col = 'grey80'),
-                par.strip.text=list(cex=.8))
+                par.strip.text=list(cex=.8),
+                box.umbrella = list(col = 'black',lty=1),
+                box.rectangle = list(col= 'black',
+                                     fill='transparent'),
+                superpose.point=list(col='black'),
+                superpose.symbol=list(fill='black'),
+                plot.symbol   = list(cex = 1, col = 1, pch= 1) 
+)
 
 xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
        data=datsmnok[datsmnok$element=='C' ,],
@@ -943,14 +950,29 @@ shorttstk$site=as.character(shorttstk$site)
 shorttstk=mutate(shorttstk,
                  site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
                   LU2=ifelse(LU=='E','E','O'))
-mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element %in% shortE$element,]),
+mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element!='Cl',]),
                  stand,site,LU,site2,LU2,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
             chgrt20=(stock20_16-stock20_04)/stock20_04,
             chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04))
+            chgln20=log(stock20_16/stock20_04),
+            sig20=ifelse(pval20<0.05,2,1),
+            sig100=ifelse(pval100<0.05,2,1))
+mrstkchgs$element=factor(mrstkchgs$element,levels=
+                           c('C','N','K','P','S','Ca','Mg',
+                             'Al','Fe','Nb','Zr'))
+mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
+mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
+                                         ifelse(LU=='P','Pasture',
+                                                'Native vegetation')),
+                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'))
+mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
+                        levels=c('Eucalyptus','Native vegetation','Pasture'))
+mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
+                           levels=c('Atlantic Forest','Cerrado'))
+
 mrstkE=mrstkchgs[mrstkchgs$LU=='E' & mrstkchgs$stand!='It.E1',]
 mrstkO=mrstkchgs[mrstkchgs$LU!='E' & mrstkchgs$stand!='It.N'&
                    mrstkchgs$stand!='JP.N',]
@@ -1000,6 +1022,96 @@ tapply(mrstkO$chgrt100,mrstkO$element,mean)
 tapply(mrstkO$chgrt100,mrstkO$element,median)            
 tapply(mrstkO$chgrt100,mrstkO$element,sd) 
 plot(chgrt100~LU,data=mrstkchgs[mrstkchgs$element=='C',])
+
+
+
+L_to_pct=function(x){
+  (exp(x)-1)*100
+}
+pct_to_L=function(l){
+  log((l/100)+1)
+}
+panel.mean <- function(x, y, ...) {
+  tmp <- tapply(y, x, FUN = mean)#; print(tmp)
+  panel.points(y=tmp, x=seq_along(tmp), ...)
+}
+
+
+
+par(mar=c(4,5,1,4))
+plot(chgrt20~element, ylim=c(-1,1),las=1,
+     data=mrstkchgs[mrstkchgs$LU=='E',],
+     ylab='Log change in stock over 12 years, 0-20 cm')
+abline(h=0,lty=2)
+axis(side=4,at=pct_to_L(c(-50,-25,0,25,75,125)),
+     labels=paste(c('-50','-25','0','+25','+75','+125'),'%',sep=''),las=1)
+
+par(mar=c(4,5,1,4))
+plot(chgrt100~element, ylim=c(-1,1),las=1,
+     data=mrstkchgs[mrstkchgs$LU=='E',],
+     ylab='Log change in stock over 12 years, 0-100 cm')
+abline(h=0,lty=2)
+axis(side=4,at=pct_to_L(c(-50,-25,0,25,75,125)),
+     labels=paste(c('-50','-25','0','+25','+75','+125'),'%',sep=''),las=1)
+points(seq(length(levels(mrstkchgs[mrstkchgs$LU=='E',]$element))),
+       tapply(mrstkchgs[mrstkchgs$LU=='E',]$chgrt100,
+              mrstkchgs[mrstkchgs$LU=='E',]$element,mean),pch=4)
+
+bwplot(chgrt20~element|LU,ylim=c(-1,1),las=1,
+       data=mrstkchgs[mrstkchgs$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       varwidth=T,layout=c(1,3),as.table=T,col.line='black',
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       strip=strip.custom(
+         factor.levels=c('Eucalyptus (n = 6)',
+                         'Native vegetation (n = 4)',
+                         'Pasture (n = 2)')),
+       panel = function(x, y, ...){
+         panel.bwplot(x, y,col='black',...)
+         panel.abline(h=0,lty=3)
+         panel.mean(x,y, pch=4, cex=1.5, col='black')
+         # median almost exactly = mean
+       })
+bwplot(chgrt20~element|biomelong+LUlong,ylim=c(-1,1),las=1,
+       data=mrstkchgs[mrstkchgs$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,layout=c(2,3),col.line='black',#varwidth=T,
+       box.ratio=0,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         panel.axis(side=ifelse(panel.number()==3,'left','right'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
+                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
+         panel.abline(h=0,lty=3)
+         panel.abline(v=7.5,lty=1,col='gray50')
+         #panel.mean(x,y, pch=4, cex=1.5, col='black')
+         # median = mean if n=2, duh
+       })
+
+#scales=list(draw=ifelse(panel.number() %in% 
+ #                         c(1,4,5),T,F)),
+bwplot(chgrt100~element|LU,ylim=c(-1,1),las=1,
+       data=mrstkchgs[mrstkchgs$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.P'),],
+       varwidth=T,layout=c(1,3),as.table=T,border=1,
+       ylab='Log change in stock in 12 years, 0-100 cm',
+       strip=strip.custom(
+         factor.levels=c('Eucalyptus (n = 4)',
+                         'Native vegetation (n = 2)',
+                         'Pasture (n = 2)')),
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         panel.abline(h=0,lty=3)
+         panel.mean(x,y, pch=4, cex=1.5,col='black')
+         # median almost exactly = mean
+       })
 
 simpstkchgs=mrstkchgs[mrstkchgs$stand %in% simple20_2$stand,]
 simpstkchgs$site=as.character(simpstkchgs$site)
