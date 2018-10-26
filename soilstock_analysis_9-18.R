@@ -95,7 +95,7 @@ plot(Al~C,data=widedats4,col=site) # within a site, more C or N = less Al
 # Fe and Al tend to co-occur, esp at low values, but inverse to Si, ok
 
 # Where did a given element change? T-tests by stand and depth, n=4 per year
-gen_ttable(ttests[ttests$element=='N',]$depth,
+Ntt=gen_ttable(ttests[ttests$element=='N',]$depth,
            ttests[ttests$element=='N',]$stand,
            ttests[ttests$element=='N',]$pval,
            ttests[ttests$element=='N',]$tstat,0.05)
@@ -106,6 +106,13 @@ gen_ttable(ttests[ttests$stand=='JP.N',]$depth,
            ttests[ttests$stand=='JP.N',]$pval,
            ttests[ttests$stand=='JP.N',]$tstat,0.05)
 # Yes, especially N, S, Fe, Zr, Nb, Mo (things that shouldn't change)
+
+apply(Ntt,1,sum)
+apply(gen_ttable(ttests[ttests$element=='C',]$depth,
+                 ttests[ttests$element=='C',]$stand,
+                 ttests[ttests$element=='C',]$pval,
+                 ttests[ttests$element=='C',]$tstat,0.05),1,sum)
+# net increse at 30 and decrease at 50 cm
 
 
 # Across all sites, does C accumulate over time?
@@ -522,6 +529,13 @@ eucK20.lme=lme(log(stock20)~year,data=euc2deps[euc2deps$element=='K' &
                                             euc2deps$site!='Bp',],
                random=~1|site/stand,na.action=na.omit)
 # nice residual distrib with log; increase at p=.035
+eucCa20LU.lme=lme(log(stock20)~year,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Ca2',],
+                  na.action = na.omit)
+qqr(eucCa20LU.lme) # tails a bit off
+summary(eucCa20LU.lme)
+
+
 
 allN20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
                  data=dats2deps[dats2deps$element=='N' & 
@@ -967,9 +981,12 @@ mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
 mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
                                          ifelse(LU=='P','Pasture',
                                                 'Native vegetation')),
-                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'))
+                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
+                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'))
 mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
                         levels=c('Eucalyptus','Native vegetation','Pasture'))
+mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
+                        levels=c('Eucalyptus','Other vegetation'))
 mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
                            levels=c('Atlantic Forest','Cerrado'))
 
@@ -1047,7 +1064,7 @@ axis(side=4,at=pct_to_L(c(-50,-25,0,25,75,125)),
      labels=paste(c('-50','-25','0','+25','+75','+125'),'%',sep=''),las=1)
 
 par(mar=c(4,5,1,4))
-plot(chgrt100~element, ylim=c(-1,1),las=1,
+plot(chgln100~element, ylim=c(-1,1),las=1,
      data=mrstkchgs[mrstkchgs$LU=='E',],
      ylab='Log change in stock over 12 years, 0-100 cm')
 abline(h=0,lty=2)
@@ -1057,7 +1074,7 @@ points(seq(length(levels(mrstkchgs[mrstkchgs$LU=='E',]$element))),
        tapply(mrstkchgs[mrstkchgs$LU=='E',]$chgrt100,
               mrstkchgs[mrstkchgs$LU=='E',]$element,mean),pch=4)
 
-bwplot(chgrt20~element|LU,ylim=c(-1,1),las=1,
+bwplot(chgln20~element|LU,ylim=c(-1,1),las=1,
        data=mrstkchgs[mrstkchgs$stand %in% 
                         c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
                           'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
@@ -1073,12 +1090,51 @@ bwplot(chgrt20~element|LU,ylim=c(-1,1),las=1,
          panel.mean(x,y, pch=4, cex=1.5, col='black')
          # median almost exactly = mean
        })
-bwplot(chgrt20~element|biomelong+LUlong,ylim=c(-1,1),las=1,
+bwplot(chgln20~element|biomelong+LUlong,ylim=c(-1,1),las=1,
        data=mrstkchgs[mrstkchgs$stand %in% 
                         c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
                           'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
        as.table=T,layout=c(2,3),col.line='black',#varwidth=T,
        box.ratio=0,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         panel.axis(side=ifelse(panel.number()==3,'left','right'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
+                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
+         panel.abline(h=0,lty=3)
+         panel.abline(v=7.5,lty=1,col='gray50')
+         #panel.mean(x,y, pch=4, cex=1.5, col='black')
+         # median = mean if n=2, duh
+       })
+bwplot(chgln20~element|biomelong+LU2long,ylim=c(-1,1),las=1,
+       data=mrstkchgs[mrstkchgs$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         strip.custom(fg=c('orange','orchid'),style=2)
+         panel.axis(side=ifelse(panel.number()==3,'left','right'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
+                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
+         panel.abline(h=0,lty=3)
+         panel.abline(v=7.5,lty=1,col='gray50')
+         #panel.mean(x,y, pch=4, cex=1.5, col='black')
+         # median = mean if n=2, duh
+       })
+bwplot(chgln20~element|LU2long,ylim=c(-1,1),las=1,
+       data=mrstkchgs[mrstkchgs$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black', box.ratio=0,layout=c(1,2),
        ylab='Log change in stock over 12 years, 0-20 cm',
        panel = function(x, y, ...){
          panel.bwplot(x, y, ...)
@@ -1178,6 +1234,9 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 # a change in either input or output should affect obs-predicted agreement
 plot(Concentration~Nutrient,data=budgets)
 
+summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
+          budgets$Wood_m3_1[budgets$Nutrient=='N']*
+          budgets$Concentration[budgets$Nutrient=='N']*511)
 
 plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)
@@ -1306,12 +1365,16 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 palette('default')
 plot(chg20~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
-rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',
+     xlim=c(-.2,.5),ylim=c(-.2,.5),
+     las=1)
+#rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+#segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+#         col=as.numeric(as.factor(stkchgs$biome))+2)
+segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
          col=as.numeric(as.factor(stkchgs$biome))+2)
 segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
          y1=stkchgs$chg20+stkchgs$sdchg20,
@@ -1330,7 +1393,9 @@ plot(chg100~budget,data=stkchgs,type='n',
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg100,
+#segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+#         col=as.numeric(as.factor(stkchgs$biome))+2)
+segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
          col=as.numeric(as.factor(stkchgs$biome))+2)
 segments(x0=stkchgs$budget,y0=stkchgs$chg100-stkchgs$sdchg100,
          y1=stkchgs$chg100+stkchgs$sdchg100,
