@@ -53,6 +53,12 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
         ylim=c(90,0),xlab='Zr (g / kg)',as.table=T,
         par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
         auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
+         data=datsmnok[datsmnok$element=='Mg2' ,],
+         ylim=c(90,0),xlab='Mg (g / kg)',as.table=T,
+         par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+         auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+
 
 xyplot(depth~value*10|stand,groups=year,type='p',ylab='Depth (cm)',
        data=dats[dats$element=='N' ,],
@@ -108,12 +114,19 @@ gen_ttable(ttests[ttests$stand=='JP.N',]$depth,
 # Yes, especially N, S, Fe, Zr, Nb, Mo (things that shouldn't change)
 
 apply(Ntt,1,sum)
-apply(gen_ttable(ttests[ttests$element=='C',]$depth,
-                 ttests[ttests$element=='C',]$stand,
-                 ttests[ttests$element=='C',]$pval,
-                 ttests[ttests$element=='C',]$tstat,0.05),1,sum)
-# net increse at 30 and decrease at 50 cm
+Ntt
 
+gentfun=function(dfr,elmt){
+  subt=subset(dfr,element==elmt)
+  ttab=gen_ttable(subt$depth,
+             subt$stand,
+             subt$pval,
+             subt$tstat,0.05)
+  return(list(elmt,ttab, apply(ttab,1,sum)))
+  }
+gentfun(ttests,'C')
+# net increase at 30 and decrease at 50 cm
+gentfun(ttests,'P') # net increases at all depths, except 0 at 10-20 cm
 
 # Across all sites, does C accumulate over time?
 allC20.lme=lme(stock20~year,random=~1|site/stand,
@@ -959,6 +972,9 @@ Cstks=group_by(shorttstk[shorttstk$element=='C',],
             chgrat100=mean(stk100_16/stk100_04),
             nstands=n())
 Cstks
+mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='C']) # 46.1
+mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='C']) # 50.1
+
 
 shorttstk$site=as.character(shorttstk$site)
 shorttstk=mutate(shorttstk,
@@ -1590,6 +1606,8 @@ simple20_2=droplevels(simple20_2[simple20_2$stand %in%
 
 table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
 # Not balanced--rep 5
+
+
 Alaov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Al',])
 qqr(Alaov) # one outlier
 summary(Alaov)
@@ -1624,6 +1642,79 @@ Caovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='C',])
 qqr(Caovc) # lower tail a bit off, mostly ok
 summary(Caovc) # that is different, good
 TukeyHSD(Caovc) # N > P at p= .0019; at alpha=.11, N > E > P
+
+Cstk20blLU16.aov=aov(log(stock20)~biome*LU,
+                     data=simple20_2[simple20_2$year=='16'& 
+                                       simple20_2$element=='C',])
+qqr(Cstk20blLU16.aov) #pretty ok
+summary(Cstk20blLU16.aov) # not different
+Cstk20blLUN.aov=aov(log(stock20)~biome*LU,
+                     data=droplevels(simple20_2[simple20_2$year=='16'& 
+                                       simple20_2$element=='C'&
+                                       simple20_2$site2 %in% 
+                                       c('Vg','JP2','It','Eu'),]))
+qqr(Cstk20blLUN.aov) #ok
+summary(Cstk20blLUN.aov) # no differences
+
+
+simple20_2=mutate(simple20_2,LUlong=ifelse(LU=='E','Eucalyptus',
+                                         ifelse(LU=='P','Pasture',
+                                                'Native vegetation')),
+                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
+                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'))
+simple20_2$LUlong=factor(simple20_2$LUlong,
+                        levels=c('Eucalyptus','Native vegetation','Pasture'))
+simple20_2$LU2long=factor(simple20_2$LU2long,
+                         levels=c('Eucalyptus','Other vegetation'))
+simple20_2$biomelong=factor(simple20_2$biomelong,
+                           levels=c('Atlantic Forest','Cerrado'))
+
+bwplot(stock20~LUlong|biomelong*year,
+       data=droplevels(simple20_2[simple20_2$element=='C'&
+                                    simple20_2$site2 %in% 
+                                    c('Vg','JP2','It','Eu'),]),
+       ylab='Carbon stock (Mg ha-1), 0-20 cm',as.table=T)
+bwplot(stock100~LUlong|biomelong*year,
+       data=droplevels(simple20_2[simple20_2$element=='C'&
+                                    simple20_2$site2 %in% 
+                                    c('Vg','JP2','It','Eu'),]),
+       ylab='Carbon stock (Mg ha-1), 0-100 cm',as.table=T)
+
+
+
+Cstk20blLUN04.aov=aov(log(stock20)~biome*LU,
+                    data=droplevels(simple20_2[simple20_2$year=='04'& 
+                                                 simple20_2$element=='C'&
+                                                 simple20_2$site2 %in% 
+                                                 c('Vg','JP2','It','Eu'),]))
+qqr(Cstk20blLUN04.aov) #tails way off with JP2
+summary(Cstk20blLUN04.aov) # only sig diff btwn biomes
+TukeyHSD(Cstk20blLUN04.aov) # no signif pairwise diffs
+
+# same thing to 100 cm
+Cstk100blLU16.aov=aov(log(stock100)~biome*LU,
+                     data=simple20_2[simple20_2$year=='16'& 
+                                       simple20_2$element=='C',])
+qqr(Cstk100blLU16.aov) #pretty ok
+summary(Cstk100blLU16.aov) # not different except between biomes
+Cstk100blLUN.aov=aov(log(stock100)~biome*LU,
+                    data=droplevels(simple20_2[simple20_2$year=='16'& 
+                                                 simple20_2$element=='C'&
+                                                 simple20_2$site2 %in% 
+                                                 c('Vg','JP2','It','Eu'),]))
+qqr(Cstk100blLUN.aov) #tails a bit off
+summary(Cstk100blLUN.aov) # no differences
+
+
+Cstk100blLUN04.aov=aov(log(stock100)~biome*LU,
+                      data=droplevels(simple20_2[simple20_2$year=='04'& 
+                                                   simple20_2$element=='C'&
+                                                   simple20_2$site2 %in% 
+                                                   c('Vg','JP2','It','Eu'),]))
+qqr(Cstk100blLUN04.aov) #tails off 
+summary(Cstk100blLUN04.aov) # only sig diff btwn biomes
+TukeyHSD(Cstk100blLUN04.aov) # AF N > Cer E, ok (p=.038)
+# marginal: AF > Cer within LU
 
 
 

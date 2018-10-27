@@ -79,6 +79,46 @@ fakeModWithRestarts <- function(m.o, n = 100,  ...){
   })
 }
 
+fake <- function(N = 2, J = 6, K = 2, b = NULL, m.orig = mod,
+                 transform = TRUE, ...){
+  ## Simulated Data for power analysis
+  ## N = Number of years
+  ## J = Number of sites
+  ## K = Number of stands within sites
+  # How do I make this reflect samples within stands?
+  year <- rep(0:(N-1), each = J*K)
+  site <- factor(rep(rep(1:J, each = K), times = N))
+  stand <- factor(rep(1:K, times = N*J))
+  
+  ## Simulated parameters
+  hp<-GetHyperparam(x=m.orig)
+  if(is.null(b))
+    b <- hp['b']
+  g <- rnorm(J*K, 0, hp['sigma.g'])
+  a <- rnorm(J*K, hp['mu.a'] + g, hp['sigma.a'])
+  
+  ## Simulated responses
+  eta <- rnorm(J*K*N, a + b * year, hp['sigma.y'])
+  if (transform){
+    if (m.orig$type == "normal"){
+      y <- eta
+      #y[y > 1] <- 1 # Fix any boundary problems.
+      #y[y < 0] <- 0
+    }
+    else if (m.orig$type == "log"){
+      y <- exp(eta)
+      #y[y > 1] <- 1
+    }
+    else if (m.orig$type == "logit")
+      y <- exp(eta) / (1 + exp(eta))
+  }
+  else{
+    y <- eta
+  }
+  
+  return(data.frame(stock20 = y, year, stand, site))
+}
+
 dt.power <- function (m, n.sims = 1000, alpha=0.05, ...){
   ## Calculate power for a particular sampling design
   signif<-rep(NA, n.sims)
@@ -144,8 +184,32 @@ eucK=Model(euc2deps[euc2deps$element=='K'&
                       euc2deps$site!='Bp',],type='log')
 qqr(eucK) # tails still off with Bp--without Bp, nice with log
 dt.power(eucK)
+mean(log(tstock$stock20_16[tstock$element=='K' & tstock$LU=='E' & 
+                             tstock$site!='Bp']/
+           tstock$stock20_04[tstock$element=='K' & tstock$LU=='E' & 
+                               tstock$site!='Bp'])) # mean .0809, med .106
 dt.power(eucK,b=.092) #median observed change (ln)
 dt.power(eucK,b=.232) # median budget (close to mean)
+dt.power(eucK, b=.081)
+
+eucCu=Model(euc2deps[euc2deps$element=='Cu',],type='normal')
+qqr(eucCu) # some outliers; better without log?
+dt.power(eucCu) # .055
+summary(eucCu) # change is .0005 Mg? ha-1 i.e. half a kg
+mean(tstock$stock20_16[tstock$element=='Cu' & tstock$LU=='E']-
+             tstock$stock20_04[tstock$element=='Cu'& tstock$LU=='E']) 
+#.0013 Mg, 13 kg = median, mean is .0006, ok
+dt.power(eucCu,b=.0013) # .113 not very useful if overall effect != median
+
+eucZn=Model(euc2deps[euc2deps$element=='Zn',],type='log')
+qqr(eucZn) # tails still off
+dt.power(eucZn) # .055
+summary(eucZn) # 
+mean(log(tstock$stock20_16[tstock$element=='Zn' & tstock$LU=='E']/
+       tstock$stock20_04[tstock$element=='Zn'& tstock$LU=='E']))
+#med .0607, mean.127
+dt.power(eucZn,b=.061) # .054, although I didn't log-transform it
+
 
 factoredDesign <- function(Elevs = 0.25/c(.5,1,2,5,10),
                            Nlevs = 2,
@@ -188,45 +252,7 @@ factoredDesign <- function(Elevs = 0.25/c(.5,1,2,5,10),
   return(data.frame(E, N, J, K))
 }
 
-fake <- function(N = 2, J = 6, K = 2, b = NULL, m.orig = mod,
-                 transform = TRUE, ...){
-  ## Simulated Data for power analysis
-  ## N = Number of years
-  ## J = Number of sites
-  ## K = Number of stands within sites
-  # How do I make this reflect samples within stands?
-  year <- rep(0:(N-1), each = J*K)
-  site <- factor(rep(rep(1:J, each = K), times = N))
-  stand <- factor(rep(1:K, times = N*J))
-  
-  ## Simulated parameters
-  hp<-GetHyperparam(x=m.orig)
-  if(is.null(b))
-    b <- hp['b']
-  g <- rnorm(J*K, 0, hp['sigma.g'])
-  a <- rnorm(J*K, hp['mu.a'] + g, hp['sigma.a'])
-  
-  ## Simulated responses
-  eta <- rnorm(J*K*N, a + b * year, hp['sigma.y'])
-  if (transform){
-    if (m.orig$type == "normal"){
-      y <- eta
-      #y[y > 1] <- 1 # Fix any boundary problems.
-      #y[y < 0] <- 0
-    }
-    else if (m.orig$type == "log"){
-      y <- exp(eta)
-      #y[y > 1] <- 1
-    }
-    else if (m.orig$type == "logit")
-      y <- exp(eta) / (1 + exp(eta))
-  }
-  else{
-    y <- eta
-  }
-  
-  return(data.frame(stock20 = y, year, stand, site))
-}
+
 
 powerAnalysis <- function(parallel = T, ...){
   ## Full Power Analysis
