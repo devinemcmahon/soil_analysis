@@ -1248,6 +1248,16 @@ tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
 #budgets=mutate(budgets,inoutrat=In_kgha/Out_kgha)
 # usually close except for P and Mg
 # a change in either input or output should affect obs-predicted agreement
+
+budgets$Nutrient=factor(budgets$Nutrient,levels = 
+                          c('N','P','K','Ca','Mg'))
+bdgsum=group_by(budgets,Nutrient)%>%
+  summarise(Input=mean(ifelse(Wood_m3_2>0,In_kgha_2,In_kgha_1)),
+            Harvest=mean(ifelse(Wood_m3_2>0,Wood_m3_2,Wood_m3_1))*
+              mean(Concentration)*511,Conc=mean(Concentration),
+            Budget=Input-Harvest)
+print.data.frame(bdgsum)
+
 plot(Concentration~Nutrient,data=budgets)
 
 summary(budgets$In_kgha_1[budgets$Nutrient=='N']-

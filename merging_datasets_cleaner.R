@@ -33,6 +33,13 @@ dups1=group_by(dups,ID)%>%
 dups2=group_by(dups,ID)%>%
   summarise_all(function(x){x[2]})
 
+length(dups1$ID)/length(ea$ID) # 14%
+summary(abs(dups1$C-dups2$C)*2/(dups1$C+dups2$C)) 
+# mean difference is 8.8%, median 4.6% (min .04%, max 66%)
+summary(abs(dups1$N-dups2$N)*2/(dups1$N+dups2$N)) 
+# mean 26%, median 16%, min =0 and max=200%
+
+
 plot(dups1$C,dups2$C/dups1$C) 
 dups1$ID[dups2$C/dups1$C>1.2]
 dups2$C[dups2$C/dups1$C>1.2]

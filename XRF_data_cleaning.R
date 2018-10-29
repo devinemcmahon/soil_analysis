@@ -152,6 +152,17 @@ dups2=group_by(dups,ID)%>%
 #dups3=dups3[!is.na(dups3$Al),]
 #xrf$K[xrf$ID %in% dups3$ID]
 # just 2 samples, third evaluation similar to others; drop third one
+length(dups1$ID)/length(xrf$ID) # 3.7%
+summary(abs(dups1$P-dups2$P)*2/(dups1$P+dups2$P)) 
+# median 15%, min 1%, max 86%
+summary(abs(dups1$Ca-dups2$Ca)*2/(dups1$Ca+dups2$Ca)) 
+# med 8% mean 14%
+summary(abs(dups1$Mg-dups2$Mg)*2/(dups1$Mg+dups2$Mg)) #13%
+summary(abs(dups1$K-dups2$K)*2/(dups1$K+dups2$K)) 
+# median just 2.5%, nice
+summary(abs(dups1$Fe-dups2$Fe)*2/(dups1$Fe+dups2$Fe)) 
+# median just 2.8
+
 dups1$ID
 dups1$evaldate
 dups2$evaldate
