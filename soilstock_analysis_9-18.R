@@ -95,6 +95,33 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
 
 plot(P~S,data=widedats4) # no apparent relationship
 
+# depth differences
+Cdeplme=lme(log(repval)~depth,data=dats4[dats4$element=='C'&dats4$LU!='A'&
+                                      dats4$site!='TM'&dats4$site!='Cr',],
+            random=~1|site/stand,na.action = na.omit)
+qqr(Cdeplme) # one is way off
+summary(Cdeplme) # decreases with depth
+Cdeeplme=lme(log(repval)~depth,
+             data=dats4[dats4$element=='C'&dats4$LU!='A'& dats4$site!='TM'&
+                          dats4$site!='Cr' & dats4$depth>15,],
+            random=~1|site/stand,na.action = na.omit)
+qqr(Cdeeplme)
+summary(Cdeeplme) # still decreases with depth; one value way off
+plot(Cdeeplme)
+Kdeeplme=lme(log(repval)~depth,
+             data=dats4[dats4$element=='K'&dats4$LU!='A'& dats4$site!='TM'&
+                          dats4$site!='Cr' & dats4$depth>15,],
+             random=~1|site/stand,na.action = na.omit)
+qqr(Kdeeplme) # horrible
+summary(Kdeeplme) # no change; not valid
+# doesn't work with random = ~ 1+depth|site/stand
+Ndeeplme=lme(log(repval)~depth,
+             data=dats4[dats4$element=='N'&dats4$LU!='A'& dats4$site!='TM'&
+                          dats4$site!='Cr' & dats4$depth>15,],
+             random=~1|site/stand,na.action = na.omit)
+qqr(Ndeeplme) # also quite bad; in summary, def. decreases with depth
+# same deal for P2 and Ca2 (but Ca residuals less bad)
+
 plot(Al~C,data=widedats4,col=site) # within a site, more C or N = less Al
 # Makes sense--OM displaces minerals
 # Not so much for Fe
@@ -139,6 +166,9 @@ plot(resid(allC20.lme)~dats2deps$stock20[dats2deps$element=='C' &
 plot(resid(allC20.lme)~dats2deps$year[dats2deps$element=='C' &
                                         !is.na(dats2deps$stock20)])
 # more spread in 04? nah
+plot(resid(allC20.lme)~dats2deps$LU[dats2deps$element=='C' &
+                                        !is.na(dats2deps$stock20)])
+# maybe narrower IQR in euc? partially due to sample size
 qqnorm(resid(allC20.lme))
 qqline(resid(allC20.lme)) # upper tail off but probably ok
 
@@ -354,7 +384,7 @@ tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn in
 
 
 # Repeat analysis with just eucs
-# Subset data frames now make in soil_data_reader
+# Subset data frames now made in soil_data_reader
 #euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
 #test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
 #euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
@@ -391,7 +421,6 @@ eucMg20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Mg2',],na.action = na.omit)
 qqr(eucMg20bm.lme) # tails way off even with log
 summary(eucMg20bm.lme) # no change
-
 
 eucAl20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Al',],na.action = na.omit)
@@ -449,6 +478,30 @@ eucMo20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Mo',],na.action = na.omit)
 qqr(eucMo20bm.lme) # low outlier but pretty ok with log
 summary(eucMo20bm.lme) # no change
+
+# changes within native veg only
+nat2deps=droplevels(dats2deps[dats2deps$LU=='N',])
+
+natMo20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                  data=nat2deps[nat2deps$element=='Mo',],na.action = na.omit)
+qqr(natMo20bm.lme) # low outlier but pretty ok with log
+summary(natMo20bm.lme)
+
+natC20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                  data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
+qqr(natC20bm.lme) # tails a bit off
+summary(natC20bm.lme) # marginal decrease in AF, def increase in cerrado
+natC20.lme=lme(log(stock20)~year,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
+qqr(natC20.lme) # ok
+summary(natC20.lme) # no significant change
+
+natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='N',],na.action = na.omit)
+qqr(natN20bm.lme) # nice
+summary(natN20bm.lme) # marginal decrease in AF, def increase in cerrado
+# also marginal decrease in AF (p=.076), strong increase in Cerrado
+
 
 
 eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
@@ -836,6 +889,13 @@ Caelt.lme=lme(log(value)~elt, random=~1|stand,
                          dats$element =='Ca2',],na.action=na.omit)
 qqr(Caelt.lme)
 summary(Caelt.lme) # no difference
+
+Cuelt.lme=lme(value~elt, random=~1|stand,
+              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                          dats$element =='Cu',],na.action=na.omit)
+qqr(Cuelt.lme) # no good
+summary(Caelt.lme)
+
 # Spatial heterogeneity overall:
 depcvs=group_by(droplevels(dats4[dats4$site!='TM'&dats4$site!='Cr'&
                                    dats4$LU!='A',]),
@@ -849,8 +909,14 @@ tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
                            depcvs$LU=='E',])$element,summary)
 
 xyplot(CV~depth|element,data=depcvs[depcvs$year=='16' &depcvs$element %in% 
-                                         c('C','N','P2','Ca2','K','S','Zn'),],
+                                         c('C','N','P2','Ca2','K','S'),],
        groups=stand,type='l',ylim=c(0,1)) #ugly
+depCV.lme=lme(CV~depth,random=~1+depth|element,
+              depcvs[depcvs$year=='16' &depcvs$element %in% 
+                       c('C','N','P2','Ca2','K','S'),],
+              na.action = na.omit)
+summary(depCV.lme) # CV increases with depth at p=.06?
+qqr(depCV.lme) #no way
 
 # paired sites, by land use
 tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K','S','Zn')&
@@ -890,7 +956,7 @@ plot(CV~depth,data=depcvs[depcvs$element=='C' & depcvs$LU!='A',],col=LU,pch=5,ce
 bwplot(CV~LU|element,data=depcvs[depcvs$element %in% c('C','N','K') &
                                    depcvs$LU!='A',])
 bwplot(CV~as.factor(depth)|LU,data=depcvs[depcvs$element %in% c('C','N','K') &
-                                            depcvs$stand!='It.E1'&depcvs$stand!='It.N'&
+                                            #depcvs$stand!='It.E1'&depcvs$stand!='It.N'&
                                             depcvs$LU!='A',])
 bwplot(CV~as.factor(depth)|LU*element,data=depcvs[depcvs$year=='16' &depcvs$element %in% 
                                       c('C','N','P2','Ca2','K','S','Zn'),],
@@ -901,11 +967,45 @@ bwplot(CV~as.factor(depth)|LU*element,data=depcvs[depcvs$year=='16' &depcvs$elem
 cvaov=aov(CV~LU,data=depcvs[depcvs$element %in% c('C','N','P2','Ca2','K'),])
 summary(cvaov)
 qqr(cvaov) # nooo
+cvaov=aov(log(CV)~LU,data=depcvs[depcvs$element %in% 
+                                   c('C','N','P2','Ca2','K') &
+                                   depcvs$CV>0,])
+summary(cvaov) #p=.081
+qqr(cvaov) #tails a bit off
+TukeyHSD(cvaov) # N maybe a little > P (p=.086)
+
+Ccvaov=aov(log(CV)~LU,data=depcvs[depcvs$element =='C',])
+summary(Ccvaov) #fine with log
+qqr(Ccvaov)
+
+cvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element %in% 
+                                       c('C','N','P2','Ca2','K') &
+                                       depcvs$CV>0,])
+qqr(cvdeplm)
+summary(cvdeplm) # no effect
+Ccvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='C',])
+qqr(Ccvdeplm)
+summary(Ccvdeplm) # +.003, p=.096
+Cacvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='Ca',])
+qqr(Cacvdeplm)
+summary(Cacvdeplm) # no effect, nor for P
+Kcvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='K',])
+qqr(Kcvdeplm)
+summary(Kcvdeplm)# there is an effect for K, decreasing with depth
+Ncvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='N' &
+                                        depcvs$CV>0,])
 
 
-Ccvaov=aov(log(CV)~LU,depcvs[depcvs$element=='C',])
+# Why is there a zero?
+# 2004 values for N are same for all reps in JP.E1.20-40 and JP.P.10-20
+qqr(Ncvdeplm) # tail off, non-log bad too
+summary(Ncvdeplm) # no effect
+
+
+
+Ccvaov=aov(log(CV)~LU,data=depcvs[depcvs$element=='C',])
 qqr(Ccvaov) # nice with log
-summary(Ccvaov) # yes, signif effect of LU
+summary(Ccvaov) # no signif effect of LU 
 TukeyHSD(Ccvaov)
 
 stockcvs=group_by(dats2deps,stand,LU,biome,element,year) %>%
@@ -1056,7 +1156,27 @@ tapply(mrstkO$chgrt100,mrstkO$element,median)
 tapply(mrstkO$chgrt100,mrstkO$element,sd) 
 plot(chgrt100~LU,data=mrstkchgs[mrstkchgs$element=='C',])
 
+# Are there differences in stock between paired land uses?
+t.test(mrstkcomp2$stk20_16_E[mrstkcomp2$element=='C'],
+       mrstkcomp2$stk20_16_O[mrstkcomp2$element=='C'],
+       paired=T) # no (nor for K, Ca, P, N, Mg, Al, Fe)
+t.test(mrstkcomp2$stk20_16_E[mrstkcomp2$element=='Fe'],
+       mrstkcomp2$stk20_16_O[mrstkcomp2$element=='Fe'],
+       paired=T)
+# lmes will have more power by including all the reps within a site
 
+JA_C.lme=lme(log(repval)~LU,random=~1|site/stand/depth,
+             data=dats4[dats4$element=='C' &
+                          dats4$site!='TM'&dats4$site!='Cr'&
+                          dats4$LU!='A',],na.action=na.omit)
+qqr(JA_C.lme)
+summary(JA_C.lme) # no difference
+JA_C2.lme=lme(log(repval)~LU,random=~1|site/stand/depth,
+             data=dats4[dats4$element=='C' &
+                          dats4$site!='TM'&dats4$site!='Cr'&
+                          dats4$LU!='A',],na.action=na.omit)
+qqr(JA_C.lme)
+summary(JA_C.lme)
 
 L_to_pct=function(x){
   (exp(x)-1)*100
@@ -1263,6 +1383,9 @@ plot(Concentration~Nutrient,data=budgets)
 summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
           budgets$Wood_m3_1[budgets$Nutrient=='N']*
           budgets$Concentration[budgets$Nutrient=='N']*511)
+
+summary(I((stkchgs$maxbudgconc-stkchgs$minbudgconc)/stkchgs$budget))
+# -10.6 to +4.3 -- times, not %. Mean -5%, median + 45%
 
 plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
 abline(0,1)

@@ -442,7 +442,11 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
             maxbudgconc=max(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
                         modconcbudg,#lessrotbudg,lessharvbudg,moreharvbudg,
-                        woodonlybudg,bark5budg,bark20budg,budget,na.rm=T))
+                        woodonlybudg,bark5budg,bark20budg,budget,na.rm=T))#,
+           # whichminconc=names(stkchgs)[which.min(c(grandconcbudg,plconcbudg,denserbudg,
+           #                                lessdensebudg,modconcbudg,woodonlybudg,
+           #                                bark5budg,bark20budg,budget))])
+# I want to know which column is the min, but that doesn't work
 stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
 
 yrdiffstockplot100_LU=function(sub_ttests){
