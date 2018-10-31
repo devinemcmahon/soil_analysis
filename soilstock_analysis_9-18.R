@@ -81,6 +81,12 @@ xyplot(depth~value/1000|stand,groups=rep,type='p',ylab='Depth (cm)',
 # Huge spatial variation in K in the high-K sites
 # also very slightly depleted in top 10 cm?
 
+# Highlighting the scale of the spatial heterogeneity in Bps
+xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
+       data=dats[dats$element=='K' & dats$site=='Bp',],
+       ylim=c(90,0),xlab='K (g / kg)',as.table=T)
+
+
 xyplot(depth~value|stand,groups=year,type='p',ylab='Depth (cm)',
        data=dats[dats$element=='S' ,],
        ylim=c(90,0),xlab='S (mg / kg)',as.table=T,
@@ -154,6 +160,36 @@ gentfun=function(dfr,elmt){
 gentfun(ttests,'C')
 # net increase at 30 and decrease at 50 cm
 gentfun(ttests,'P') # net increases at all depths, except 0 at 10-20 cm
+
+power.t.test(n=4,delta=mean(abs(ttests$mn16[ttests$element=='N']-
+                              ttests$mn04[ttests$element=='N'])),
+             sd=mean(ttests$sd16[ttests$element=='N'])) #.182
+# sd slightly larger than mean (.0164 vs .0144 g/100g)
+# with abs val, power increases to .436
+power.t.test(n=4,delta=mean(abs(ttests$mn16[ttests$element=='K' &
+                                          ttests$site!='Bp']-
+                              ttests$mn04[ttests$element=='K'&
+                                            ttests$site!='Bp'])),
+             sd=mean(ttests$sd16[ttests$element=='K'&
+                                   ttests$site!='Bp'])) 
+# more power WITH Bp stock changes, duh--only 11% without (34% if abs)
+
+power.t.test(n=4,delta=mean(abs(ttests$mn16[ttests$element=='P']-
+                               ttests$mn04[ttests$element=='P']),na.rm=T),
+              sd=mean(ttests$sd16[ttests$element=='P'],na.rm=T)) #51%
+# Ca2: 23% ; C 41% ; Zr 36%
+
+power.t.test(power=.8,delta=mean(abs(ttests$mn16[ttests$element=='C']-
+                                ttests$mn04[ttests$element=='C']),na.rm=T),
+             sd=mean(ttests$sd16[ttests$element=='C'],na.rm=T))
+# n = 8 for C and N
+
+# stock t-tests
+t(tstock[tstock$element=='Ca2'&tstock$stand=='Eu.N',]) # not signif
+data.frame(pval=tstock$pval20[tstock$element %in% c('Ca2','C','N','P','K') &
+                      tstock$stand=='Eu.N'],
+      element=tstock$element[tstock$element %in% c('Ca2','C','N','P','K') &
+                      tstock$stand=='Eu.N'])
 
 # Across all sites, does C accumulate over time?
 allC20.lme=lme(stock20~year,random=~1|site/stand,
@@ -862,6 +898,18 @@ plot(value~depth,data=dats[dats$element=='Ca2'& dats$year=='04' & dats$stand=='E
 #   below 20 cm, though, 4 has highest and 3 second-highest
 # For C, 1 and 2 are similar, 4 has highest values at surface
 # 
+plot(value~depth,data=dats[dats$element=='K'& dats$year=='04' & dats$stand=='Bp.E1' &
+                             dats$elt %in% c('E','L','T'),],
+     col=as.numeric(elt)-2,pch=rep+14)
+
+xyplot(value~depth|stand,groups=elt,
+       data=droplevels(dats[dats$element=='P2'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),]),pch=19,
+       auto.key=list(space='top', columns=3,lines=FALSE, points=TRUE),
+       ylab='P concentration (mg/kg)',ylim=c(0,600))
+# Different patterns in different stands; in Bp.E1, more in E at surface?
+# Less in L? in It.E1 and Bp.E2, at least in top 20 cm
+
 
 Nelt.lme=lme(value~elt, random=~1|stand,
              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
