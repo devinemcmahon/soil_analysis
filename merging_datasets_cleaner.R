@@ -32,6 +32,8 @@ dups1=group_by(dups,ID)%>%
   summarise_all(function(x){x[1]})
 dups2=group_by(dups,ID)%>%
   summarise_all(function(x){x[2]})
+dups1$ID[dups1$year=='04'] # there are no duplicates from 2004
+# not good
 
 length(dups1$ID)/length(ea$ID) # 14%
 summary(abs(dups1$C-dups2$C)*2/(dups1$C+dups2$C)) 
@@ -58,7 +60,9 @@ abline(0,1)
 # same deal; dups2 more likely to be < dups1 
 # does that mean N was volatilizing in the oven? Probably not
 #   some are run on the same day
-dups1$ID[dups2$N/dups1$N<.8]
+plot(dups1$Nadj,dups2$Nadj) #better...
+abline(0,1)
+dups1$ID[dups2$Nadj/dups1$Nadj<.8] # 2 fewer than just N
 # take the more recent values for JP.A because those were foiled
 #   a really long time before running and some may have leaked?
 plot(dups1$N,dups2$N,col=as.numeric(as.factor(dups1$site)))
@@ -75,6 +79,7 @@ abline(0,1) # nice
 dupsavg=group_by(dups,ID)%>%
   summarise_all(function(x){ifelse(is.numeric(x)==T,
                                    mean(x,na.rm=T),x[1])})
+# oh good, Nadj does get averaged
 
 ea=ea[-which(ea$ID %in% dupIDs),]
 ea=rbind(ea,dupsavg)

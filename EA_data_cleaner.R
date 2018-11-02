@@ -109,6 +109,12 @@ sd(c(.2136,.2286,.2239))/mean(c(.2136,.2286,.2239))
 sd(c(0.17906404, 0.15602440, 0.15164233))/
   mean(c(0.17906404, 0.15602440, 0.15164233))
 # still smallish though (went from 3 to 9%)
+jun14viz=droplevels(jun14[!is.element(jun14$site,
+                                      c('std','blank','blank1')),])
+plot(Nadj~N,col=stand,data=jun14viz)
+legend('topleft',legend=unique(jun14viz$stand),bty='n',
+       pch=15, col=as.factor(unique(jun14viz$stand)))
+abline(0,1)
 
 #jul07=read.csv('Jul_07_17.csv')
 #jul07=prepEAdat(jul07)
