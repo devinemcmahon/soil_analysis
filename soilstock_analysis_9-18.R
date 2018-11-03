@@ -101,6 +101,12 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
 
 plot(P~S,data=widedats4) # no apparent relationship
 
+# Are trends in native veg N affected by EA N drift 
+#   on the day we tested 0-10 and 60-100 in a bunch of sites?
+plot(N~C,data=widedats,col=as.numeric(CNevalday=='Jun-14')+1)
+plot(N~C,data=widedats,col=site)
+plot(N~C,data=widedats,col=LU)
+
 # depth differences
 Cdeplme=lme(log(repval)~depth,data=dats4[dats4$element=='C'&dats4$LU!='A'&
                                       dats4$site!='TM'&dats4$site!='Cr',],
@@ -132,6 +138,14 @@ plot(Al~C,data=widedats4,col=site) # within a site, more C or N = less Al
 # Makes sense--OM displaces minerals
 # Not so much for Fe
 # Fe and Al tend to co-occur, esp at low values, but inverse to Si, ok
+summary(datsmnok$mn[datsmnok$element=='Fe'&datsmnok$depth==5])
+# 0.5 to 11% Fe; 0.5 to 12% at 60-100 cm
+datsmnok$stand[datsmnok$element=='Fe'&
+                 datsmnok$depth==5][which.min(datsmnok$mn[
+                   datsmnok$element=='Fe'&datsmnok$depth==5])]
+# JP.N, ok; max is Vg.E
+# Al: 7 to 24% at 0-10 cm, 10% to 27% at 60-100
+
 
 # Where did a given element change? T-tests by stand and depth, n=4 per year
 Ntt=gen_ttable(ttests[ttests$element=='N',]$depth,
@@ -190,6 +204,35 @@ data.frame(pval=tstock$pval20[tstock$element %in% c('Ca2','C','N','P','K') &
                       tstock$stand=='Eu.N'],
       element=tstock$element[tstock$element %in% c('Ca2','C','N','P','K') &
                       tstock$stand=='Eu.N'])
+t.test(test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='AF'],
+       test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='Cer'])
+# not different
+t.test(test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='AF'&
+                              test2deps$element=='C'],
+       test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='Cer'&
+                              test2deps$element=='C'])
+# p=.087
+bwplot(stockratio~biome|element,
+       data=test2deps[test2deps$element %in% c('C','N','K',#'P2','Ca2',
+                                               'Cu','Mg','Zn','Al','Zr'),])
+# Ca and P most superficial, especially in AF
+
+# Bulk density
+bwplot(BD20~LU|biome,
+       data=dats2deps[dats2deps$element=='C'&dats2deps$year=='16',])
+# Pasture is densest, E > N in AF but similar in Cerrado
+BDaov=aov(BD20~LU*biome,
+          data=dats2deps[dats2deps$element=='C'&dats2deps$year=='16',])
+qqr(BDaov)
+summary(BDaov) # LU effect, no biome or interaction
+BDLUaov=aov(BD20~LU,
+         data=dats2deps[dats2deps$element=='C'&dats2deps$year=='16',])
+qqr(BDLUaov) # not as good
+TukeyHSD(BDLUaov) # P > E = N 
+plot(resid(BDLUaov)~dats2deps$LU[dats2deps$element=='C'&
+                                   !is.na(dats2deps$BD20)&
+                                dats2deps$year=='16'])
+# of course pasture spread is smaller. Does this invalidate the test? 
 
 # Across all sites, does C accumulate over time?
 allC20.lme=lme(stock20~year,random=~1|site/stand,
