@@ -476,7 +476,7 @@ qqr(eucC20bm.lme) # again, log tranform helps a bit, increases significance
 eucN20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
 summary(eucN20bm.lme) # no change
-qqr(eucN20bm.lme)
+qqr(eucN20bm.lme) # mostly ok
 
 eucP20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='P2'&
@@ -503,10 +503,13 @@ summary(eucMg20bm.lme) # no change
 
 eucAl20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Al',],na.action = na.omit)
-qqr(eucAl20bm.lme)
+qqr(eucAl20bm.lme) # not very good; removing log worse
 summary(eucAl20bm.lme) # decreases (p=0.030), no biome effect
 # Note that there is more Al in top 20 cm under eucalyptus than native veg
 #   and most in pasture
+
+
+
 boxplot(stock20~LU,data=droplevels(dats2deps[dats2deps$element=='Al',]),
         varwidth=T,las=1,xlab='Vegetation',ylab='Al stock, 0-20 cm (Mg ha-1)')
 bwplot(stock20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
@@ -558,6 +561,12 @@ eucMo20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
 qqr(eucMo20bm.lme) # low outlier but pretty ok with log
 summary(eucMo20bm.lme) # no change
 
+eucNb20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Nb',],na.action = na.omit)
+qqr(eucNb20bm.lme) # still off
+summary(eucNb20bm.lme) # decrease in AF, maybe (p=.045; opposing Cerrado*yr p=.045)
+
+
 # changes within native veg only
 nat2deps=droplevels(dats2deps[dats2deps$LU=='N',])
 
@@ -580,6 +589,46 @@ natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
 qqr(natN20bm.lme) # nice
 summary(natN20bm.lme) # marginal decrease in AF, def increase in cerrado
 # also marginal decrease in AF (p=.076), strong increase in Cerrado
+
+natC100AF.lme=lme(log(stock100)~year,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='C'&
+                                 nat2deps$biome=='AF',],na.action = na.omit)
+summary(natC100AF.lme) # marginal decrease, p=0.095
+dats$CNevalday[dats$stand=='Eu.N'& dats$year=='04'& dats$depth==80 &
+                 dats$element=='C'] # new EA, shouldn't be inflated
+# and that issue was with N, not C
+# Is this change biologically meaningful? C conc doesn't change significantly
+#   at any given depth increment in Eu.N or Vg.N
+summary(nat2deps$stock100[nat2deps$element=='C'& nat2deps$year=='04'&
+                            nat2deps$biome=='AF'])
+summary(nat2deps$stock100[nat2deps$element=='C'& nat2deps$year=='16'&
+                            nat2deps$biome=='AF'])
+# yeah, mean and median decrease by 52 and 22 Mg ha-1, respectively
+median(nat2deps$stock100[nat2deps$element=='C'& nat2deps$year=='04'&
+                            nat2deps$biome=='AF'],na.rm = T)-
+median(nat2deps$stock100[nat2deps$element=='C'& nat2deps$year=='16'&
+                            nat2deps$biome=='AF'],na.rm = T)
+
+o2deps=droplevels(dats2deps[dats2deps$LU!='E',])
+oN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                 data=o2deps[o2deps$element=='N',],na.action = na.omit)
+qqr(oN20bm.lme) # nice
+summary(oN20bm.lme) # signif incr in Cerrado
+
+oC20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+               data=o2deps[o2deps$element=='C',],na.action = na.omit)
+qqr(oC20bm.lme) # ok
+summary(oC20bm.lme) # decrease in AF and increase in Cerrado
+# No change in K or Ca
+oP20bm.lme=lme(stock20~year*biome,random=~1|stand,
+                data=o2deps[o2deps$element=='P2',],na.action = na.omit)
+qqr(oP20bm.lme)
+summary(oP20bm.lme) # marginal decrease in Cerrado
+#for Al, residuals not normal, with or without log; no change
+oNb20bm.lme=lme(stock20~year*biome,random=~1|stand,
+                data=o2deps[o2deps$element=='Nb',],na.action = na.omit)
+# some resids way off; decrease overall (no year-biome interaction)
+
 
 
 
@@ -1280,7 +1329,8 @@ panel.mean <- function(x, y, ...) {
   panel.points(y=tmp, x=seq_along(tmp), ...)
 }
 
-
+mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+                                                'Ca','Al','Nb'),]
 
 par(mar=c(4,5,1,4))
 plot(chgrt20~element, ylim=c(-1,1),las=1,
@@ -1357,6 +1407,55 @@ bwplot(chgln20~element|biomelong+LU2long,ylim=c(-1,1),las=1,
          #panel.mean(x,y, pch=4, cex=1.5, col='black')
          # median = mean if n=2, duh
        })
+bwplot(chgln20~element|biomelong+LU2long,ylim=c(-1,1),las=1,
+       data=mrstkchgslim[mrstkchgslim$stand %in% 
+                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         strip.custom(fg=c('orange','orchid'),style=2)
+         panel.axis(side=ifelse(panel.number()==3,'left','right'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
+                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
+         panel.abline(h=0,lty=3)
+         panel.abline(v=5.5,lty=1,col='gray50')
+         #panel.mean(x,y, pch=4, cex=1.5, col='black')
+         # median = mean if n=2, duh
+       })
+
+# to reflect simp.lme3 analysis as in text:
+bwplot(chgln20~element|LUlong,ylim=c(-1,1),las=1,
+       data=mrstkchgslim[mrstkchgslim$stand %in% 
+                           c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                             'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       layout=c(1,3),
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         strip.custom(fg=c('orange','orchid'),style=2)
+         panel.axis(side=ifelse(panel.number()==2,'left','right'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    # I want outside=T but it won't draw anything
+                    draw.labels=T,ticks=T)
+         panel.abline(h=0,lty=3)
+         panel.abline(v=5.5,lty=1,col='gray50')
+       })
+summary(mrstkchgslim$chgln20[mrstkchgslim$stand %in% 
+                       c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                         'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N') &
+                         mrstkchgslim$element=='Ca'&
+                         mrstkchgslim$LU=='E'])
+# median is 1.13
+L_to_pct(1.132) # + 210.2 %
+
 bwplot(chgln20~element|LU2long,ylim=c(-1,1),las=1,
        data=mrstkchgs[mrstkchgs$stand %in% 
                         c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
@@ -1602,8 +1701,9 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 # What is a realistic range of bark? How to present sensitivities?
 # Table of ratios of budget to its variations?
 
+stkchgs3=stkchgs[stkchgs$element!='Mg',]
 palette('default')
-plot(chg20~budget,data=stkchgs,type='n', 
+plot(chg20~budget,data=stkchgs3,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
      ylab='Observed change in stocks to 20 cm, Mg ha-1',
      xlim=c(-.2,.5),ylim=c(-.2,.5),
@@ -1614,13 +1714,13 @@ abline(v=0,lty=3)
 abline(0,1)
 #segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
 #         col=as.numeric(as.factor(stkchgs$biome))+2)
-segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
-         col=as.numeric(as.factor(stkchgs$biome))+2)
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
-         y1=stkchgs$chg20+stkchgs$sdchg20,
-         col=as.numeric(as.factor(stkchgs$biome))+2)
-text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-     col=as.numeric(as.factor(stkchgs$biome))+2)
+segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+         col=as.numeric(as.factor(stkchgs3$biome))+2)
+segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
+         y1=stkchgs3$chg20+stkchgs3$sdchg20,
+         col=as.numeric(as.factor(stkchgs3$biome))+2)
+text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
+     col=as.numeric(as.factor(stkchgs3$biome))+2)
 legend('bottomright',pch=15,col=c(3,4),
        legend=c('Atlantic Forest','Cerrado'),bty='n')
 
@@ -2134,7 +2234,23 @@ Zrsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
 qqr(Zrsimp.lme3) 
 summary(Zrsimp.lme3) # minor increase in other (p=.052)
 # when separated by veg type, P starts with more Zr, N with less; 
-# increases in native 
+# increases in native
+
+Alsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+                data=simple20_2[simple20_2$element=='Al',], na.action=na.omit)
+qqr(Alsimp.lme3) 
+summary(Alsimp.lme3)
+# decreases overall, interaction terms marginal (p=.06 for P, .05 for N)
+#   but maybe doesn't change in those
+natAl20.lme=lme(log(stock20)~year,random=~1|stand,
+               data=nat2deps[nat2deps$element=='Al',],na.action = na.omit)
+qqr(natAl20.lme) # tails pretty off, esp one really high value
+summary(natAl20.lme) # no significant change
+
+Nbsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
+                data=simple20_2[simple20_2$element=='Nb',], na.action=na.omit)
+qqr(Nbsimp.lme3) 
+summary(Nbsimp.lme3) # differs between veg types but not between years
 
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
@@ -2153,6 +2269,8 @@ Csimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
 qqr(Csimp100.lme)
 summary(Csimp100.lme) # now increase in euc isn't signif, 
 #   but decreases in native and pasture are! 
+# Is that real?
+
 # don't do log transform for P (in which nothing changes)
 
 
