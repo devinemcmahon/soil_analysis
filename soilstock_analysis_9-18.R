@@ -1238,9 +1238,12 @@ mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
                                          ifelse(LU=='P','Pasture',
                                                 'Native vegetation')),
                  biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
-                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'))
+                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'),
+                 LUlongish=ifelse(LU=='E','Euc',ifelse(LU=='P','Past','Nat')))
 mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
                         levels=c('Eucalyptus','Native vegetation','Pasture'))
+mrstkchgs$LUlongish=factor(mrstkchgs$LUlongish,
+                        levels=c('Euc','Nat','Past'))
 mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
                         levels=c('Eucalyptus','Other vegetation'))
 mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
@@ -1455,6 +1458,34 @@ summary(mrstkchgslim$chgln20[mrstkchgslim$stand %in%
                          mrstkchgslim$LU=='E'])
 # median is 1.13
 L_to_pct(1.132) # + 210.2 %
+
+# Group by element instead
+
+mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+                                                'Ca'),]
+bwplot(chgln20~LUlongish|element,ylim=c(-1,1),las=1,
+       data=mrstkchgslim[mrstkchgslim$stand %in% 
+                           c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                             'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       layout=c(3,2),
+       
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         superpose.symbol=list(fill=c('blue3','springgreen','darkgoldenrod1'))
+         superpose.point=list(col=c('blue3','springgreen','darkgoldenrod1'))
+         panel.axis(side=ifelse(panel.number()==3,'right','left'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    # I want outside=T but it won't draw anything
+                    draw.labels=ifelse(panel.number()%in%c(3,4),T,F),
+                    ticks=ifelse(panel.number()%in%c(3,4),T,F))
+         panel.abline(h=0,lty=3)
+       })
+
+
 
 bwplot(chgln20~element|LU2long,ylim=c(-1,1),las=1,
        data=mrstkchgs[mrstkchgs$stand %in% 
