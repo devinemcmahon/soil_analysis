@@ -455,6 +455,10 @@ legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='P2',],label=F,fulllegend = F)
+legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
+
+
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Zn' & tstock$stock20_16<.1,])
 tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn incr
 
@@ -916,6 +920,29 @@ unique(widedats$ID[widedats$stand=='Bp.E2'&
 
 
 # Spatial heterogeneity
+# How many cores/samples did we analyze individually before compositing?
+length(unique(dats$ID[dats$element=='C'& is.na(dats$position)==F &
+                        dats$year==16])) #333
+length(unique(dats$stand[dats$element=='C'& is.na(dats$position)==F &
+                           dats$year==16])) #11
+length(unique(dats$ID[dats$element=='C'& is.na(dats$position)==F &
+                        dats$year==16 & dats$depth==5])) #150
+
+#just CN
+length(unique(dats$ID[dats$element=='C'& is.na(dats$position)==F &
+                        dats$year==16 & !is.na(dats$value)] )) #326
+length(unique(dats$stand[dats$element=='C'& is.na(dats$position)==F &
+                        dats$year==16])) #11
+length(unique(dats$ID[dats$element=='C'& is.na(dats$position)==F &
+                        dats$year==16 & dats$depth==5& !is.na(dats$value)])) #149
+# just XRF
+length(unique(dats$ID[dats$element=='K'& is.na(dats$position)==F &
+                        dats$year==16& !is.na(dats$value)])) #279
+length(unique(dats$stand[dats$element=='K'& is.na(dats$position)==F &
+                           dats$year==16])) #11
+length(unique(dats$ID[dats$element=='K'& is.na(dats$position)==F &
+                        dats$year==16 & dats$depth==5& !is.na(dats$value)])) #132
+
 plot(value~depth,data=dats[dats$stand=='Bp.E1'&dats$element=='K',],
      col=rep,pch=as.numeric(as.factor(elt)))
 # reps, not row positions, are variable (row positions similar within a rep)
@@ -1181,12 +1208,28 @@ tapply(shorttstk$stock100_16,shorttstk$element,
 mean(shorttstk$BD100_16[shorttstk$element=='C'])
 sd(shorttstk$BD100_16[shorttstk$element=='C'])
 
+tapply(shorttstk$stock20_16,shorttstk$element,
+       function(x){mean(x,na.rm=T)})
+
+
 shortE = shorttstk[shorttstk$LU=='E' &
                      shorttstk$stand!='It.E1',]
 tapply(shortE$stock100_16,shortE$element,
        function(x){mean(x,na.rm=T)})
 tapply(shortE$stock100_16,shortE$element,
        function(x){sd(x,na.rm=T)})
+tapply(shortE$stock20_16,shortE$element,
+       function(x){mean(x,na.rm=T)})
+tapply(shortE$stock20_16,shortE$element,
+       function(x){sd(x,na.rm=T)})
+
+tapply(shorttstk$stock20_16[shorttstk$LU=='E'],
+       shortE$element[shorttstk$LU=='E'],
+       function(x){mean(x,na.rm=T)})
+tapply(shorttstk$stock20_04[shorttstk$LU=='E'],
+       shortE$element[shorttstk$LU=='E'],
+       function(x){mean(x,na.rm=T)})
+
 tapply(shortE$rat_16,shortE$element,
        function(x){mean(x,na.rm=T)})
 tapply(shortE$rat_16,shortE$element,
@@ -1750,8 +1793,8 @@ segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
-text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
-     col=as.numeric(as.factor(stkchgs3$biome))+2)
+text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)#,
+#     col=as.numeric(as.factor(stkchgs3$biome))+2)
 legend('bottomright',pch=15,col=c(3,4),
        legend=c('Atlantic Forest','Cerrado'),bty='n')
 
