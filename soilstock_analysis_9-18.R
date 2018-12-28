@@ -1258,6 +1258,90 @@ Cstks
 mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='C']) # 46.1
 mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='C']) # 50.1
 
+table(shorttstk$stockunit,shorttstk$element)
+nutstk=group_by(dats2deps[dats2deps$element %in% c('C','N','K','P2','Ca2') &
+                            dats2deps$stand !='It.E1',],
+                element,LU,biome,year)
+nutstk$stock100[nutstk$site=='Bp'&nutstk$element=='K']=NA
+nutstk$stock20[nutstk$site=='Bp'&nutstk$element=='K']=NA
+nutstk= summarise(nutstk,stk20down=mean(stock100-stock20,na.rm=T),
+            stk20up=mean(stock20,na.rm=T),
+            stk100=mean(stock100,na.rm=T),
+            nobs=n(),
+            se100=sd(stock100,na.rm=T)/sqrt(nobs),
+            se20=sd(stock20,na.rm=T)/sqrt(nobs))
+#library(reshape2)
+nutstk=ungroup(nutstk)
+#nutmelt=melt.data.frame(nutstk,measure.vars=c("stk20down","stk20up"))
+# "Names do not match previous names"--why not??
+#nutmelt=melt.data.frame(nutstk,measure.vars=5:6) #likewise
+# Fine I'll do it by hand
+nutstkd=mutate(nutstk,depth=rep('20down'))
+nutstkd=nutstkd[,-which(names(nutstkd) %in% c('stk20up','se20'))]
+nutstku=mutate(nutstk,depth=rep('20up'))
+nutstku=nutstku[,-which(names(nutstku) %in% c('stk20down','se100'))]
+names(nutstkd)[which(names(nutstkd)=='stk20down')]='stock'
+names(nutstkd)[which(names(nutstkd)=='se100')]='se'
+names(nutstku)[which(names(nutstku)=='stk20up')]='stock'
+names(nutstku)[which(names(nutstku)=='se20')]='se'
+nutstk2=rbind(nutstku,nutstkd)
+
+nutstk2$element=as.character(nutstk2$element)
+nutstk2$element[nutstk2$element=='Ca2']='Ca'
+nutstk2$element[nutstk2$element=='P2']='P'
+nutstk2$element=factor(nutstk2$element,levels=c('C','N','K','P','Ca'))
+nutstk2$year=factor(nutstk2$year,levels=c('16','04'))
+nutstk2$stock[nutstk2$element=='C']=nutstk2$stock[nutstk2$element=='C']/10
+nutstk2$se[nutstk2$element=='C']=nutstk2$se[nutstk2$element=='C']/10
+nutstk2$stk100[nutstk2$element=='C']=nutstk2$stk100[nutstk2$element=='C']/10
+nutstk2=mutate(nutstk2,hibar=ifelse(depth=='20up',stock+se,stk100+se),
+               lobar=ifelse(depth=='20up',stock-se,stk100-se))
+nutstkE=nutstk2[nutstk2$LU=='E',]
+plot(stock~element,data=nutstkE)
+#library(ggplot2)
+nutstkE <- with(nutstkE, nutstkE[order(element,year,depth),])
+nutstkE=mutate(nutstkE,sig=rep(NA))
+nutstkE$sig[nutstkE$depth=='20down'&nutstkE$element=='N'&nutstkE$biome=='Cer'&
+              nutstkE$year=='16']=1
+nutstkE$sig[nutstkE$depth=='20down'&nutstkE$element=='Ca'&
+              nutstkE$year=='16']=1
+nutstkE$sig[nutstkE$depth=='20up'&nutstkE$element=='C'&nutstkE$biome=='Cer'&
+              nutstkE$year=='16']=1
+nutstkE$sig[nutstkE$depth=='20up'&nutstkE$element=='Ca'&nutstkE$biome=='Cer'&
+              nutstkE$year=='16']=1
+nutstkE$sig[nutstkE$depth=='20up'&nutstkE$element=='K'&nutstkE$biome=='AF'&
+              nutstkE$year=='16']=1
+nutstkE$sig=as.integer(nutstkE$sig)
+labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
+
+ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) + 
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  coord_flip() +
+  labs(y="Stock (Mg/ha)", x="Year", fill="Depth") +
+  theme(strip.text.y = element_text(angle = 0),
+        legend.position=c(0.8,0.1),
+        panel.background = element_rect(fill='white'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_blank()) +
+  geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
+  scale_fill_discrete(labels=c('20-100 cm','0-20 cm'),
+                      guide = guide_legend(reverse=TRUE,title=NULL))+
+  geom_point(mapping = aes(y = hibar+1, shape = as.factor(sig)),show.legend=F)
+  #geom_text(mapping = aes(y = hibar+1, label = '*'),na.rm=T,show.legend=F)
+
+allstks = group_by(nutstk,biome,LU,element) %>% 
+  summarise(stk20_16=mean(stock20_16),
+            stk100_16=mean(stock100_16),
+            se20_16=sd(stock20_16)/sqrt(n()),
+            se100_16=sd(stock100_16)/sqrt(n()),
+            stk20_04=mean(stock20_04),
+            stk100_04=mean(stock100_04),
+            se20_04=sd(stock20_04)/sqrt(n()),
+            se100_04=sd(stock100_04)/sqrt(n()),
+            chgrat20=mean(stk20_16/stk20_04),
+            chgrat100=mean(stk100_16/stk100_04),
+            nstands=n())
 
 shorttstk$site=as.character(shorttstk$site)
 shorttstk=mutate(shorttstk,
@@ -1793,6 +1877,15 @@ segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
+#arrows(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+#         col=as.numeric(as.factor(stkchgs3$biome))+2,
+#       angle=90,lty=2,code=3,length=.05)
+#arrows(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
+#         y1=stkchgs3$chg20+stkchgs3$sdchg20,
+#         col=as.numeric(as.factor(stkchgs3$biome))+2,
+#       angle=90,lty=2,code=3,length=.05)
+# arrows are worse
+
 text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)#,
 #     col=as.numeric(as.factor(stkchgs3$biome))+2)
 legend('bottomright',pch=15,col=c(3,4),

@@ -14,7 +14,8 @@ myplot=function(dats,stand,lmt){
            na.rm=T)
   plot(depth~mn04,type='l',data=mysub,
        xlim=c(minx*0.8,maxx*1.2),las=1,
-       ylim=c(90,0),lwd=2,col=2,xlab=paste(lmt,unique(mysub$unit)),ylab='Depth (cm)'
+       ylim=c(90,0),lwd=2,col=2,xlab=paste(lmt,unique(mysub$unit)),
+       ylab='Profundidade (cm)'
        )
   lines(mysub$mn16,mysub$depth,col=4,lwd=2)
   segments(x0=mysub$mn04-I(mysub$sd04/sqrt(mysub$n04)),y0=mysub$depth-1,
@@ -25,7 +26,7 @@ myplot=function(dats,stand,lmt){
   #points(I(mysub$mn16-mysub$sd16),mysub$depth,pch=4,cex=.5,col=4)
   text(rep(maxx*1.1),mysub$depth,label='*',cex=1.1,col=mysub$pval<0.05)
 }
-myplot(ttests,'BO.E','Ca2')
+myplot(ttests,'BO.E','C')
 
 pts=ttests[,c('stand','element','depth','pval','tstat')]
 datsmnok2=merge(datsmnok,pts,by=c('stand','element','depth'),all.x=T)
