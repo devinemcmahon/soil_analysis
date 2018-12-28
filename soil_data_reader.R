@@ -8,6 +8,7 @@ library(nlme)
 library(reshape)
 library(RColorBrewer)
 library(MASS)
+library(ggplot2)
 source('xrf_formatting_functions.R')
 
 gen_ttable=function(elmtcol,groupcol,pvalcol,tstatcol,a){

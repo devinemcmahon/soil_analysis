@@ -1276,6 +1276,7 @@ nutstk=ungroup(nutstk)
 # "Names do not match previous names"--why not??
 #nutmelt=melt.data.frame(nutstk,measure.vars=5:6) #likewise
 # Fine I'll do it by hand
+# oh, this is probably because I loaded both reshape and reshape2
 nutstkd=mutate(nutstk,depth=rep('20down'))
 nutstkd=nutstkd[,-which(names(nutstkd) %in% c('stk20up','se20'))]
 nutstku=mutate(nutstk,depth=rep('20up'))
@@ -1314,7 +1315,7 @@ nutstkE$sig[nutstkE$depth=='20up'&nutstkE$element=='K'&nutstkE$biome=='AF'&
 nutstkE$sig=as.integer(nutstkE$sig)
 labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
 
-ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) + 
+ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
   facet_grid(element~biome,labeller = labeller(biome=labls)) + 
   coord_flip() +
@@ -1325,10 +1326,13 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
         panel.grid.major.x = element_line(colour='grey80'),
         panel.grid.major.y = element_blank()) +
   geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
-  scale_fill_discrete(labels=c('20-100 cm','0-20 cm'),
+  scale_fill_manual(values=c('slategray','lightblue'),
+                      labels=c('20-100 cm','0-20 cm'),
                       guide = guide_legend(reverse=TRUE,title=NULL))+
-  geom_point(mapping = aes(y = hibar+1, shape = as.factor(sig)),show.legend=F)
-  #geom_text(mapping = aes(y = hibar+1, label = '*'),na.rm=T,show.legend=F)
+  geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
+             shape=18,size=3,show.legend=F)
+  #geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
+  #          na.rm=T,show.legend=F,size=8,hjust=0)
 
 allstks = group_by(nutstk,biome,LU,element) %>% 
   summarise(stk20_16=mean(stock20_16),
@@ -1459,8 +1463,6 @@ panel.mean <- function(x, y, ...) {
   panel.points(y=tmp, x=seq_along(tmp), ...)
 }
 
-mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
-                                                'Ca','Al','Nb'),]
 
 par(mar=c(4,5,1,4))
 plot(chgrt20~element, ylim=c(-1,1),las=1,
@@ -1590,6 +1592,81 @@ L_to_pct(1.132) # + 210.2 %
 
 mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
                                                 'Ca'),]
+#mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+ #                                               'Ca','Al','Nb'),]
+#mrmelt=melt.data.frame(mrstkchgslim,measure.vars=c("chgln20","chgln100"))
+# "Names do not match previous names", still
+mrd=mutate(mrstkchgslim,depth=rep('0-100'))
+mrd=mrd[,-which(names(mrd) %in% c('stk20_16', 'chg20', 'chgln20',
+                                  'chgrt20', 'sig20'))]
+mru=mutate(mrstkchgslim,depth=rep('0-20'))
+mru=mru[,-which(names(mru) %in% c('stk100_16', 'chg100', 'chgln100',
+                                  'chgrt100', 'sig100'))]
+names(mrd)[which(names(mrd)=='stk100_16')]='stock_16'
+names(mrd)[which(names(mrd)=='chg100')]='change'
+names(mrd)[which(names(mrd)=='chgln100')]='chgln'
+names(mrd)[which(names(mrd)=='chgrt100')]='chgrt'
+names(mrd)[which(names(mrd)=='sig100')]='sig'
+names(mru)[which(names(mru)=='stk20_16')]='stock_16'
+names(mru)[which(names(mru)=='chg20')]='change'
+names(mru)[which(names(mru)=='chgln20')]='chgln'
+names(mru)[which(names(mru)=='chgrt20')]='chgrt'
+names(mru)[which(names(mru)=='sig20')]='sig'
+mr2=rbind(mru,mrd)
+
+mr2=group_by(mr2,element,LU,depth) %>%
+  mutate(chglnmn = mean(chgln,na.rm=T))
+mr2=group_by(mr2,element) %>%
+  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
+
+mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='P']='-'
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='N']='*'
+
+mr2$depth=factor(mr2$depth,levels=c('0-20','0-100'))
+
+# ggplot version
+
+ggplot(data=mr2, aes(x=LUlongish, y=chgln,#y=chgln20,
+                              #fill=depth,colour=LUlongish))+
+                              fill=LUlongish,colour=depth))+
+                              #colour='grey30')) + 
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_boxplot(varwidth = T,show.legend = F,size=.8,
+               position=position_dodge(.8)) + 
+  #geom_point(aes(x=LUlongish,y=chglnmn,colour=LUlongish),
+  #           shape=15,size=2,show.legend = F)+
+  geom_point(aes(x=LUlongish,y=chglnmn,colour=depth),
+             shape=15,size=2,show.legend = F,
+             position=position_dodge(.8))+
+  scale_colour_manual(values=c('lightblue','steelblue'))+
+  scale_fill_manual(values=c('blue3','springgreen','darkgoldenrod1'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  #facet_wrap(depth~element,ncol=3,scales='free_y') +
+  labs(y='Log change in stock over 12 years, 0-20 cm', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        legend.position=c(0.8,0.1),
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank())+ 
+  #scale_fill_discrete(labels=c('20-100 cm','0-20 cm'),
+  #                    guide = guide_legend(reverse=TRUE,title=NULL))+
+  #geom_point(mapping = aes(y = hibar+1, shape = as.factor(sig)),show.legend=F)
+geom_text(mapping = aes(x=LUlongish, y=maxchgln*0.9*!is.na(sigveg),
+                        label = sigveg, colour=depth),
+          size=8,na.rm=T,show.legend=F,#colour='black',
+          position=position_dodge(.8))+
+geom_text(mapping = aes(x=LUlongish, y=(maxchgln)*!is.na(sigyr), 
+                        label = sigyr, colour=depth),
+          size=6,na.rm=T,show.legend=F,#colour='black',
+          position=position_dodge(.8))
+
+
+
+# old figure: lattice
 bwplot(chgln20~LUlongish|element,ylim=c(-1,1),las=1,
        data=mrstkchgslim[mrstkchgslim$stand %in% 
                            c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
