@@ -3,150 +3,6 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
-# Plots by year and depth in each stand
-trellis.par.set(strip.background = list(col = 'grey80'),
-                par.strip.text=list(cex=.8),
-                box.umbrella = list(col = 'black',lty=1),
-                box.rectangle = list(col= 'black',
-                                     fill='transparent'),
-                superpose.point=list(col='black'),
-                superpose.symbol=list(fill='black'),
-                plot.symbol   = list(cex = 1, col = 1, pch= 1) 
-)
-
-xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
-       data=datsmnok[datsmnok$element=='C' ,],
-       ylim=c(90,0),xlab='C (g / 100 g)',as.table=T,
-       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-xyplot(depth~mn*10|stand,groups=year,type='l',ylab='Depth (cm)',
-        data=datsmnok[datsmnok$element=='N' ,],
-        ylim=c(90,0),xlab='N (g / kg)',as.table=T,
-        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-# With separate correction for JP.E2, N increases at depth there as well
-# Don't use that
-
-xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
-       data=datsmnok[datsmnok$element=='Ca2' ,],
-       ylim=c(90,0),xlim=c(-.2,1.2),xlab='Ca (g / kg)',as.table=T,
-       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-xyplot(depth~I(mn)|stand,groups=year,type='l',ylab='Depth (cm)',
-       data=datsmnok[datsmnok$element=='Ca2' ,],
-       ylim=c(90,0),xlim=c(-80,500),xlab='Ca (mg / kg)',as.table=T,
-       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
-       data=datsmnok[datsmnok$element=='Ca2' &
-                       datsmnok$site %in% c('Eu','JP') &
-                       datsmnok$stand!='JP.N',],
-       ylim=c(90,0),xlab='Ca (g / kg)',as.table=T,
-       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
-        data=datsmnok[datsmnok$element=='Zr' ,],
-        ylim=c(90,0),xlab='Zr (g / kg)',as.table=T,
-        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
-         data=datsmnok[datsmnok$element=='Mg2' ,],
-         ylim=c(90,0),xlab='Mg (g / kg)',as.table=T,
-         par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-         auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-
-xyplot(depth~value*10|stand,groups=year,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='N' ,],
-       ylim=c(90,0),xlab='N (g / kg)',as.table=T,
-       par.settings = list(superpose.points = list(col = c(2,4))),
-       auto.key=list(space='top', columns=2,lines=F, points=T))
-xyplot(depth~value|stand,groups=year,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='K' & !is.element(dats$site,
-                                                 c('Bp','TM','Cr')),],
-       ylim=c(90,0),xlab='K (mg / kg)',as.table=T,
-       par.settings = list(superpose.points = list(col = c(2,4))),
-       auto.key=list(space='top', columns=2,lines=F, points=T))
-xyplot(depth~value/1000|stand,groups=rep,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='K' & is.element(dats$site,
-                                                 c('Bp','TM','Cr')) &
-                   dats$year=='16',],
-       ylim=c(90,0),xlab='K (g / kg) 2016',as.table=T,
-       par.settings = list(superpose.points = list(col = c(2,4))),
-       auto.key=list(space='top', columns=2,lines=F, points=T))
-# Huge spatial variation in K in the high-K sites
-# also very slightly depleted in top 10 cm?
-
-# Highlighting the scale of the spatial heterogeneity in Bps
-xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='K' & dats$site=='Bp',],
-       ylim=c(90,0),xlab='K (g / kg)',as.table=T)
-
-
-xyplot(depth~value|stand,groups=year,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='S' ,],
-       ylim=c(90,0),xlab='S (mg / kg)',as.table=T,
-       par.settings = list(superpose.points = list(col = c(2,4))),
-       auto.key=list(space='top', columns=2,lines=F, points=T))
-
-xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
-       data=datsmnok[datsmnok$element=='S' ,],
-       ylim=c(90,0),xlab='S (g / kg)',as.table=T,
-       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
-       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
-
-plot(P~S,data=widedats4) # no apparent relationship
-
-# Are trends in native veg N affected by EA N drift 
-#   on the day we tested 0-10 and 60-100 in a bunch of sites?
-plot(N~C,data=widedats,col=as.numeric(CNevalday=='Jun-14')+1)
-plot(N~C,data=widedats,col=site)
-plot(N~C,data=widedats,col=LU)
-
-# depth differences
-Cdeplme=lme(log(repval)~depth,data=dats4[dats4$element=='C'&dats4$LU!='A'&
-                                      dats4$site!='TM'&dats4$site!='Cr',],
-            random=~1|site/stand,na.action = na.omit)
-qqr(Cdeplme) # one is way off
-summary(Cdeplme) # decreases with depth
-Cdeeplme=lme(log(repval)~depth,
-             data=dats4[dats4$element=='C'&dats4$LU!='A'& dats4$site!='TM'&
-                          dats4$site!='Cr' & dats4$depth>15,],
-            random=~1|site/stand,na.action = na.omit)
-qqr(Cdeeplme)
-summary(Cdeeplme) # still decreases with depth; one value way off
-plot(Cdeeplme)
-Kdeeplme=lme(log(repval)~depth,
-             data=dats4[dats4$element=='K'&dats4$LU!='A'& dats4$site!='TM'&
-                          dats4$site!='Cr' & dats4$depth>15,],
-             random=~1|site/stand,na.action = na.omit)
-qqr(Kdeeplme) # horrible
-summary(Kdeeplme) # no change; not valid
-# doesn't work with random = ~ 1+depth|site/stand
-Ndeeplme=lme(log(repval)~depth,
-             data=dats4[dats4$element=='N'&dats4$LU!='A'& dats4$site!='TM'&
-                          dats4$site!='Cr' & dats4$depth>15,],
-             random=~1|site/stand,na.action = na.omit)
-qqr(Ndeeplme) # also quite bad; in summary, def. decreases with depth
-# same deal for P2 and Ca2 (but Ca residuals less bad)
-
-plot(Al~C,data=widedats4,col=site) # within a site, more C or N = less Al
-# Makes sense--OM displaces minerals
-# Not so much for Fe
-# Fe and Al tend to co-occur, esp at low values, but inverse to Si, ok
-summary(datsmnok$mn[datsmnok$element=='Fe'&datsmnok$depth==5])
-# 0.5 to 11% Fe; 0.5 to 12% at 60-100 cm
-datsmnok$stand[datsmnok$element=='Fe'&
-                 datsmnok$depth==5][which.min(datsmnok$mn[
-                   datsmnok$element=='Fe'&datsmnok$depth==5])]
-# JP.N, ok; max is Vg.E
-# Al: 7 to 24% at 0-10 cm, 10% to 27% at 60-100
-
-
 # Where did a given element change? T-tests by stand and depth, n=4 per year
 Ntt=gen_ttable(ttests[ttests$element=='N',]$depth,
            ttests[ttests$element=='N',]$stand,
@@ -212,10 +68,12 @@ t.test(test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='AF'&
        test2deps$stockratio[test2deps$LU=='E'&test2deps$biome=='Cer'&
                               test2deps$element=='C'])
 # p=.087
+# Depth distribution ratio
 bwplot(stockratio~biome|element,
        data=test2deps[test2deps$element %in% c('C','N','K',#'P2','Ca2',
                                                'Cu','Mg','Zn','Al','Zr'),])
 # Ca and P most superficial, especially in AF
+# Most elements have >20% in top 20 cm, but not Zr and Al, good
 
 # Bulk density
 bwplot(BD20~LU|biome,
@@ -235,10 +93,11 @@ plot(resid(BDLUaov)~dats2deps$LU[dats2deps$element=='C'&
 # of course pasture spread is smaller. Does this invalidate the test? 
 
 # Across all sites, does C accumulate over time?
-allC20.lme=lme(stock20~year,random=~1|site/stand,
+allC20.lme=lme(log(stock20)~year,random=~1|site/stand,
                data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
-summary(allC20.lme) # yes, increases (marginally, adding Eu)
+summary(allC20.lme) 
 # with latest data, not even marginally
+qqr(allC20.lme)
 plot(resid(allC20.lme)~dats2deps$stock20[dats2deps$element=='C' &
                                            !is.na(dats2deps$stock20)])
 # residuals still highest at highest C
@@ -269,28 +128,6 @@ plot(resid(allC20LU.lme)~dats2deps$LU[dats2deps$element=='C' &
 
 
 
-allC100LUsite.lme=lme(stock100~year*LU,random=~1|site,
-                      data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
-summary(allC100LUsite.lme) # p for increase =.06, year:pasture = .06 also
-qqnorm(resid(allC100LUsite.lme))
-qqline(resid(allC100LUsite.lme)) # probably ok
-plot(resid(allC100LUsite.lme)~dats2deps$year[dats2deps$element=='C' &
-                                               !is.na(dats2deps$stock100)]) 
-# prob ok
-plot(resid(allC100LUsite.lme)~dats2deps$LU[dats2deps$element=='C' &
-                                             !is.na(dats2deps$stock100)]) 
-
-allC100LUstd.lme=lme(stock100~year*LU,random=~1|stand,
-                     data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
-summary(allC100LUstd.lme) # that seems to have less power
-
-allC100LU.lme=lme(stock100~year*LU,random=~1|site/stand,
-                     data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
-summary(allC100LU.lme) 
-AIC(allC100LUsite.lme,allC100LUstd.lme,allC100LU.lme)
-# both = lowest, but almost identical to site alone
-# fix this to take out It.E1 and It.N
-
 #allN100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
 #                  data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
 allN100LU.lme=lme(log(stock100)~year*LU,random=~1|site/stand,
@@ -300,14 +137,6 @@ allN20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
                   data=dats2deps[dats2deps$element=='N',],na.action = na.omit)
 qqr(allN20LU.lme) #ok
 summary(allN20LU.lme)
-# 20 cm: increases only in natveg (signif intrxn);
-#   within site not stand, both natveg and interaction signif
-# no change with constant bulk density
-# 100 cm within site, only intrxn signif again
-# with Eu, now increase is significant and larger in N 
-# should these be proportional increases?
-#  now still signif increase, but decrease in P, no change in N,
-#   with or without It.E1 and N
 qqr(allN100LU.lme)# tails way off, even with log
 
 plot(resid(allN20LU.lme)~dats2deps$year[dats2deps$element=='N' &
@@ -461,9 +290,6 @@ legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
 
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Zn' & tstock$stock20_16<.1,])
 tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn incr
-
-
-# Ratios for analyzing change in different vegetation types
 
 
 # Repeat analysis with just eucs
@@ -636,17 +462,17 @@ oNb20bm.lme=lme(stock20~year*biome,random=~1|stand,
 
 
 
-eucC100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='C',],
+eucC100.lme=lme(log(stock100)~year,data=euc2deps2[euc2deps2$element=='C',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucC100.lme) # increases (but only with It.E1)
-# now also increases without It.E1 (p=.03)
+# now also increases without It.E1 (p=.03,.02 with log)
 qqnorm(resid(eucC100.lme))
 qqline(resid(eucC100.lme)) # upper tail still off (not bad without It.E1)
 plot(resid(eucC100.lme)~euc2deps2$year[euc2deps2$element=='C' &
                                            !is.na(euc2deps2$stock100)])
 # smaller IQR in 2016; just 40 obs/yr # ok without It.E1
 
-eucN100.lme=lme(stock100~year,data=euc2deps2[euc2deps2$element=='N',],
+eucN100.lme=lme(log(stock100)~year,data=euc2deps2[euc2deps2$element=='N',],
                 random=~1|site/stand,na.action=na.omit)
 summary(eucN100.lme) # increases quite a bit, p = 0.0041 # nope
 # With 2016 BD in both years and no It.E1, N increases (p=.0003. now .0004?)
@@ -1347,438 +1173,8 @@ allstks = group_by(nutstk,biome,LU,element) %>%
             chgrat100=mean(stk100_16/stk100_04),
             nstands=n())
 
-shorttstk$site=as.character(shorttstk$site)
-shorttstk=mutate(shorttstk,
-                 site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
-                  LU2=ifelse(LU=='E','E','O'))
-mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element!='Cl',]),
-                 stand,site,LU,site2,LU2,element,biome)%>%
-  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
-            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
-            chgrt100=(stock100_16-stock100_04)/stock100_04,
-            chgrt20=(stock20_16-stock20_04)/stock20_04,
-            chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04),
-            sig20=ifelse(pval20<0.05,2,1),
-            sig100=ifelse(pval100<0.05,2,1))
-mrstkchgs$element=factor(mrstkchgs$element,levels=
-                           c('C','N','K','P','S','Ca','Mg',
-                             'Al','Fe','Nb','Zr'))
-mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
-mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
-                                         ifelse(LU=='P','Pasture',
-                                                'Native vegetation')),
-                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
-                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'),
-                 LUlongish=ifelse(LU=='E','Euc',ifelse(LU=='P','Past','Nat')))
-mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
-                        levels=c('Eucalyptus','Native vegetation','Pasture'))
-mrstkchgs$LUlongish=factor(mrstkchgs$LUlongish,
-                        levels=c('Euc','Nat','Past'))
-mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
-                        levels=c('Eucalyptus','Other vegetation'))
-mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
-                           levels=c('Atlantic Forest','Cerrado'))
-
-mrstkE=mrstkchgs[mrstkchgs$LU=='E' & mrstkchgs$stand!='It.E1',]
-mrstkO=mrstkchgs[mrstkchgs$LU!='E' & mrstkchgs$stand!='It.N'&
-                   mrstkchgs$stand!='JP.N',]
-mrstkcomp=merge(mrstkE,mrstkO,by=c('biome','site2','element'),
-                suffixes = c('_E','_O'),all=F)
-mrstkE2=mrstkchgs[mrstkchgs$LU=='E',]
-mrstkO2=mrstkchgs[mrstkchgs$LU!='E',]
-mrstkcomp2=merge(mrstkE2,mrstkO2,by=c('biome','site2','element'),
-                suffixes = c('_E','_O'),all=F)
-
-t.test(mrstkcomp$chgln20_E[mrstkcomp$element=='C'],
-       mrstkcomp$chgln20_O[mrstkcomp$element=='C'],
-       paired=T) # p = .019, the log ratios are not the same
-t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='C'],
-       mrstkcomp2$chgln20_O[mrstkcomp2$element=='C'],
-       paired=T) # p = .235, the log ratios are the same
-hist(mrstkchgs$chgln20[mrstkchgs$element=='C']) 
-# There isn't a lot of data here
-# Probably best to focus on the pairs
-# but maybe do the lmes because that way you can see 
-#   increase or decrease for each vegetation type
-# or:
-t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='C'])
-t.test(mrstkcomp2$chgln20_O[mrstkcomp2$element=='C'])
-# no significant change between years in either
-
-t.test(mrstkcomp$chgln20_E[mrstkcomp$element=='P'],
-       mrstkcomp$chgln20_O[mrstkcomp$element=='P'],
-       paired=T) # no difference for N, P, K, yes for Ca
-t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='P'],
-       mrstkcomp2$chgln20_O[mrstkcomp2$element=='P'],
-       paired=T) # no: N, P, K yes: Ca
-hist(mrstkchgs$chgln20[mrstkchgs$element=='P']) 
-qqnorm(mrstkchgs$chgln20[mrstkchgs$element=='P']) 
-# ok for Ca, 2 weird K outliers, P still weird
-
-t.test(mrstkcomp2$chgln20_E[mrstkcomp2$element=='P']) 
-#p=.08 for N, .04 for Ca, no for K and P
-t.test(mrstkcomp2$chgln20_O[mrstkcomp2$element=='P'])
-# no change in N, Ca, K, P
-
-tapply(mrstkE$chgrt100,mrstkE$element,mean)            
-tapply(mrstkE$chgrt100,mrstkE$element,median)            
-tapply(mrstkE$chgrt100,mrstkE$element,sd) 
-
-tapply(mrstkO$chgrt100,mrstkO$element,mean)            
-tapply(mrstkO$chgrt100,mrstkO$element,median)            
-tapply(mrstkO$chgrt100,mrstkO$element,sd) 
-plot(chgrt100~LU,data=mrstkchgs[mrstkchgs$element=='C',])
-
-# Are there differences in stock between paired land uses?
-t.test(mrstkcomp2$stk20_16_E[mrstkcomp2$element=='C'],
-       mrstkcomp2$stk20_16_O[mrstkcomp2$element=='C'],
-       paired=T) # no (nor for K, Ca, P, N, Mg, Al, Fe)
-t.test(mrstkcomp2$stk20_16_E[mrstkcomp2$element=='Fe'],
-       mrstkcomp2$stk20_16_O[mrstkcomp2$element=='Fe'],
-       paired=T)
-# lmes will have more power by including all the reps within a site
-
-JA_C.lme=lme(log(repval)~LU,random=~1|site/stand/depth,
-             data=dats4[dats4$element=='C' &
-                          dats4$site!='TM'&dats4$site!='Cr'&
-                          dats4$LU!='A',],na.action=na.omit)
-qqr(JA_C.lme)
-summary(JA_C.lme) # no difference
-JA_C2.lme=lme(log(repval)~LU,random=~1|site/stand/depth,
-             data=dats4[dats4$element=='C' &
-                          dats4$site!='TM'&dats4$site!='Cr'&
-                          dats4$LU!='A',],na.action=na.omit)
-qqr(JA_C.lme)
-summary(JA_C.lme)
-
-L_to_pct=function(x){
-  (exp(x)-1)*100
-}
-pct_to_L=function(l){
-  log((l/100)+1)
-}
-panel.mean <- function(x, y, ...) {
-  tmp <- tapply(y, x, FUN = mean)#; print(tmp)
-  panel.points(y=tmp, x=seq_along(tmp), ...)
-}
 
 
-par(mar=c(4,5,1,4))
-plot(chgrt20~element, ylim=c(-1,1),las=1,
-     data=mrstkchgs[mrstkchgs$LU=='E',],
-     ylab='Log change in stock over 12 years, 0-20 cm')
-abline(h=0,lty=2)
-axis(side=4,at=pct_to_L(c(-50,-25,0,25,75,125)),
-     labels=paste(c('-50','-25','0','+25','+75','+125'),'%',sep=''),las=1)
-
-par(mar=c(4,5,1,4))
-plot(chgln100~element, ylim=c(-1,1),las=1,
-     data=mrstkchgs[mrstkchgs$LU=='E',],
-     ylab='Log change in stock over 12 years, 0-100 cm')
-abline(h=0,lty=2)
-axis(side=4,at=pct_to_L(c(-50,-25,0,25,75,125)),
-     labels=paste(c('-50','-25','0','+25','+75','+125'),'%',sep=''),las=1)
-points(seq(length(levels(mrstkchgs[mrstkchgs$LU=='E',]$element))),
-       tapply(mrstkchgs[mrstkchgs$LU=='E',]$chgrt100,
-              mrstkchgs[mrstkchgs$LU=='E',]$element,mean),pch=4)
-
-bwplot(chgln20~element|LU,ylim=c(-1,1),las=1,
-       data=mrstkchgs[mrstkchgs$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       varwidth=T,layout=c(1,3),as.table=T,col.line='black',
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       strip=strip.custom(
-         factor.levels=c('Eucalyptus (n = 6)',
-                         'Native vegetation (n = 4)',
-                         'Pasture (n = 2)')),
-       panel = function(x, y, ...){
-         panel.bwplot(x, y,col='black',...)
-         panel.abline(h=0,lty=3)
-         panel.mean(x,y, pch=4, cex=1.5, col='black')
-         # median almost exactly = mean
-       })
-bwplot(chgln20~element|biomelong+LUlong,ylim=c(-1,1),las=1,
-       data=mrstkchgs[mrstkchgs$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,layout=c(2,3),col.line='black',#varwidth=T,
-       box.ratio=0,
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         panel.axis(side=ifelse(panel.number()==3,'left','right'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
-                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
-         panel.abline(h=0,lty=3)
-         panel.abline(v=7.5,lty=1,col='gray50')
-         #panel.mean(x,y, pch=4, cex=1.5, col='black')
-         # median = mean if n=2, duh
-       })
-bwplot(chgln20~element|biomelong+LU2long,ylim=c(-1,1),las=1,
-       data=mrstkchgs[mrstkchgs$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         strip.custom(fg=c('orange','orchid'),style=2)
-         panel.axis(side=ifelse(panel.number()==3,'left','right'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
-                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
-         panel.abline(h=0,lty=3)
-         panel.abline(v=7.5,lty=1,col='gray50')
-         #panel.mean(x,y, pch=4, cex=1.5, col='black')
-         # median = mean if n=2, duh
-       })
-bwplot(chgln20~element|biomelong+LU2long,ylim=c(-1,1),las=1,
-       data=mrstkchgslim[mrstkchgslim$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         strip.custom(fg=c('orange','orchid'),style=2)
-         panel.axis(side=ifelse(panel.number()==3,'left','right'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
-                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
-         panel.abline(h=0,lty=3)
-         panel.abline(v=5.5,lty=1,col='gray50')
-         #panel.mean(x,y, pch=4, cex=1.5, col='black')
-         # median = mean if n=2, duh
-       })
-
-# to reflect simp.lme3 analysis as in text:
-bwplot(chgln20~element|LUlong,ylim=c(-1,1),las=1,
-       data=mrstkchgslim[mrstkchgslim$stand %in% 
-                           c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                             'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       layout=c(1,3),
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         strip.custom(fg=c('orange','orchid'),style=2)
-         panel.axis(side=ifelse(panel.number()==2,'left','right'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    # I want outside=T but it won't draw anything
-                    draw.labels=T,ticks=T)
-         panel.abline(h=0,lty=3)
-         panel.abline(v=5.5,lty=1,col='gray50')
-       })
-summary(mrstkchgslim$chgln20[mrstkchgslim$stand %in% 
-                       c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                         'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N') &
-                         mrstkchgslim$element=='Ca'&
-                         mrstkchgslim$LU=='E'])
-# median is 1.13
-L_to_pct(1.132) # + 210.2 %
-
-# Group by element instead
-
-mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
-                                                'Ca'),]
-#mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
- #                                               'Ca','Al','Nb'),]
-#mrmelt=melt.data.frame(mrstkchgslim,measure.vars=c("chgln20","chgln100"))
-# "Names do not match previous names", still
-mrd=mutate(mrstkchgslim,depth=rep('0-100'))
-mrd=mrd[,-which(names(mrd) %in% c('stk20_16', 'chg20', 'chgln20',
-                                  'chgrt20', 'sig20'))]
-mru=mutate(mrstkchgslim,depth=rep('0-20'))
-mru=mru[,-which(names(mru) %in% c('stk100_16', 'chg100', 'chgln100',
-                                  'chgrt100', 'sig100'))]
-names(mrd)[which(names(mrd)=='stk100_16')]='stock_16'
-names(mrd)[which(names(mrd)=='chg100')]='change'
-names(mrd)[which(names(mrd)=='chgln100')]='chgln'
-names(mrd)[which(names(mrd)=='chgrt100')]='chgrt'
-names(mrd)[which(names(mrd)=='sig100')]='sig'
-names(mru)[which(names(mru)=='stk20_16')]='stock_16'
-names(mru)[which(names(mru)=='chg20')]='change'
-names(mru)[which(names(mru)=='chgln20')]='chgln'
-names(mru)[which(names(mru)=='chgrt20')]='chgrt'
-names(mru)[which(names(mru)=='sig20')]='sig'
-mr2=rbind(mru,mrd)
-
-mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                         'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),]
-#mr2$chgln[mr2$biome=='Cer'&mr2$LU=='N'&mr2$depth=='0-100']=NA
-# remove cerrado natveg? this messes up the plot
-# only if varwidth=T: can't handle different numbers of obs 
-#   in paired boxes
-# remove pairs together?
-mr2$chgln[mr2$site2=='JP2'&mr2$depth=='0-100']=NA
-mr2$chgln[mr2$site2=='It'&mr2$depth=='0-100']=NA
-mr2=group_by(mr2,element,LU,depth) %>%
-  mutate(chglnmn = mean(chgln,na.rm=T),newnobs=n())
-mr2=group_by(mr2,element) %>%
-  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
-
-mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
-mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
-mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='P']='-'
-mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
-mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
-mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
-mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='N']='*'
-mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
-
-mr2$depth=factor(mr2$depth,levels=c('0-20','0-100'))
-
-# ggplot version
-
-ggplot(data=mr2, aes(x=LUlongish, y=chgln,width=newnobs,#y=chgln20,
-                              #fill=depth,colour=LUlongish))+
-                              fill=LUlongish,colour=depth))+
-                              #colour=LUlongish,shape=depth))+
-                              #colour='grey30')) + 
-  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
-  geom_boxplot(varwidth =T,size=.8,#show.legend = F,
-               position=position_dodge2(.8,preserve='single'),
-               outlier.shape = 1) +
-  #geom_pointrange(size=3,
-  #             position=position_dodge2(1,preserve='single')) +
-  #geom_point(aes(x=LUlongish,y=chglnmn,colour=LUlongish),
-  #           shape=15,size=2,show.legend = F)+
-  #geom_point(aes(x=LUlongish,y=chglnmn,
-  #               colour=depth),
-                 #shape=depth),
-  #           size=2,show.legend = F,shape=19,
-  #           position=position_dodge(.8))+
-  scale_colour_manual(values=c('lightblue','steelblue'),
-                      name='Depth (cm)')+
-  scale_fill_manual(values=c('blue3','springgreen','darkgoldenrod1'),
-                    name='Vegetation type',
-                    labels=c('Eucalyptus','Native vegetation',
-                             'Pasture'))+
-  facet_wrap(~element,ncol=3,scales='free_y') +
-  scale_y_continuous(sec.axis = 
-                       sec_axis(trans=~.,name='Percent change in stock',
-                      breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
-                      labels=paste(c('-75', '-25','+25','+75',
-                                     '+200', '+1000'),'%',sep='')))+
-  #facet_wrap(depth~element,ncol=3,scales='free_y') +
-  labs(y='Log change in stock over 12 years', x="") +
-  theme(strip.text.y = element_text(angle = 0),
-        strip.background = element_rect(fill='grey80',size=.7),
-        legend.position=c(0.9,0.2),
-        legend.spacing.y = unit(1.2,'lines'), 
-        panel.background = element_rect(fill='white'),
-        panel.grid.major = element_blank(),
-        legend.key=element_blank())+ 
-  #scale_fill_discrete(labels=c('20-100 cm','0-20 cm'),
-  #                    guide = guide_legend(reverse=TRUE,title=NULL))+
-  #geom_point(mapping = aes(y = hibar+1, shape = as.factor(sig)),show.legend=F)
-geom_text(mapping = aes(x=LUlongish, y=maxchgln*0.9*!is.na(sigveg),
-                        label = sigveg,colour=depth),
-          size=8,na.rm=T,show.legend=F,#colour='black',
-          position=position_dodge(.8))+
-geom_text(mapping = aes(x=LUlongish, y=(maxchgln)*!is.na(sigyr), 
-                        label = sigyr,colour=depth),
-          size=6,na.rm=T,show.legend=F,#colour='black',
-          position=position_dodge(.8))
-
-
-
-# old figure: lattice
-bwplot(chgln20~LUlongish|element,ylim=c(-1,1),las=1,
-       data=mrstkchgslim[mrstkchgslim$stand %in% 
-                           c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                             'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       layout=c(3,2),
-       
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         superpose.symbol=list(fill=c('blue3','springgreen','darkgoldenrod1'))
-         superpose.point=list(col=c('blue3','springgreen','darkgoldenrod1'))
-         panel.axis(side=ifelse(panel.number()==3,'right','left'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    # I want outside=T but it won't draw anything
-                    draw.labels=ifelse(panel.number()%in%c(3,4),T,F),
-                    ticks=ifelse(panel.number()%in%c(3,4),T,F))
-         panel.abline(h=0,lty=3)
-       })
-
-
-
-bwplot(chgln20~element|LU2long,ylim=c(-1,1),las=1,
-       data=mrstkchgs[mrstkchgs$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
-       as.table=T,col.line='black', box.ratio=0,layout=c(1,2),
-       ylab='Log change in stock over 12 years, 0-20 cm',
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         panel.axis(side=ifelse(panel.number()==3,'left','right'),
-                    at=pct_to_L(c(-50,-25,25,75,125)),
-                    labels=paste(c('-50','-25','+25','+75','+125'),
-                                 '%',sep=''),outside = F,half=F,
-                    draw.labels=ifelse(panel.number()%in%c(2,3,6),T,F),
-                    ticks=ifelse(panel.number()%in%c(2,3,6),T,F))
-         panel.abline(h=0,lty=3)
-         panel.abline(v=7.5,lty=1,col='gray50')
-         #panel.mean(x,y, pch=4, cex=1.5, col='black')
-         # median = mean if n=2, duh
-       })
-
-#scales=list(draw=ifelse(panel.number() %in% 
- #                         c(1,4,5),T,F)),
-bwplot(chgrt100~element|LU,ylim=c(-1,1),las=1,
-       data=mrstkchgs[mrstkchgs$stand %in% 
-                        c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                          'JP.E1','JP.P'),],
-       varwidth=T,layout=c(1,3),as.table=T,border=1,
-       ylab='Log change in stock in 12 years, 0-100 cm',
-       strip=strip.custom(
-         factor.levels=c('Eucalyptus (n = 4)',
-                         'Native vegetation (n = 2)',
-                         'Pasture (n = 2)')),
-       panel = function(x, y, ...){
-         panel.bwplot(x, y, ...)
-         panel.abline(h=0,lty=3)
-         panel.mean(x,y, pch=4, cex=1.5,col='black')
-         # median almost exactly = mean
-       })
-
-simpstkchgs=mrstkchgs[mrstkchgs$stand %in% simple20_2$stand,]
-simpstkchgs$site=as.character(simpstkchgs$site)
-simpstkchgs=mutate(simpstkchgs,site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
-                  LU2=ifelse(LU=='E','E','O'))
-Cyrrat.lme=lme(chgln20~LU2,random=~1|site2,
-               data=simpstkchgs[simpstkchgs$element=='C',])
-qqr(Cyrrat.lme)
-summary(Cyrrat.lme) # no signif effect
-# just reformat the data and do a paired t-test
-
-
-
-tapply(shorttstk$stock100_16[shorttstk$LU=='N'&
-                               shorttstk$site!='It'],
-       shortE$element[shorttstk$LU=='N'&
-                        shorttstk$site!='It'],
-       function(x){mean(x,na.rm=T)})
-# This isn't really helpful because there are unpaired eucs: site effect
-tapply(shorttstk$rat_16[shorttstk$site!='It'],
-       shorttstk$element[shorttstk$site!='It'],
-       function(x){mean(x,na.rm=T)})
 
 # Difference between euc and not
 vegrats=group_by(shorttstk, site, element) %>%
@@ -2314,109 +1710,19 @@ TukeyHSD(Cstk100blLUN04.aov) # AF N > Cer E, ok (p=.038)
 
 
 
-Csimp.lme=lme(stock20~year*LU2,random=~1|site,
-               data=simple20[simple20$element=='C',], na.action=na.omit)
-qqr(Csimp.lme) # wavery, but not so bad
-summary(Csimp.lme) # nothing is significant
-
-Csimp.lme2=lme(stock20~year*LU2,random=~1|site2,
-              data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
-qqr(Csimp.lme2) # tails off, mostly ok?
-summary(Csimp.lme2) # C increases between years if JP.E1 and E2 both included
-
-Nsimp.lme=lme(stock20~year*LU2,random=~1|site,
-              data=simple20[simple20$element=='N',], na.action=na.omit)
-qqr(Nsimp.lme) # nice
-summary(Nsimp.lme) # N initially higher in other, doesn't increase without JP.E1
-Nsimp.aov=aov(stock20~year*LU2,data=simple20[simple20$element=='N',])
-qqr(Nsimp.aov) # tails off
-summary(Nsimp.aov) # not correct I think
-Nsimp.lme2=lme(stock20~year*LU2,random=~1|site,
-              data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
-qqr(Nsimp.lme2) # nice
-summary(Nsimp.lme2) # same deal
-
-Ksimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
-              data=simple20[simple20$element=='K',], na.action=na.omit)
-qqr(Ksimp.lme) # some outliers
-summary(Ksimp.lme) # no significant terms; increase in euc when JP excluded
-
-xyplot(stock20~year|site,groups=LU2,data=simple20[simple20$element=='K',])
-# different trends for euc and non-euc veg, but not consistent among sites
-# For C, apparent increases in euc in most sites and other in It,
-#   but decreases in JP.N, Vg.N, BO.P, and Eu.N
-
-xyplot(stock20~year|site,groups=LU2,data=simple20[simple20$element=='N',],
-       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
-       ylab='N stock to 20 cm (Mg ha-1)',xlab='Sampling year')
-
-xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='C',],
-       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
-       ylab='C stock to 20 cm (Mg ha-1)',xlab='Sampling year')
-
-xyplot(stock20~year|site2,groups=LU2,data=simple20_2[simple20_2$element=='K',],
-       auto.key=list(space='top', columns=2,lines=FALSE, points=TRUE),
-       ylab='K stock to 20 cm (Mg ha-1)',xlab='Sampling year')
-
-
-Casimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
-              data=simple20[simple20$element=='Ca2',], na.action=na.omit)
-qqr(Casimp.lme) # good with log
-summary(Casimp.lme) # increase in euc, barely in other when JP.P included (p=.047)
-
-Psimp.lme=lme(stock20~year*LU2,random=~1|site,
-               data=simple20[simple20$element=='P2',], na.action=na.omit)
-qqr(Psimp.lme) # upper tail off
-summary(Psimp.lme) # no signif changes as you might expect
-
-Zrsimp.lme=lme(log(stock20)~year*LU2,random=~1|site,
-               data=simple20[simple20$element=='Zr',], na.action=na.omit)
-qqr(Zrsimp.lme) 
-summary(Zrsimp.lme) # starts lower in other, marginally increases there (p=.07)
-# increase significant when JP.P included (p=.045)
-
-Ksimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
-               data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
-
-
-Casimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
-               data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
-qqr(Casimp.lme2) # good with log
-summary(Casimp.lme2) # increase in euc but not in other (opposite sign)
-
-
-Psimp.lme2=lme(stock20~year*LU2,random=~1|site2,
-              data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
-qqr(Psimp.lme2) # upper tail off
-summary(Psimp.lme2) # no signif changes as you might expect
-
-Zrsimp.lme2=lme(log(stock20)~year*LU2,random=~1|site2,
-               data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
-qqr(Zrsimp.lme2) 
-summary(Zrsimp.lme2) # minor increase in other (p=.052)
-
 # is it appropriate to group pasture with native veg? 
+# Decided that it's not (use LU, not LU2)
 Casimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                 data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
 qqr(Casimp.lme3) # good with log
-summary(Casimp.lme3) # ca starts higher under P, increases as under E
+summary(Casimp.lme3) # Ca starts higher under P, increases as under E
 # starts same under N, does not increase
 # Probably better to keep the three types separate
-
-# But how to show which are different?
-Casimp.aov=aov(log(stock20)~year*LU,
+Casimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
-qqr(Casimp.aov)
-summary(Casimp.aov)
-TukeyHSD(Casimp.aov) # none of these are actually different
-# except N < P and 16 > 04 at p=.058
-# I don't want all the year/veg comparisons, just year within veg
-# Dunnett test?
-
-Csimp.aov=aov(stock20~year*LU,
-               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
-qqr(Csimp.aov) # tails way off, opposite direction from usual
-summary(Csimp.aov) # marginal LU effect
+qqr(Casimp.lme4) # actually better than lme3
+summary(Casimp.lme4) # same signifs as lme3
+anova(Casimp.lme3,Casimp.lme4) # yes, 4 better
 
 
 Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
@@ -2424,82 +1730,47 @@ Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
 qqr(Csimp.lme3) # tails off, mostly ok? Log pretty good, but 1 outlier each end
 summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
 # But decreases in pasture; no change in native?
-exp(0.161)
-exp(0.161-.191)
-library(sjPlot) # download failed
-# this makes nice plots of coefficients of models,
-#   but would probably not be good for visualizing many elements at once
-fakedat=data.frame(site2=rep(unique(simple20_2$site2),2,each=2),
-                   year=rep(c('04','16'),12),
-                   LU=c(rep('E',12),rep(c('P','N','N','P','N','N'),each=2)))
-fakefix=data.frame(year=rep(c('04','16'),3),LU=rep(c('E','P','N'),each=2))
-Csimp20fix=summary(Csimp.lme3)$tTable
-Csimp20preds=predict(Csimp.lme3,newdata=fakedat)
-fakedat$C20=predict(Csimp.lme3,newdata=fakedat)
-fakedatgr=group_by(fakedat,year,LU)%>%mutate(mnC20=mean(C20))
-distC20=distinct(fakedatgr,mnC20,.keep_all=T)
-distC20$mnC20
-distC20$LU
-
-
-plot(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
-     col=as.numeric(as.factor(year))*2,pch=16, xaxt='n',xlim=c(.5,3.5),
-     las=1,ylab='Predicted C stock to 20 cm',xlab='')
-axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
-text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
-#points(seq(1,3),rep(35,3), pch=c(3,NA,4),cex=c(1.5,1,1))
-legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'))
-
-simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
-
-boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C',],varwidth=T,
-        names=c('Eucalyptus','Native','Pasture'),las=1,
-        ylab='Carbon stock (Mg ha-1), 0-20 cm')
-#plot(stock20~as.numeric(as.factor(LU)),data=simple20_2[simple20_2$element=='C',],
-#     col=as.numeric(as.factor(year))*2, xaxt='n',xlim=c(.5,3.5),
-#     las=1,ylab='Predicted C stock to 20 cm',xlab='')
-#axis(side=1,at=seq(1,3),labels=c('Eucalyptus','Native','Pasture'))
-text(seq(1,3),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
-points(exp(mnC20)~as.numeric(as.factor(LU)),data=fakedatgr,
-     col=as.numeric(as.factor(year))*2,pch=18,cex=2)
-     
-#points(seq(1,3),rep(3.5,3), pch=c(3,NA,4),cex=c(1.5,1,1))
-legend('topright',pch=15,col=c(2,4),legend=c('2004','2016'),
-       title='Fixed effects predictions',bty='n')
-
-boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C' &
-                                     simple20_2$year=='04',],
-        varwidth=T,at=c(.6,2.6,4.6),xlim=c(.25,5.75),las=1,
-        ylab='Carbon stock (Mg ha-1), 0-20 cm',col='transparent',
-        border=2,boxwex=.5,xaxt='n')
-boxplot(stock20~LU,data=simple20_2[simple20_2$element=='C' &
-                                     simple20_2$year=='16',],
-        varwidth=T,at=c(1.3,3.3,5.3),xlim=c(0,6),las=1,col='transparent',
-        border=4,boxwex=.5,xaxt='n',add=T)
-axis(side=1,at=c(1,3,5),labels=c('Eucalyptus','Native','Pasture'))
-points(c(.6,2.6,4.6),exp(unique(fakedatgr$mnC20[fakedatgr$year=='04'])),
-       col=2,pch=18,cex=2)
-points(c(1.3,3.3,5.3),exp(unique(fakedatgr$mnC20[fakedatgr$year=='16'])),
-       col=4,pch=18,cex=2)
-legend('topright',pch=18,col=c(2,4),legend=c('2004','2016'),
-       title='Fixed effects predictions',bty='n')
-text(c(.95,2.95,4.95),rep(35,3), c('*','','#'),cex=c(1.5,1,1))
-
+Csimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
+qqr(Csimp.lme4) # tails off,esp lower
+summary(Csimp.lme4) # no effect of year on euc (p=.10) but sig neg intrxns
+#   between year and both native and pasture veg
+anova(Csimp.lme3,Csimp.lme4) # 4 has lower A/BIC
+# Yes, I think this makes more conceptual sense.
+# Wait, does that still have a random intercept? I think so.
 
 
 Nsimp.lme3=lme(stock20~year*LU,random=~1|site,
                data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
 qqr(Nsimp.lme3) # nice
 summary(Nsimp.lme3) # with all sites included, starts higher in N, no change
+Nsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+               data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
+qqr(Nsimp.lme4) # much less nice than lme3
+summary(Nsimp.lme4) # same signifs as lme3
+anova(Nsimp.lme3,Nsimp.lme4) # doesn't work: "first model has a different response"
+
 
 Ksimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
+qqr(Ksimp.lme3)
+summary(Ksimp.lme3)
 # no differences between types or years
+Ksimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+               data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
+qqr(Ksimp.lme4) # much less nice than lme3
+summary(Ksimp.lme4) # same signifs as lme3
+anova(Ksimp.lme3,Ksimp.lme4) # not different
 
 Psimp.lme3=lme(stock20~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
 qqr(Psimp.lme3) # both tails off
 summary(Psimp.lme3) # no signif changes as you might expect
+Psimp.lme4=lme(stock20~year*LU,random=~1+year|site2,
+               data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
+qqr(Psimp.lme4) # worse
+summary(Psimp.lme4) # no signif changes as you might expect
+anova(Psimp.lme3,Psimp.lme4) #favors 4
 
 Zrsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                 data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
@@ -2507,6 +1778,10 @@ qqr(Zrsimp.lme3)
 summary(Zrsimp.lme3) # minor increase in other (p=.052)
 # when separated by veg type, P starts with more Zr, N with less; 
 # increases in native
+Zrsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+                data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
+qqr(Zrsimp.lme4) 
+summary(Zrsimp.lme4) #same results
 
 Alsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                 data=simple20_2[simple20_2$element=='Al',], na.action=na.omit)
@@ -2515,7 +1790,7 @@ summary(Alsimp.lme3)
 # decreases overall, interaction terms marginal (p=.06 for P, .05 for N)
 #   but maybe doesn't change in those
 natAl20.lme=lme(log(stock20)~year,random=~1|stand,
-               data=nat2deps[nat2deps$element=='Al',],na.action = na.omit)
+                data=nat2deps[nat2deps$element=='Al',],na.action = na.omit)
 qqr(natAl20.lme) # tails pretty off, esp one really high value
 summary(natAl20.lme) # no significant change
 
@@ -2527,23 +1802,308 @@ summary(Nbsimp.lme3) # differs between veg types but not between years
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
-Ksimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
-              data=simp100[simp100$element=='K',], na.action=na.omit)
+Ksimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
+                 data=simp100[simp100$element=='K',], na.action=na.omit)
 qqr(Ksimp100.lme) # mostly ok
-summary(Ksimp100.lme) # excluding JP2 and It, 
-#   increase overall and both noneuc start higher than euc, but no intrxn 
-Nsimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
+summary(Ksimp100.lme) # with diff slopes, no change for euc, native decr
+
+Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='N',], na.action=na.omit)
+# iteration limit reached--??
 qqr(Nsimp100.lme) # ok
 summary(Nsimp100.lme)
-Csimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
-                  data=simp100[simp100$element=='C',], na.action=na.omit)
+
+Csimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
+                 data=simp100[simp100$element=='C',], na.action=na.omit)
 qqr(Csimp100.lme)
-summary(Csimp100.lme) # now increase in euc isn't signif, 
+summary(Csimp100.lme) 
+# with random ~1|site, increase in euc isn't signif, 
 #   but decreases in native and pasture are! 
-# Is that real?
+# with random ~1|year+site (more appropriate),
+#   only signif thing is decrease in pasture
 
 # don't do log transform for P (in which nothing changes)
+Casimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
+                 data=simp100[simp100$element=='Ca2',], na.action=na.omit)
+qqr(Casimp100.lme) # some way off
+summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes 
+
+
+shorttstk$site=as.character(shorttstk$site)
+shorttstk=mutate(shorttstk,
+                 site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                 LU2=ifelse(LU=='E','E','O'))
+mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element!='Cl',]),
+                   stand,site,LU,site2,LU2,element,biome)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04),
+            sig20=ifelse(pval20<0.05,2,1),
+            sig100=ifelse(pval100<0.05,2,1))
+mrstkchgs$element=factor(mrstkchgs$element,levels=
+                           c('C','N','K','P','S','Ca','Mg',
+                             'Al','Fe','Nb','Zr'))
+mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
+mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
+                                         ifelse(LU=='P','Pasture',
+                                                'Native vegetation')),
+                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
+                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'),
+                 LUlongish=ifelse(LU=='E','Euc',ifelse(LU=='P','Past','Nat')))
+mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
+                        levels=c('Eucalyptus','Native vegetation','Pasture'))
+mrstkchgs$LUlongish=factor(mrstkchgs$LUlongish,
+                           levels=c('Euc','Nat','Past'))
+mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
+                         levels=c('Eucalyptus','Other vegetation'))
+mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
+                           levels=c('Atlantic Forest','Cerrado'))
+# in longer script, tried paired t-tests between euc and noneuc
+#   comparing (log) changes in stocks, n=6 sites
+# Decided to use lmes instead
+
+
+L_to_pct=function(x){
+  (exp(x)-1)*100
+}
+pct_to_L=function(l){
+  log((l/100)+1)
+}
+panel.mean <- function(x, y, ...) {
+  tmp <- tapply(y, x, FUN = mean)#; print(tmp)
+  panel.points(y=tmp, x=seq_along(tmp), ...)
+}
+
+
+
+# to reflect simp.lme3 analysis as in text:
+
+# Set up data frame of change by stand, for visualization of 
+#   simp.lme3 analyses (i.e. change in stock)
+# Is this misleading? Didn't actually analyze change in stock
+#   as a response variable
+mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+                                                'Ca'),]
+#mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+#                                               'Ca','Al','Nb'),]
+#mrmelt=melt.data.frame(mrstkchgslim,measure.vars=c("chgln20","chgln100"))
+# "Names do not match previous names", still
+mrd=mutate(mrstkchgslim,depth=rep('0-100'))
+mrd=mrd[,-which(names(mrd) %in% c('stk20_16', 'chg20', 'chgln20',
+                                  'chgrt20', 'sig20'))]
+mru=mutate(mrstkchgslim,depth=rep('0-20'))
+mru=mru[,-which(names(mru) %in% c('stk100_16', 'chg100', 'chgln100',
+                                  'chgrt100', 'sig100'))]
+names(mrd)[which(names(mrd)=='stk100_16')]='stock_16'
+names(mrd)[which(names(mrd)=='chg100')]='change'
+names(mrd)[which(names(mrd)=='chgln100')]='chgln'
+names(mrd)[which(names(mrd)=='chgrt100')]='chgrt'
+names(mrd)[which(names(mrd)=='sig100')]='sig'
+names(mru)[which(names(mru)=='stk20_16')]='stock_16'
+names(mru)[which(names(mru)=='chg20')]='change'
+names(mru)[which(names(mru)=='chgln20')]='chgln'
+names(mru)[which(names(mru)=='chgrt20')]='chgrt'
+names(mru)[which(names(mru)=='sig20')]='sig'
+mr2=rbind(mru,mrd)
+
+mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                         'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),]
+#mr2$chgln[mr2$biome=='Cer'&mr2$LU=='N'&mr2$depth=='0-100']=NA
+# remove cerrado natveg? this messes up the plot
+# only if varwidth=T: can't handle different numbers of obs 
+#   in paired boxes
+# remove pairs together?
+mr2$chgln[mr2$site2=='JP2'&mr2$depth=='0-100']=NA
+mr2$chgln[mr2$site2=='It'&mr2$depth=='0-100']=NA
+mr2=group_by(mr2,element,LU,depth) %>%
+  mutate(chglnmn = mean(chgln,na.rm=T),newnobs=n())
+mr2=group_by(mr2,element) %>%
+  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
+
+mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
+# Not with different slopes for different groups
+# Also, lme doesn't say if changes significant within N and P
+# Just focus on if euc changed and if N and P are diff from euc
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='P']='-'
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU!='E']='*'
+#mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='N' & mr2$LU=='E']='+'
+mr2$sigveg[mr2$depth=='0-100'& mr2$element=='K' & mr2$LU=='N']='*'
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='E']='+'
+#mr2$sigveg[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='N']='*' nope
+mr2$sigveg[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU=='P']='*'
+
+mr2$depth=factor(mr2$depth,levels=c('0-20','0-100'))
+
+# ggplot version
+
+ggplot(data=mr2, aes(x=LUlongish, y=chgln,width=newnobs,#y=chgln20,
+                     #fill=depth,colour=LUlongish))+
+                     fill=LUlongish,colour=depth))+
+  #colour=LUlongish,shape=depth))+
+  #colour='grey30')) + 
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_boxplot(varwidth =T,size=.8,#show.legend = F,
+               position=position_dodge2(.8,preserve='single'),
+               outlier.shape = 1) +
+  #geom_pointrange(size=3,
+  #             position=position_dodge2(1,preserve='single')) +
+  #geom_point(aes(x=LUlongish,y=chglnmn,colour=LUlongish),
+  #           shape=15,size=2,show.legend = F)+
+  #geom_point(aes(x=LUlongish,y=chglnmn,
+  #               colour=depth),
+  #shape=depth),
+  #           size=2,show.legend = F,shape=19,
+  #           position=position_dodge(.8))+
+  scale_colour_manual(values=c('lightblue','steelblue'),
+                      name='Depth (cm)')+
+  scale_fill_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                    name='Vegetation type',
+                    labels=c('Eucalyptus','Native vegetation',
+                             'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Percent change in stock',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  #facet_wrap(depth~element,ncol=3,scales='free_y') +
+  labs(y='Log change in stock over 12 years', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())+ 
+  #scale_fill_discrete(labels=c('20-100 cm','0-20 cm'),
+  #                    guide = guide_legend(reverse=TRUE,title=NULL))+
+  #geom_point(mapping = aes(y = hibar+1, shape = as.factor(sig)),show.legend=F)
+  geom_text(mapping = aes(x=LUlongish, y=maxchgln*0.9*!is.na(sigveg),
+                          label = sigveg,colour=depth),
+            size=8,na.rm=T,show.legend=F,#colour='black',
+            position=position_dodge(.8))+
+  geom_text(mapping = aes(x=LUlongish, y=(maxchgln)*!is.na(sigyr), 
+                          label = sigyr,colour=depth),
+            size=6,na.rm=T,show.legend=F,#colour='black',
+            position=position_dodge(.8))
+
+# old figure: lattice
+bwplot(chgln20~LUlongish|element,ylim=c(-1,1),las=1,
+       data=mrstkchgslim[mrstkchgslim$stand %in% 
+                           c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                             'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),],
+       as.table=T,col.line='black',box.ratio=0,#varwidth=T,
+       ylab='Log change in stock over 12 years, 0-20 cm',
+       layout=c(3,2),
+       
+       panel = function(x, y, ...){
+         panel.bwplot(x, y, ...)
+         superpose.symbol=list(fill=c('blue3','springgreen','darkgoldenrod1'))
+         superpose.point=list(col=c('blue3','springgreen','darkgoldenrod1'))
+         panel.axis(side=ifelse(panel.number()==3,'right','left'),
+                    at=pct_to_L(c(-50,-25,25,75,125)),
+                    labels=paste(c('-50','-25','+25','+75','+125'),
+                                 '%',sep=''),outside = F,half=F,
+                    # I want outside=T but it won't draw anything
+                    draw.labels=ifelse(panel.number()%in%c(3,4),T,F),
+                    ticks=ifelse(panel.number()%in%c(3,4),T,F))
+         panel.abline(h=0,lty=3)
+       })
+
+
+
+
+
+simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
+simple20_2lim=simple20_2[simple20_2$element %in% c('C','N','K','P','Ca'),]
+
+ggplot(data=simple20_2lim, aes(x=LU, y=stock20,
+                     fill=LU,colour=year))+
+  geom_boxplot(varwidth =T,size=.8,#show.legend = F,
+               position=position_dodge2(.8,preserve='single'),
+               outlier.shape = 1) +
+  scale_colour_manual(values=c('red','blue'),
+                      name='Year',labels=c('2004','2016'))+
+  scale_fill_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                    name='Vegetation type',
+                    labels=c('Eucalyptus','Native vegetation',
+                             'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  labs(y='Stock, 0-20 cm, Mg/ha', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())
+
+simple20_2lim=simple20_2[simple20_2$element %in% c('C','N','K','P','Ca'),]
+# Make a new column to show which euc stands are paired with native vs pasture
+simple20_2lim=mutate(simple20_2lim,LU3=as.character(LU))
+simple20_2lim$LU3[simple20_2lim$stand=='JP.E1']='EP'
+simple20_2lim$LU3[simple20_2lim$LU3=='E']='EN'
+simple20_2lim$LU3=factor(simple20_2lim$LU3,levels=c('EN','N','EP','P'))
+
+ggplot(data=simple20_2lim, aes(x=LU3, y=stock20,
+                               fill=LU,colour=year))+
+  geom_boxplot(varwidth =T,size=.8,#show.legend = F,
+               position=position_dodge2(.8,preserve='single'),
+               outlier.shape = 1) +
+  scale_colour_manual(values=c('red','blue'),
+                      name='Year',labels=c('2004','2016'))+
+  scale_fill_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                    name='Vegetation type',
+                    labels=c('Eucalyptus','Native vegetation',
+                             'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  labs(y='Stock, 0-20 cm, Mg/ha', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())
+
+# Simpler version with less data?
+simple20_2limd=group_by(simple20_2lim,element,year,LU3) %>%
+  mutate(mn20=mean(stock20,na.rm=T),nobs=n(),
+         se20=sd(stock20,na.rm=T)/sqrt(nobs),
+         min20=min(stock20,na.rm=T),
+         max20=max(stock20,na.rm=T))
+simple20_2limd=distinct(simple20_2limd,element,year,LU,LU3,.keep_all=T)
+
+ggplot(data=simple20_2limd, aes(x=LU3, y=mn20,colour=LU,shape=year))+
+  #geom_pointrange(aes(ymin=min20,ymax=max20),size=.8,#show.legend = F
+  geom_vline(xintercept=7.5)+
+  geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
+                                  position=position_dodge2(.8,preserve='single')) +
+  scale_shape_manual(values=c(17,15),
+                      name='Year',labels=c('2004','2016'))+
+  scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                    name='Vegetation type',
+                    labels=c('Eucalyptus','Native vegetation',
+                             'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  labs(y='Stock, 0-20 cm, Mg/ha', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())
+
+
 
 
 Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
