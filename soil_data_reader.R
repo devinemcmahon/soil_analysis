@@ -577,7 +577,8 @@ yrdiffstockplot20_bmLU=function(sub_ttests){
 }
 
 yrdiffstockplot20_bmLUall=function(sub_ttests,label=T,fulllegend=F){
-  par(mar=c(5,5,2,2))
+  #par(mar=c(5,5,2,2))
+  par(mar=c(4,4,.5,.5))
   palette(c('darkgoldenrod1','blue3','springgreen'))
   sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
   sub_ttests$biome=factor(sub_ttests$biome,levels=c('Cer','AF'))

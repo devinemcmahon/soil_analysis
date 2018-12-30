@@ -276,16 +276,28 @@ shortbmstk=droplevels(bmstock[bmstock$element %in%
                                 'Cl','Nb','Zr'),])
 yrdiffstockplot20_bmLU(bmstock[bmstock$element=='N',])
 # no that's no good. standard errors huge.
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = T)
 yrdiffstockplot100_bmLUall(tstock[tstock$element=='C',],fulllegend = T)
 
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2',],label=F,fulllegend = T)
-legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
-legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+par(mfrow=c(2,3))
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = F)
+legend('bottomright',bty='n',legend='a',cex=1.5)
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='N',],fulllegend = T)
+legend('bottomright',bty='n',legend='b',cex=1.5)
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='K' &
+                                   tstock$site!='Bp',],fulllegend = F)
+legend('bottomright',bty='n',legend='c',cex=1.5)
 
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='P2',],label=F,fulllegend = F)
 legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='d',cex=1.5)
+
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2',],label=F,fulllegend = F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='e',cex=1.5)
+
+yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='f',cex=1.5)
 
 
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='Zn' & tstock$stock20_16<.1,])
@@ -362,6 +374,11 @@ qqr(eucAl20bm.lme) # not very good; removing log worse
 summary(eucAl20bm.lme) # decreases (p=0.030), no biome effect
 # Note that there is more Al in top 20 cm under eucalyptus than native veg
 #   and most in pasture
+
+eucCN20bm.lme=lme(conc20~year*biome,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='CN',],na.action = na.omit)
+summary(eucCN20bm.lme) # decreases in AF, increases in Cer
+qqr(eucCN20bm.lme) # tails a bit off
 
 
 
@@ -1824,6 +1841,10 @@ Nbsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
 qqr(Nbsimp.lme3) 
 summary(Nbsimp.lme3) # differs between veg types but not between years
 
+CNsimp.lme=lme(log(conc20)~year*LU,random=~1|site2,
+  data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)
+summary(CNsimp.lme)
+qqr(CNsimp.lme) # decreases in N and P, no change in E
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
