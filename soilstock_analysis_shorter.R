@@ -298,27 +298,52 @@ tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn in
 #test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
 #euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
 
+# Added a random slope (year) to these models, 12-29-18
+# Does that make sense? I do want to know the overall effect of year
+#   which is just an offset, not a slope
+# Leave it how it was?
+# But allow different slopes for the different LU pairs, below?
+# That doesn't seem right--the two analyses should be the same
 eucC20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                     data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
 summary(eucC20bm.lme) # increase in Cerrado only (also if using euc2deps2)
 qqr(eucC20bm.lme) # again, log tranform helps a bit, increases significance
+eucC20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
+summary(eucC20bm.lme2) # increase in Cerrado now barely signif (p=.046)
+qqr(eucC20bm.lme2) # slightly better?
+anova(eucC20bm.lme,eucC20bm.lme2) # not different
 
+# N: doesn't converge with a random slope
 eucN20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
-                 data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
+                 data=euc2deps[euc2deps$element=='N',],na.action = na.omit,
+                 control = lmeControl(opt='optim'))
 summary(eucN20bm.lme) # no change
 qqr(eucN20bm.lme) # mostly ok
 
-eucP20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+eucN20bm.lme2=lme(stock20~year*biome,random=~1+year|site/stand,
+                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit,
+                  control = lmeControl(opt='optim'))
+summary(eucN20bm.lme2) # no change
+qqr(eucN20bm.lme2) # tails off
+anova(eucN20bm.lme,eucN20bm.lme2)
+# 2 has lower AIC but higher BIC; differ at p=.02
+
+eucP20bm.lme=lme(stock20~year*biome,random=~1+year|site/stand,
                  data=euc2deps[euc2deps$element=='P2'&
                                  euc2deps$site!='Eu',],na.action = na.omit)
 qqr(eucP20bm.lme) # tails off without Eu, but much less bad
 summary(eucP20bm.lme) # when excluding Eu, increase (p=.01) due to Vg;
 # p=.08 for opposite sign year-Cerrado interaction
 
-eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
-                 data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
+eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=euc2deps[euc2deps$element=='Ca2',],
+                 na.action = na.omit,control = lmeControl(opt='optim'))
 qqr(eucCa20bm.lme)
 summary(eucCa20bm.lme) # maybe increase in AF (p=.07), increase in Cer (.0005)
+# with a random slope, no signif effects
+# but that seems wrong, clearly a lot of Ca was added in the Cerrado
+# go with just a random intercept?
 
 eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='K'&
