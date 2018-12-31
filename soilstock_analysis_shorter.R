@@ -379,21 +379,43 @@ eucCN20bm.lme=lme(conc20~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='CN',],na.action = na.omit)
 summary(eucCN20bm.lme) # decreases in AF, increases in Cer
 qqr(eucCN20bm.lme) # tails a bit off
+eucCN100bm.lme=lme(conc100~year*biome,random=~1|site/stand,
+                  data=euc2deps2[euc2deps2$element=='CN',],na.action = na.omit)
+summary(eucCN100bm.lme) # decreases in AF, increases in Cer
+qqr(eucCN100bm.lme) 
+
+bwplot(conc20~year|biome,data=euc2deps[euc2deps$element=='CN',],
+       varwidth=T,las=1)
 
 
+# is there increased C associated with liming?
+Cchg=tstock[tstock$element=='C',]%>%mutate(chgrt20=stock20_16/stock20_04,
+                       chg20=stock20_16-stock20_04)
+Cachg=tstock[tstock$element=='Ca2',]%>%mutate(chgrt20=stock20_16/stock20_04,
+                                             chg20=stock20_16-stock20_04)
+plot(Cachg$chg20,Cchg$chg20)
+abline(h=0)
+abline(v=0)
+text(Cachg$chg20,Cchg$chg20,Cachg$stand)
+# C increases in JPs, but magnitude is way bigger than for Ca
+# probably not important
 
-boxplot(stock20~LU,data=droplevels(dats2deps[dats2deps$element=='Al',]),
-        varwidth=T,las=1,xlab='Vegetation',ylab='Al stock, 0-20 cm (Mg ha-1)')
-bwplot(stock20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
-        varwidth=T,las=1,xlab='Vegetation',ylab='Al stock, 0-20 cm (Mg ha-1)')
-bwplot(conc20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
-       varwidth=T,las=1,xlab='Vegetation',ylab='Al concentration, 0-20 cm (%)')
-# Much more variable and overlapping
-# Greater density increases stocks in pasture
-bwplot(BD20~LU|year,data=droplevels(dats2deps[dats2deps$element=='Al',]),
-       varwidth=T,las=1,xlab='Vegetation',ylab='Bulk density, g cm-3')
+xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
+          data=datsmnok[datsmnok$element=='CN' ,],
+          ylim=c(90,0),xlab='C:N ratio',as.table=T,
+          par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+          auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
+            data=datsmnok[datsmnok$element=='C' ,],
+            ylim=c(90,0),xlab='C (%)',as.table=T,
+            par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+            auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+xyplot(depth~mn*10|stand,groups=year,type='l',ylab='Depth (cm)',
+            data=datsmnok[datsmnok$element=='N' ,],
+            ylim=c(90,0),xlab='N (g/kg)',as.table=T,
+            par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+            auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 
-#AlLUaov=aov(stock20~LU,data=simple20) # see this later in script
 
 eucZr20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Zr',],na.action = na.omit)
@@ -842,6 +864,59 @@ summary(Celt.lme) # L significantly less than E
 xyplot(value~as.numeric(elt)|stand,groups=rep,
        data=dats[dats$depth==5&dats$element=='C'& dats$year=='16' &
                    dats$elt %in% c('E','L','T'),],pch=19)
+eltdats=dats[dats$elt %in% c('E','L','T') & dats$LU=='E'&dats$year=='16',]
+eltdats=mutate(eltdats,eltlong=ifelse(elt=='E','Inter-',
+                                      ifelse(elt=='L','Current','Previous')))
+eltdats$eltlong=factor(eltdats$eltlong,levels=c('Current','Previous',
+                                                'Inter-'))
+eltdats=group_by(eltdats,stand,depth,element,rep,elt)%>%
+  mutate(eltmn=mean(value,na.rm=T))
+
+ggplot(data=eltdats[eltdats$element=='P2'&
+                      eltdats$stand %in% c('Bp.E1','Eu.E2','It.E1','JP.E2')&
+                      eltdats$depth==5,],
+       aes(x=eltlong,y=eltmn/1000, color=as.factor(rep)))+
+  geom_point(shape=18,size=3,show.legend=F)+
+  geom_line(aes(group=as.factor(rep)),show.legend = F)+
+  facet_wrap(~stand,ncol=2,scales='free_y')+
+  theme(panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank())+
+  labs(y='Soil P content (g/kg), 0-10 cm',x='Row position')+
+  scale_color_brewer(palette='Dark2')
+
+eltdats=ungroup(eltdats)
+eltdats=group_by(eltdats,stand,depth,element,rep)%>%
+  mutate(repmn=mean(value,na.rm=T),repvar=var(value,na.rm=T),
+         repcv=sqrt(repvar)/repmn)
+eltdats=ungroup(eltdats)
+eltdats=group_by(eltdats,stand,depth,element,elt)%>%
+  mutate(posmn=mean(value,na.rm=T),posvar=var(value,na.rm=T),
+         poscv=sqrt(posvar)/posmn)
+eltdats=ungroup(eltdats)
+eltdis=distinct(eltdats,stand,depth,element,.keep_all = T)
+plot(poscv~repcv,data=eltdis[eltdis$element=='C'&eltdis$depth==5,])
+abline(0,1)
+plot(posvar~repvar,data=eltdis[eltdis$element=='C'&eltdis$depth==5,])
+plot(poscv~repcv,data=eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                               eltdis$depth==5,],col=element,pch=16)
+eltsum=group_by(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                         eltdis$depth==5,],element) %>%
+  summarise(#mnposvar=mean(posvar,na.rm=T),mnrepvar=mean(repvar,na.rm=T),
+            #nstands=n(), #n=8
+            mnposcv=mean(poscv,na.rm=T),mnrepcv=mean(repcv,na.rm=T))
+eltsum
+#write.csv(eltsum,'eltrepcvs.csv')
+t.test(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                eltdis$depth==5,]$poscv,
+       eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                eltdis$depth==5,]$repcv)
+# anova probably more appropriate--did I do that already?
+# No, because there should not be a consistent effect of rep across sites
+# It would have to be n=16 within sites, ok
+t.test(eltdis[eltdis$element =='C' & eltdis$depth==5,]$posvar,
+       eltdis[eltdis$element =='C' & eltdis$depth==5,]$repvar)
+# cv or var not significantly diff between rep and position for any element
+
 Celtbm.lme=lme(log(value)~elt*biome, random=~1|stand,
              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
                          dats$element =='C',],na.action=na.omit)
