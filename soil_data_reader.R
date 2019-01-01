@@ -640,3 +640,159 @@ yrdiffstockplot100_bmLUall=function(sub_ttests,label=T,fulllegend=F){
   palette('default')
   par(mar=c(4,4,2,2))
 }
+
+
+simple20=droplevels(dats2deps[dats2deps$stand %in% 
+                                c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                                  'JP.E2','JP.N','It.E1','It.N'),])
+simple20=mutate(simple20,LU2=ifelse(LU=='E','E','O'))
+# for this analysis, O = "other"
+
+simple20_2=dats2deps
+simple20_2$site=as.character(simple20_2$site)
+simple20_2=mutate(simple20_2,site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                  LU2=ifelse(LU=='E','E','O'))
+simple20_2=droplevels(simple20_2[simple20_2$stand %in% 
+                                   c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                                     'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),])
+simple20_2=mutate(simple20_2,LUlong=ifelse(LU=='E','Eucalyptus',
+                                           ifelse(LU=='P','Pasture',
+                                                  'Native vegetation')),
+                  biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
+                  LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'))
+simple20_2$LUlong=factor(simple20_2$LUlong,
+                         levels=c('Eucalyptus','Native vegetation','Pasture'))
+simple20_2$LU2long=factor(simple20_2$LU2long,
+                          levels=c('Eucalyptus','Other vegetation'))
+simple20_2$biomelong=factor(simple20_2$biomelong,
+                            levels=c('Atlantic Forest','Cerrado'))
+
+simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
+shorttstk$site=as.character(shorttstk$site)
+shorttstk=mutate(shorttstk,
+                 site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
+                 LU2=ifelse(LU=='E','E','O'))
+mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element!='Cl',]),
+                   stand,site,LU,site2,LU2,element,biome)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04),
+            sig20=ifelse(pval20<0.05,2,1),
+            sig100=ifelse(pval100<0.05,2,1))
+mrstkchgs$element=factor(mrstkchgs$element,levels=
+                           c('C','N','K','P','S','Ca','Mg',
+                             'Al','Fe','Nb','Zr'))
+mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
+mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
+                                         ifelse(LU=='P','Pasture',
+                                                'Native vegetation')),
+                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
+                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'),
+                 LUlongish=ifelse(LU=='E','Euc',ifelse(LU=='P','Past','Nat')))
+mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
+                        levels=c('Eucalyptus','Native vegetation','Pasture'))
+mrstkchgs$LUlongish=factor(mrstkchgs$LUlongish,
+                           levels=c('Euc','Nat','Past'))
+mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
+                         levels=c('Eucalyptus','Other vegetation'))
+mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
+                           levels=c('Atlantic Forest','Cerrado'))
+# in longer script, tried paired t-tests between euc and noneuc
+#   comparing (log) changes in stocks, n=6 sites
+# Decided to use lmes instead
+
+
+L_to_pct=function(x){
+  (exp(x)-1)*100
+}
+pct_to_L=function(l){
+  log((l/100)+1)
+}
+panel.mean <- function(x, y, ...) {
+  tmp <- tapply(y, x, FUN = mean)#; print(tmp)
+  panel.points(y=tmp, x=seq_along(tmp), ...)
+}
+# to reflect simp.lme3 analysis as in text:
+
+# Set up data frame of change by stand, for visualization of 
+#   simp.lme3 analyses (i.e. change in stock)
+# Is this misleading? Didn't actually analyze change in stock
+#   as a response variable
+mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+                                                'Ca'),]
+#mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
+#                                               'Ca','Al','Nb'),]
+#mrmelt=melt.data.frame(mrstkchgslim,measure.vars=c("chgln20","chgln100"))
+# "Names do not match previous names", still
+mrd=mutate(mrstkchgslim,depth=rep('0-100'))
+mrd=mrd[,-which(names(mrd) %in% c('stk20_16', 'chg20', 'chgln20',
+                                  'chgrt20', 'sig20'))]
+mru=mutate(mrstkchgslim,depth=rep('0-20'))
+mru=mru[,-which(names(mru) %in% c('stk100_16', 'chg100', 'chgln100',
+                                  'chgrt100', 'sig100'))]
+names(mrd)[which(names(mrd)=='stk100_16')]='stock_16'
+names(mrd)[which(names(mrd)=='chg100')]='change'
+names(mrd)[which(names(mrd)=='chgln100')]='chgln'
+names(mrd)[which(names(mrd)=='chgrt100')]='chgrt'
+names(mrd)[which(names(mrd)=='sig100')]='sig'
+names(mru)[which(names(mru)=='stk20_16')]='stock_16'
+names(mru)[which(names(mru)=='chg20')]='change'
+names(mru)[which(names(mru)=='chgln20')]='chgln'
+names(mru)[which(names(mru)=='chgrt20')]='chgrt'
+names(mru)[which(names(mru)=='sig20')]='sig'
+mr2=rbind(mru,mrd)
+
+mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
+                         'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),]
+#mr2$chgln[mr2$biome=='Cer'&mr2$LU=='N'&mr2$depth=='0-100']=NA
+# remove cerrado natveg? this messes up the plot
+# only if varwidth=T: can't handle different numbers of obs 
+#   in paired boxes
+# remove pairs together?
+mr2$chgln[mr2$site2=='JP2'&mr2$depth=='0-100']=NA
+mr2$chgln[mr2$site2=='It'&mr2$depth=='0-100']=NA
+mr2=group_by(mr2,element,LU,depth) %>%
+  mutate(chglnmn = mean(chgln,na.rm=T),newnobs=n())
+mr2=group_by(mr2,element) %>%
+  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
+
+mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
+# Not with different slopes for different groups
+# Also, lme doesn't say if changes significant within N and P
+# Just focus on if euc changed and if N and P are diff from euc
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='P']='-'
+mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
+#mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
+mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU!='E']='*'
+#mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='N' & mr2$LU=='E']='+'
+mr2$sigveg[mr2$depth=='0-100'& mr2$element=='K' & mr2$LU=='N']='*'
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='E']='+'
+#mr2$sigveg[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='N']='*' nope
+mr2$sigveg[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU=='P']='*'
+
+mr2$depth=factor(mr2$depth,levels=c('0-20','0-100'))
+
+simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
+simple20_2lim=simple20_2[simple20_2$element %in% c('C','N','K','P','Ca'),]
+
+
+simple20_2lim=simple20_2[simple20_2$element %in% c('C','N','K','P','Ca'),]
+# Make a new column to show which euc stands are paired with native vs pasture
+simple20_2lim=mutate(simple20_2lim,LU3=as.character(LU))
+simple20_2lim$LU3[simple20_2lim$stand=='JP.E1']='EP'
+simple20_2lim$LU3[simple20_2lim$LU3=='E']='EN'
+simple20_2lim$LU3=factor(simple20_2lim$LU3,levels=c('EN','N','EP','P'))
+
+# Simpler version with less data?
+simple20_2limd=group_by(simple20_2lim,element,year,LU3) %>%
+  mutate(mn20=mean(stock20,na.rm=T),nobs=n(),
+         se20=sd(stock20,na.rm=T)/sqrt(nobs),
+         min20=min(stock20,na.rm=T),
+         max20=max(stock20,na.rm=T))
+simple20_2limd=distinct(simple20_2limd,element,year,LU,LU3,.keep_all=T)

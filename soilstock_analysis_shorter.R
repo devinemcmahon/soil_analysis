@@ -1241,7 +1241,7 @@ nutstk2$stk100[nutstk2$element=='C']=nutstk2$stk100[nutstk2$element=='C']/10
 nutstk2=mutate(nutstk2,hibar=ifelse(depth=='20up',stock+se,stk100+se),
                lobar=ifelse(depth=='20up',stock-se,stk100-se))
 nutstkE=nutstk2[nutstk2$LU=='E',]
-plot(stock~element,data=nutstkE)
+#plot(stock~element,data=nutstkE)
 #library(ggplot2)
 nutstkE <- with(nutstkE, nutstkE[order(element,year,depth),])
 nutstkE=mutate(nutstkE,sig=rep(NA))
@@ -1262,7 +1262,8 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
   facet_grid(element~biome,labeller = labeller(biome=labls)) + 
   coord_flip() +
-  labs(y="Stock (Mg/ha)", x="Year", fill="Depth") +
+  labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
+       x="Year", fill="Depth") +
   theme(strip.text.y = element_text(angle = 0),
         legend.position=c(0.8,0.1),
         panel.background = element_rect(fill='white'),
@@ -1346,9 +1347,16 @@ print.data.frame(bdgsum)
 
 plot(Concentration~Nutrient,data=budgets)
 
-summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
-          budgets$Wood_m3_1[budgets$Nutrient=='N']*
-          budgets$Concentration[budgets$Nutrient=='N']*511)
+#summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
+#          budgets$Wood_m3_1[budgets$Nutrient=='N']*
+#          budgets$Concentration[budgets$Nutrient=='N']*511)
+summary(budgets$budget[budgets$Nutrient=='N']*1000)
+# overall changes
+plot(budgets$budget[budgets$Nutrient=='N'])
+abline(h=0)
+
+summary(stkchgs$minbudg[stkchgs$element=='N']*1000)
+# max N export = 478 kg ha-1 over the 12 years
 
 summary(I((stkchgs$maxbudgconc-stkchgs$minbudgconc)/stkchgs$budget))
 # -10.6 to +4.3 -- times, not %. Mean -5%, median + 45%
@@ -1699,19 +1707,6 @@ Ceucrat.lme=lme(log(concratio)~year,random=~1|site/stand,
               na.action = na.omit)
 summary(Ceucrat.lme) # no change
 
-simple20=droplevels(dats2deps[dats2deps$stand %in% 
-                                c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                                  'JP.E2','JP.N','It.E1','It.N'),])
-simple20=mutate(simple20,LU2=ifelse(LU=='E','E','O'))
-# for this analysis, O = "other"
-
-simple20_2=dats2deps
-simple20_2$site=as.character(simple20_2$site)
-simple20_2=mutate(simple20_2,site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
-                  LU2=ifelse(LU=='E','E','O'))
-simple20_2=droplevels(simple20_2[simple20_2$stand %in% 
-                                c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
-                                  'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),])
 
 table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
 # Not balanced--rep 5
@@ -1766,17 +1761,6 @@ qqr(Cstk20blLUN.aov) #ok
 summary(Cstk20blLUN.aov) # no differences
 
 
-simple20_2=mutate(simple20_2,LUlong=ifelse(LU=='E','Eucalyptus',
-                                         ifelse(LU=='P','Pasture',
-                                                'Native vegetation')),
-                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
-                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'))
-simple20_2$LUlong=factor(simple20_2$LUlong,
-                        levels=c('Eucalyptus','Native vegetation','Pasture'))
-simple20_2$LU2long=factor(simple20_2$LU2long,
-                         levels=c('Eucalyptus','Other vegetation'))
-simple20_2$biomelong=factor(simple20_2$biomelong,
-                           levels=c('Atlantic Forest','Cerrado'))
 
 bwplot(stock20~LUlong|biomelong*year,
        data=droplevels(simple20_2[simple20_2$element=='C'&
@@ -1950,84 +1934,9 @@ qqr(Casimp100.lme) # some way off
 summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes 
 
 
-shorttstk$site=as.character(shorttstk$site)
-shorttstk=mutate(shorttstk,
-                 site2=ifelse(stand=='JP.E2'|stand=='JP.N','JP2',site),
-                 LU2=ifelse(LU=='E','E','O'))
-mrstkchgs=group_by(droplevels(shorttstk[shorttstk$element!='Cl',]),
-                   stand,site,LU,site2,LU2,element,biome)%>%
-  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
-            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
-            chgrt100=(stock100_16-stock100_04)/stock100_04,
-            chgrt20=(stock20_16-stock20_04)/stock20_04,
-            chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04),
-            sig20=ifelse(pval20<0.05,2,1),
-            sig100=ifelse(pval100<0.05,2,1))
-mrstkchgs$element=factor(mrstkchgs$element,levels=
-                           c('C','N','K','P','S','Ca','Mg',
-                             'Al','Fe','Nb','Zr'))
-mrstkchgs$LU=factor(mrstkchgs$LU,levels=c('E','N','P'))
-mrstkchgs=mutate(mrstkchgs,LUlong=ifelse(LU=='E','Eucalyptus',
-                                         ifelse(LU=='P','Pasture',
-                                                'Native vegetation')),
-                 biomelong=ifelse(biome=='Cer','Cerrado','Atlantic Forest'),
-                 LU2long=ifelse(LU2=='E','Eucalyptus','Other vegetation'),
-                 LUlongish=ifelse(LU=='E','Euc',ifelse(LU=='P','Past','Nat')))
-mrstkchgs$LUlong=factor(mrstkchgs$LUlong,
-                        levels=c('Eucalyptus','Native vegetation','Pasture'))
-mrstkchgs$LUlongish=factor(mrstkchgs$LUlongish,
-                           levels=c('Euc','Nat','Past'))
-mrstkchgs$LU2long=factor(mrstkchgs$LU2long,
-                         levels=c('Eucalyptus','Other vegetation'))
-mrstkchgs$biomelong=factor(mrstkchgs$biomelong,
-                           levels=c('Atlantic Forest','Cerrado'))
-# in longer script, tried paired t-tests between euc and noneuc
-#   comparing (log) changes in stocks, n=6 sites
-# Decided to use lmes instead
-
-
-L_to_pct=function(x){
-  (exp(x)-1)*100
-}
-pct_to_L=function(l){
-  log((l/100)+1)
-}
-panel.mean <- function(x, y, ...) {
-  tmp <- tapply(y, x, FUN = mean)#; print(tmp)
-  panel.points(y=tmp, x=seq_along(tmp), ...)
-}
 
 
 
-# to reflect simp.lme3 analysis as in text:
-
-# Set up data frame of change by stand, for visualization of 
-#   simp.lme3 analyses (i.e. change in stock)
-# Is this misleading? Didn't actually analyze change in stock
-#   as a response variable
-mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
-                                                'Ca'),]
-#mrstkchgslim=mrstkchgs[mrstkchgs$element %in% c('C','N','K','P',
-#                                               'Ca','Al','Nb'),]
-#mrmelt=melt.data.frame(mrstkchgslim,measure.vars=c("chgln20","chgln100"))
-# "Names do not match previous names", still
-mrd=mutate(mrstkchgslim,depth=rep('0-100'))
-mrd=mrd[,-which(names(mrd) %in% c('stk20_16', 'chg20', 'chgln20',
-                                  'chgrt20', 'sig20'))]
-mru=mutate(mrstkchgslim,depth=rep('0-20'))
-mru=mru[,-which(names(mru) %in% c('stk100_16', 'chg100', 'chgln100',
-                                  'chgrt100', 'sig100'))]
-names(mrd)[which(names(mrd)=='stk100_16')]='stock_16'
-names(mrd)[which(names(mrd)=='chg100')]='change'
-names(mrd)[which(names(mrd)=='chgln100')]='chgln'
-names(mrd)[which(names(mrd)=='chgrt100')]='chgrt'
-names(mrd)[which(names(mrd)=='sig100')]='sig'
-names(mru)[which(names(mru)=='stk20_16')]='stock_16'
-names(mru)[which(names(mru)=='chg20')]='change'
-names(mru)[which(names(mru)=='chgln20')]='chgln'
-names(mru)[which(names(mru)=='chgrt20')]='chgrt'
-names(mru)[which(names(mru)=='sig20')]='sig'
 mr2=rbind(mru,mrd)
 
 mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
@@ -2204,11 +2113,12 @@ simple20_2limd=group_by(simple20_2lim,element,year,LU3) %>%
 simple20_2limd=distinct(simple20_2limd,element,year,LU,LU3,.keep_all=T)
 
 ggplot(data=simple20_2limd, aes(x=LU3, y=mn20,colour=LU,shape=year))+
-  #geom_pointrange(aes(ymin=min20,ymax=max20),size=.8,#show.legend = F
   geom_vline(xintercept=7.5)+
-  geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
+  geom_pointrange(aes(ymin=min20,ymax=max20),size=.8,#show.legend = F
+  #geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
                                   position=position_dodge2(.8,preserve='single')) +
-  scale_shape_manual(values=c(17,15),
+  scale_x_discrete()+
+  scale_shape_manual(values=c(18,15),
                       name='Year',labels=c('2004','2016'))+
   scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
                     name='Vegetation type',
