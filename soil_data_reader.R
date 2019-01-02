@@ -31,16 +31,18 @@ widedats=readRDS('all_data_10-4-18.Rds')
 # Makes a really big N stock change
 # Go with consistent conversion for all stands (all_data_10-4)
 # temporary fix: 
-#widedats$ID=as.character(widedats$ID)
-#widedats$ID[widedats$ID=='It.N.T.A.60-100.16'|
-#              widedats$ID=='It.N.TA.60-100.16']='It.N.A.5.60-100.16'
-#widedats$ID[widedats$ID=='It.N.T.B.60-100.16'|
-#              widedats$ID=='It.N.TB.60-100.16']='It.N.B.5.60-100.16'
-#widedats$ID[widedats$ID=='Vg.N.1.B.60-100.16']='Vg.N.B.1.60-100.16'
-#widedats$ID[widedats$ID=='Vg.N.2.B.60-100.16']='Vg.N.B.2.60-100.16'
-#widedats$ID[widedats$ID=='Vg.N.1.B.0-10.16']='Vg.N.B.1.0-10.16'
-#widedats$ID[widedats$ID=='Vg.N.2.B.0-10.16']='Vg.N.B.2.0-10.16'
-#widedats=strfun(widedats)
+# was commented out; uncommented 1-1-19 because these issues are still there!
+widedats$ID=as.character(widedats$ID)
+widedats$ID[widedats$ID=='It.N.T.A.60-100.16'|
+              widedats$ID=='It.N.TA.60-100.16']='It.N.A.5.60-100.16'
+widedats$ID[widedats$ID=='It.N.T.B.60-100.16'|
+              widedats$ID=='It.N.TB.60-100.16']='It.N.B.5.60-100.16'
+widedats$ID[widedats$ID=='Vg.N.1.B.60-100.16']='Vg.N.B.1.60-100.16'
+widedats$ID[widedats$ID=='Vg.N.2.B.60-100.16']='Vg.N.B.2.60-100.16'
+widedats$ID[widedats$ID=='Vg.N.1.B.0-10.16']='Vg.N.B.1.0-10.16'
+widedats$ID[widedats$ID=='Vg.N.2.B.0-10.16']='Vg.N.B.2.0-10.16'
+widedats=strfun(widedats)
+
 
 widedats$CN=widedats$C/widedats$N # this ratio can be useful, or just noisy
 widedats1=widedats[,-which(names(widedats) %in% 
@@ -796,3 +798,15 @@ simple20_2limd=group_by(simple20_2lim,element,year,LU3) %>%
          min20=min(stock20,na.rm=T),
          max20=max(stock20,na.rm=T))
 simple20_2limd=distinct(simple20_2limd,element,year,LU,LU3,.keep_all=T)
+
+# Stocks at each depth
+datsstk5ok=datsstk5[!is.element(datsstk5$site,c('TM','Cr'))&
+                      datsstk5$stand!='JP.A' &
+                      datsstk5$element %in% c('C','N','K','P2','Ca2'),]
+depstksum=group_by(datsstk5ok,year,element,LU,biome,depth) %>% 
+  summarise(mnstk=mean(stock,na.rm=T),nobs=n(),
+            sestk=sd(stock,na.rm=T)/sqrt(nobs))
+
+depstkts=group_by(datsstk5ok,element,LU,biome,depth) %>%
+  summarise(tstat=t.test(stock[year=='16'],stock[year=='04'])$statistic,
+            pval=t.test(stock[year=='16'],stock[year=='04'])$p.value)

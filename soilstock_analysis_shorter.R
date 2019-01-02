@@ -316,6 +316,13 @@ tstock$stand[tstock$element=='Zn' & tstock$stock20_16>.1] # Bp.E2 has huge Zn in
 # Leave it how it was?
 # But allow different slopes for the different LU pairs, below?
 # That doesn't seem right--the two analyses should be the same
+# Adding a random year effect for each site is the more conservative 
+#   approach, and probably more appropriate
+# But some sites have just one stand
+# Puts all the effect of that stand in the error term?
+# Leave how it was for now
+# Different nesting structure for biome analysis: 
+#   Include year effect to allow for any changes within site across veg type
 eucC20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                     data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
 summary(eucC20bm.lme) # increase in Cerrado only (also if using euc2deps2)
@@ -348,14 +355,23 @@ qqr(eucP20bm.lme) # tails off without Eu, but much less bad
 summary(eucP20bm.lme) # when excluding Eu, increase (p=.01) due to Vg;
 # p=.08 for opposite sign year-Cerrado interaction
 
-eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1+year|site/stand,
-                 data=euc2deps[euc2deps$element=='Ca2',],
-                 na.action = na.omit,control = lmeControl(opt='optim'))
+
+eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Ca2',],
+                  na.action = na.omit,control = lmeControl(opt='optim'))
 qqr(eucCa20bm.lme)
 summary(eucCa20bm.lme) # maybe increase in AF (p=.07), increase in Cer (.0005)
+eucCa20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=euc2deps[euc2deps$element=='Ca2',],
+                 na.action = na.omit,control = lmeControl(opt='optim'))
+qqr(eucCa20bm.lme2)
+summary(eucCa20bm.lme2) 
+anova(eucCa20bm.lme,eucCa20bm.lme2)
 # with a random slope, no signif effects
 # but that seems wrong, clearly a lot of Ca was added in the Cerrado
+# although not consistently across cerrado stands, hence loss of significance?
 # go with just a random intercept?
+# I think that is correct, just random intercepts
 
 eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='K'&
@@ -1278,6 +1294,52 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   #geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
   #          na.rm=T,show.legend=F,size=8,hjust=0)
 
+names(depstksum)
+depstksum$element=as.character(depstksum$element)
+depstksum$element[depstksum$element=='Ca2']='Ca'
+depstksum$element[depstksum$element=='P2']='P'
+depstksum$element=factor(depstksum$element,levels=c('C','N','K','P','Ca'))
+depstksum$year=factor(depstksum$year,levels=c('16','04'))
+depstksum$mnstk[depstksum$element=='C']=depstksum$mnstk[depstksum$element=='C']/10
+depstksum$sestk[depstksum$element=='C']=depstksum$sestk[depstksum$element=='C']/10
+depstksumE=depstksum[depstksum$LU=='E',]
+depstksumE=mutate(depstksumE,sig=rep(NA))
+depstksumE$sig[depstksumE$depth==80&depstksumE$element=='N'&depstksumE$biome=='Cer'&
+              depstksumE$year=='16']=1
+depstksumE$sig[depstksumE$depth==80&depstksumE$element=='Ca'&
+              depstksumE$year=='16']=1
+depstksumE$sig[depstksumE$depth==20&depstksumE$element=='C'&depstksumE$biome=='Cer'&
+              depstksumE$year=='16']=1
+depstksumE$sig[depstksumE$depth==20&depstksumE$element=='Ca'&depstksumE$biome=='Cer'&
+              depstksumE$year=='16']=1
+depstksumE$sig[depstksumE$depth==20&depstksumE$element=='K'&depstksumE$biome=='AF'&
+              depstksumE$year=='16']=1
+depstksumE$sig=as.integer(depstksumE$sig)
+
+labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
+
+ggplot(data=depstksumE, aes(x=year, y=mnstk, fill=as.factor(depth))) +
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  coord_flip() +
+  labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
+       x="Year", fill="Depth (cm)") +
+  theme(strip.text.y = element_text(angle = 0),
+        legend.position=c(0.8,0.2),
+        panel.background = element_rect(fill='white'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_blank()) +
+  #geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
+  scale_fill_brewer(palette='Blues',direction = -1,
+                    labels=rev(c('0-10','10-20','20-40',
+                              '40-60','60-100')),
+                    guide = guide_legend(reverse=T))
+  #geom_point(mapping = aes(y = mnstk*(sig>0)),
+  #           shape=18,size=3,show.legend=F)
+#geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
+
+
+
 allstks = group_by(nutstk,biome,LU,element) %>% 
   summarise(stk20_16=mean(stock20_16),
             stk100_16=mean(stock100_16),
@@ -1486,13 +1548,14 @@ text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
 # Table of ratios of budget to its variations?
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
+
 palette('default')
+
+par(mar=c(4,4,0.5,0.5),mfrow=c(1,2))
 plot(chg20~budget,data=stkchgs3,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',
-     xlim=c(-.2,.5),ylim=c(-.2,.5),
-     las=1)
-#rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
+rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
@@ -1516,6 +1579,21 @@ text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)#,
 #     col=as.numeric(as.factor(stkchgs3$biome))+2)
 legend('bottomright',pch=15,col=c(3,4),
        legend=c('Atlantic Forest','Cerrado'),bty='n')
+legend('bottomleft',legend='a',cex=1.2,bty='n')
+plot(chg20~budget,data=stkchgs3,type='n', 
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='', xlim=c(-.2,.5),ylim=c(-.2,.5),las=1)
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+         col=as.numeric(as.factor(stkchgs3$biome))+2)
+segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
+         y1=stkchgs3$chg20+stkchgs3$sdchg20,
+         col=as.numeric(as.factor(stkchgs3$biome))+2)
+text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)
+legend('bottomleft',legend='b',cex=1.2,bty='n')
+par(mfrow=c(1,1),mar=c(4,4,1,1))
 
 
 plot(chg100~budget,data=stkchgs,type='n', 
@@ -1809,7 +1887,8 @@ summary(Cstk100blLUN04.aov) # only sig diff btwn biomes
 TukeyHSD(Cstk100blLUN04.aov) # AF N > Cer E, ok (p=.038)
 # marginal: AF > Cer within LU
 
-
+simple20_2=mutate(simple20_2,pairtype=ifelse(site2 %in% c('JP','BO'),'P','N'))
+simple20_2$pairtype=factor(simple20_2$pairtype,levels=c('N','P'))
 
 # is it appropriate to group pasture with native veg? 
 # Decided that it's not (use LU, not LU2)
@@ -1823,8 +1902,14 @@ Casimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
 qqr(Casimp.lme4) # actually better than lme3
 summary(Casimp.lme4) # same signifs as lme3
-anova(Casimp.lme3,Casimp.lme4) # yes, 4 better
-
+anova(Casimp.lme3,Casimp.lme4) # yes, 4 better fit
+Casimp.lme5=lme(log(stock20)~year*LU,random=~1|pairtype/site2,
+                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
+# maybe underdetermined with year intercept?
+qqr(Casimp.lme5)
+summary(Casimp.lme5)# now there's a significant year effect
+anova(Casimp.lme3,Casimp.lme4,Casimp.lme5)
+# 5 has the highest IC though
 
 Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
@@ -1838,18 +1923,18 @@ summary(Csimp.lme4) # no effect of year on euc (p=.10) but sig neg intrxns
 #   between year and both native and pasture veg
 anova(Csimp.lme3,Csimp.lme4) # 4 has lower A/BIC
 # Yes, I think this makes more conceptual sense.
-# Wait, does that still have a random intercept? I think so.
+# Wait, does that still have a random intercept? Yes
 
 
-Nsimp.lme3=lme(stock20~year*LU,random=~1|site,
+Nsimp.lme3=lme(stock20~year*LU,random=~1|site2,
                data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
-qqr(Nsimp.lme3) # nice
+qqr(Nsimp.lme3) # nice-ish...tails off; better without log
 summary(Nsimp.lme3) # with all sites included, starts higher in N, no change
-Nsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+Nsimp.lme4=lme(stock20~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
-qqr(Nsimp.lme4) # much less nice than lme3
+qqr(Nsimp.lme4) 
 summary(Nsimp.lme4) # same signifs as lme3
-anova(Nsimp.lme3,Nsimp.lme4) # doesn't work: "first model has a different response"
+anova(Nsimp.lme3,Nsimp.lme4) # 4 better fit
 
 
 Ksimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
@@ -1907,16 +1992,53 @@ qqr(CNsimp.lme) # decreases in N and P, no change in E
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
-Ksimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
+Ksimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
                  data=simp100[simp100$element=='K',], na.action=na.omit)
-qqr(Ksimp100.lme) # mostly ok
-summary(Ksimp100.lme) # with diff slopes, no change for euc, native decr
+qqr(Ksimp100.lme) # ok
+summary(Ksimp100.lme) # with random intercept only, euc increases, others not different
+Ksimp100.lme2=lme(log(stock100)~year*LU,random=~1+year|site,
+                 data=simp100[simp100$element=='K',], na.action=na.omit)
+qqr(Ksimp100.lme2) # mostly ok
+summary(Ksimp100.lme2) # with random slopes, no change for euc, native decr
+# Wait, decreases? No, it doesn't
+# Increases significantly less than the increase in euc, 
+#   but the increase in euc is not significant.
+# Ugh, am I misusing these statistics? I don't think so...
+Ksimp100.lme0=lme(log(stock100)~year+LU,random=~1+year|site,
+                  data=simp100[simp100$element=='K',], na.action=na.omit)
+qqr(Ksimp100.lme0) # mostly ok
+summary(Ksimp100.lme0) # no effect of year
+anova(Ksimp100.lme0,Ksimp100.lme2)
+Ksimp100.lm=lm(log(stock100)~year*LU*site,
+                data=simp100[simp100$element=='K',], na.action=na.omit)
+qqr(Ksimp100.lm)
+summary(Ksimp100.lm)
+# signif effects of year, LUs
+# why is there no LUN:siteVg term?? Just NAs.
+simp100$stock100[simp100$element=='K'&simp100$stand=='Vg.N']
+# there are two NaNs in there (reps 1 and 4 of 04), does that ruin things?
+Ksimp100.lm=lm(log(stock100)~year*LU*site,
+               data=simp100[simp100$element=='K'&!is.na(simp100$stock100),])
+qqr(Ksimp100.lm)
+summary(Ksimp100.lm)# still not there
+summary(simp100$stock100[simp100$element=='K'&simp100$year=='04'])
+summary(simp100$stock100[simp100$element=='K'&simp100$year=='16'])
+# The median decreases, what do you know
+#  bunch of NAs in 2004...
+summary(mrstkchgs$chgln100[mrstkchgs$element=='K']) 
+# median change is positive, change in medians is negative
+simp100$stand[simp100$element=='K'&is.na(simp100$stock100)]
+# several. What's up with that? Two BO.E, one JP.E1, one Vg.E, two Vg.N
+# also missing values there for P, fewer for N
 
-Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
-                 data=simp100[simp100$element=='N',], na.action=na.omit)
-# iteration limit reached--??
+Nsimp100.lme=lme(stock100~year*LU,random=~1+year|site,
+                 data=simp100[simp100$element=='N',], na.action=na.omit,
+                 control = lmeControl(opt='optim'))
+# iteration limit reached--?? got rid of log transform, now works ok
 qqr(Nsimp100.lme) # ok
 summary(Nsimp100.lme)
+#With random slope, nothing significant (p for N-yr intrxn = .08)
+#
 
 Csimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='C',], na.action=na.omit)
@@ -1925,7 +2047,7 @@ summary(Csimp100.lme)
 # with random ~1|site, increase in euc isn't signif, 
 #   but decreases in native and pasture are! 
 # with random ~1|year+site (more appropriate),
-#   only signif thing is decrease in pasture
+#   only signif thing is decrease in pasture (in native, p=.08)
 
 # don't do log transform for P (in which nothing changes)
 Casimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
@@ -1937,7 +2059,6 @@ summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes
 
 
 
-mr2=rbind(mru,mrd)
 
 mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),]
@@ -2082,6 +2203,8 @@ simple20_2lim=mutate(simple20_2lim,LU3=as.character(LU))
 simple20_2lim$LU3[simple20_2lim$stand=='JP.E1']='EP'
 simple20_2lim$LU3[simple20_2lim$LU3=='E']='EN'
 simple20_2lim$LU3=factor(simple20_2lim$LU3,levels=c('EN','N','EP','P'))
+simple20_2lim$element =factor(simple20_2lim$element,
+                              levels=c('C','N','K','P','Ca'))
 
 ggplot(data=simple20_2lim, aes(x=LU3, y=stock20,
                                fill=LU,colour=year))+
@@ -2134,6 +2257,37 @@ ggplot(data=simple20_2limd, aes(x=LU3, y=mn20,colour=LU,shape=year))+
         panel.grid.major = element_blank(),
         legend.key=element_blank())
 
+simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
+simp100limd=group_by(simple20_2lim[simple20_2lim$site2!='JP2' & 
+                                     simple20_2lim$site2!='It',],
+                     element,year,LU3) %>%
+  mutate(mn100=mean(stock100,na.rm=T),nobs=n(),
+         se100=sd(stock100,na.rm=T)/sqrt(nobs),
+         min100=min(stock100,na.rm=T),
+         max100=max(stock100,na.rm=T))
+simp100limd=distinct(simp100limd,element,year,LU,LU3,.keep_all=T)
+
+ggplot(data=simp100limd, aes(x=LU3, y=mn100,colour=LU,shape=year))+
+  geom_vline(xintercept=7.5)+
+  geom_pointrange(aes(ymin=min100,ymax=max100),size=.8,#show.legend = F
+                  #geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
+                  position=position_dodge2(.8,preserve='single')) +
+  scale_x_discrete()+
+  scale_shape_manual(values=c(18,15),
+                     name='Year',labels=c('2004','2016'))+
+  scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                      name='Vegetation type',
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  labs(y='Stock, 0-100 cm, Mg/ha', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())
 
 
 
