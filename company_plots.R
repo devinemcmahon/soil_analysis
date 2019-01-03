@@ -30,6 +30,11 @@ myplot(ttests,'BO.E','C')
 
 pts=ttests[,c('stand','element','depth','pval','tstat')]
 datsmnok2=merge(datsmnok,pts,by=c('stand','element','depth'),all.x=T)
+datsmnok2=datsmnok2[order(datsmnok2$depth),]
+datsmnok2=mutate(datsmnok2,element2=element)
+datsmnok2$element2[datsmnok2$element=='Ca2']='Ca'
+datsmnok2$element2[datsmnok2$element=='P2']='P'
+
 myxy=function(rockder,mysite){
   lmts=c('C','N')
   if(rockder==T) lmts=c('K','P2','Ca2')
@@ -67,6 +72,67 @@ myxy=function(rockder,mysite){
 }
 myxy(F,'Vg')
 myxy(T,'JP')
+
+mygg=function(rockder,mysite){
+  lmts=c('C','N')
+  if(rockder==T) lmts=c('K','P2','Ca2')
+  mysub=datsmnok2[datsmnok2$site==mysite & datsmnok2$element %in% lmts,]
+  mysub=mutate(mysub,element2=element)
+  mysub$element2[mysub$element=='Ca2']='Ca'
+  mysub$element2[mysub$element=='P2']='P'
+  if(rockder==T) mysub$element2=factor(mysub$element2,
+                                       levels=c('K','Ca','P'))
+  mysub=mysub[order(mysub$depth),]
+  ggplot(aes(x=depth,y=mn,colour=year),data=mysub)+
+    geom_line(aes(group=year),size=1.2)+
+    coord_flip()+
+    scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+    facet_grid(stand~element2,scales = 'free_x')+
+    theme(legend.position=c(0.9,0.1),
+          legend.background = element_blank(),
+          legend.key = element_blank())+
+    labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
+                  'Concentração (g elemento / 100g solo)'),
+         x='Profundidade (cm)')+
+    geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                  width=0.2) +
+    scale_colour_discrete(labels=c('2004','2016'),
+                          guide = guide_legend(reverse=F,title=NULL))+
+    geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+      label=ifelse(pval<0.05 &year=='16','*','')),
+      colour='black',size=6,nudge_x=-1)
+}
+mygg(F,'BO')
+
+ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$site=='Vg'&
+                                             datsmnok2$element %in%
+                                             c('K','Ca2','P2'),])+
+  geom_line(aes(group=year),size=1.2)+
+  coord_flip()+
+  scale_x_reverse(limits = c(90, 0))+
+  facet_grid(stand~element2,scales = 'free_x')+
+  theme(legend.position=c(0.9,0.1),
+        legend.background = element_blank(),
+        legend.key = element_blank())+
+  labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
+                   'Concentração (g elemento / 100g solo)'),
+       x='Profundidade (cm)')+
+  geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                width=0.2) +
+  scale_colour_discrete(labels=c('2004','2016'),
+                    guide = guide_legend(reverse=F,title=NULL))+
+  geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+                label=ifelse(pval<0.05 &year=='16','*','')),
+                colour='black',size=6,nudge_x=-1)
+
+
+
+  labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
+
+ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  
 
 shortsum=shorttstk[shorttstk$element%in%
                      c('C','N','K','Ca','P','Al','Fe','Zr'),
