@@ -168,7 +168,7 @@ shorttests=droplevels(ttests[ttests$element %in%
 datsmean=group_by(dats4[!is.element(dats4$unit,c('dl','err','int')),],
                   stand,depth,year,element,unit,stdonly,site,LU,biome,avgBD,BDsd) %>%
   summarise(mn=mean(repval,na.rm=T),sd=sd(repval,na.rm=T),
-            taumn=mean(tau,na.rm=T),sdtau=sd(tau,na.rm=T))
+            taumn=mean(tau,na.rm=T),sdtau=sd(tau,na.rm=T),ndepyr=n())
 datsmnok=droplevels(datsmean[datsmean$site!='TM' &
                                datsmean$site!='Cr'& datsmean$LU!='A',])
 
