@@ -48,6 +48,12 @@ xyplot(depth~I(mn/1000)|stand,groups=year,type='l',ylab='Depth (cm)',
        par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 
+xyplot(depth~mn|stand,groups=year,type='l',ylab='Depth (cm)',
+       data=datsmnok[datsmnok$element=='K' &datsmnok$site!='Bp',],
+       ylim=c(90,0),xlab='K (mg / kg)',as.table=T,
+       par.settings = list(superpose.line = list(col = c(2,4),lwd = 2)),
+       auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
+
 xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
         data=datsmnok[datsmnok$element=='Zr' ,],
         ylim=c(90,0),xlab='Zr (g / kg)',as.table=T,
@@ -100,6 +106,25 @@ xyplot(depth~mn/1000|stand,groups=year,type='l',ylab='Depth (cm)',
        auto.key=list(space='top', columns=2,lines=TRUE, points=FALSE))
 
 plot(P~S,data=widedats4) # no apparent relationship
+
+xyplot(depth~value|stand,groups=year,type='p',ylab='Depth (cm)',
+       data=dats[dats$element=='CN' & !is.element(dats$site,c('TM','Cr')) &
+                  dats$stand!='JP.A',],
+       ylim=c(90,0),xlab='C:N ratio',as.table=T,
+       par.settings = list(superpose.points = list(col = c(2,4))),
+       auto.key=list(space='top', columns=2,lines=F, points=T))
+# some weird outliers in 2004, not in 2016
+widedats$C[widedats$CN>50]
+widedats$N[widedats$CN>50]
+widedats$ID[widedats$CN>50]
+widedats$N[widedats$stand=='Vg.E' &widedats$depth==50]
+# one N value is an order of magnitude low
+widedats$N[widedats$stand=='It.E1' &widedats$depth==50 ]
+# 4-5x lower than the other 2? C also varies, but by less
+widedats$N[widedats$stand=='JP.P' &widedats$depth==5 ]
+# also ord mag off--typo??
+widedats$N.old[widedats$stand=='JP.P' &widedats$depth==5 ]
+
 
 # Are trends in native veg N affected by EA N drift 
 #   on the day we tested 0-10 and 60-100 in a bunch of sites?

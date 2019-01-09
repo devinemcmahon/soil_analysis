@@ -6,14 +6,18 @@ library(nlme)
 # some functions to make the data usable (see other script)
 source('xrf_formatting_functions.R')
 
-ea17=read.csv('2017_EA_data.csv')
+#ea17=read.csv('2017_EA_data.csv')
+# Trying to rerun everything 1-8-19 because some typos I know I fixed
+# got back into the data
+ea17=read.csv('2017_EA_data_remake.csv')
 head(ea17)
 length(ea17$ID)
 
 #ea18=read.csv('CN18_to7-27.csv')
 #ea18=read.csv('CN18_to8-17.csv')
 #ea18=read.csv('CN18_to9-13.csv')
-ea18=read.csv('CN18_to_10-2.csv')
+#ea18=read.csv('CN18_to_10-2.csv')
+ea18=read.csv('CN18_to_10-2_remake.csv')
 
 ea17=ea17[,-which(!is.element(names(ea17),names(ea18)))]
 ea=rbind(ea17,ea18)
@@ -196,7 +200,7 @@ allCN=ungroup(allCN)
 #xrf=readRDS('xrf_through_8-9-18.Rds')
 #xrf=readRDS('XRFdata_through_8-9-18.Rds')
 #xrf=readRDS('XRFdata_through_9-11-18.Rds')
-xrf=readRDS('XRFdata_through_10-4-18.Rds')
+xrf=readRDS('XRFdata_through_10-4-18_remake.Rds')
 
 dats=merge(allCN,xrf,by='ID',all=T)
 dats=strfun(dats)
@@ -211,3 +215,4 @@ head(dats)
 #saveRDS(dats,'all_data_9-13-18.Rds')
 #saveRDS(dats,'all_data_9-29-18.Rds')
 #saveRDS(dats,'all_data_10-4-18.Rds')
+#saveRDS(dats,'all_data_10-4-18_remake.Rds')

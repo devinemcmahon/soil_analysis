@@ -176,3 +176,5 @@ newea$CNevalday[newea$CNevalday=='2-9']='9-7'
 #write.csv(newea,'CN18_to8-17.csv')
 #write.csv(newea,'CN18_to9-13.csv')
 #write.csv(newea,'CN18_to_10-2.csv')
+# 1-8-19
+#write.csv(newea,'CN18_to_10-2_remake.csv')

@@ -214,3 +214,4 @@ head(allEA)
 unique(allEA$year)
 
 #write.csv(allEA,'2017_EA_data.csv')
+#write.csv(allEA,'2017_EA_data_remake.csv')

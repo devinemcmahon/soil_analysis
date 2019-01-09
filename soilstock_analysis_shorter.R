@@ -493,12 +493,24 @@ natC20.lme=lme(log(stock20)~year,random=~1|stand,
                  data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
 qqr(natC20.lme) # ok
 summary(natC20.lme) # no significant change
+natC20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|stand,
+                 data=nat2deps[nat2deps$element=='C',],na.action = na.omit,
+                 control = lmeControl(opt = 'optim')) 
+# doesn't converge: not enough data to do this?
+qqr(natC20bm.lme) # tails a bit off
+summary(natC20bm.lme) # marginal decrease in AF, def increase in cerrado
 
 natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
                  data=nat2deps[nat2deps$element=='N',],na.action = na.omit)
 qqr(natN20bm.lme) # nice
 summary(natN20bm.lme) # marginal decrease in AF, def increase in cerrado
 # also marginal decrease in AF (p=.076), strong increase in Cerrado
+
+natCN20bm.lme=lme(log(conc20)~year*biome,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='CN',],na.action = na.omit)
+qqr(natCN20bm.lme) # ok?
+summary(natCN20bm.lme) # marginal decrease in Cerrado (p=.07)
+
 
 natC100AF.lme=lme(log(stock100)~year,random=~1|stand,
                  data=nat2deps[nat2deps$element=='C'&
@@ -1989,6 +2001,7 @@ CNsimp.lme=lme(log(conc20)~year*LU,random=~1|site2,
   data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)
 summary(CNsimp.lme)
 qqr(CNsimp.lme) # decreases in N and P, no change in E
+# Removing a super low N value in JP.P: only changes in N (decrease)
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
@@ -2256,6 +2269,28 @@ ggplot(data=simple20_2limd, aes(x=LU3, y=mn20,colour=LU,shape=year))+
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_blank(),
         legend.key=element_blank())
+
+ggplot(data=simple20_2lim, aes(x=LU3, y=stock20,colour=LU,shape=year))+
+  geom_point(size=4,#show.legend = F
+                  #geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
+                  position=position_dodge2(.8)) +
+  scale_x_discrete()+
+  scale_shape_manual(values=c(5,0),
+                     name='Year',labels=c('2004','2016'))+
+  scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                      name='Vegetation type',
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  labs(y='Stock, 0-20 cm, Mg/ha', x="") +
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())
+
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 simp100limd=group_by(simple20_2lim[simple20_2lim$site2!='JP2' & 
