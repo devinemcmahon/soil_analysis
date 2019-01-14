@@ -1,7 +1,7 @@
 # XRF data visualization: July 2, 2018
 
 # set your working directory (or open a project containing all the files)
-setwd('C:\\Users\\Devin\\Documents\\Soil data')
+#setwd('C:\\Users\\Devin\\Documents\\Soil data')
 
 # useful packages:
 library(dplyr)
@@ -30,7 +30,8 @@ xrf15=myreader('std_McMahon_6-5-18')
 # 16 was a weird duplicate
 xrf17=myreader('std_McMahon_6-13-17_3')
 xrf18=myreader('std_McMahon_6-13-17_2_fixed')
-xrf19=myreader('std_McMahon_6-13-17_1_fixed')
+# Removing typo 1-8-19
+xrf19=myreader('std_McMahon_6-13-17_1_morefixed')
 xrf20=myreader('std_McMahon_6-12-17_3')
 xrf21=myreader('std_McMahon_6-12-17_2')
 xrf22=myreader('std_McMahon_6-12-17')
@@ -221,3 +222,4 @@ XRF$recent=as.numeric(XRF$evaldate>as.Date('2018-06-20'))
 #saveRDS(XRF,'XRFdata_through_8-9-18.Rds')
 #saveRDS(XRF,'XRFdata_through_9-11-18.Rds')
 #saveRDS(XRF,'XRFdata_through_10-4-18.Rds')
+#saveRDS(XRF,'XRFdata_through_10-4-18_remake.Rds')
