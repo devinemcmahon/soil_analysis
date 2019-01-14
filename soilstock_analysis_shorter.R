@@ -497,8 +497,6 @@ natC20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|stand,
                  data=nat2deps[nat2deps$element=='C',],na.action = na.omit,
                  control = lmeControl(opt = 'optim')) 
 # doesn't converge: not enough data to do this?
-qqr(natC20bm.lme) # tails a bit off
-summary(natC20bm.lme) # marginal decrease in AF, def increase in cerrado
 
 natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
                  data=nat2deps[nat2deps$element=='N',],na.action = na.omit)
@@ -1129,7 +1127,17 @@ qqr(Cacvdeplm)
 summary(Cacvdeplm) # no effect, nor for P
 Kcvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='K',])
 qqr(Kcvdeplm)
+plot(resid(Kcvdeplm)~depcvs[depcvs$element=='K',]$LU)
+# some differences, but IQRs similar
+# lower CV for pasture, generally
 summary(Kcvdeplm)# there is an effect for K, decreasing with depth
+
+Kcvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='K'&
+                                        depcvs$stand!='Bp.E1'&
+                                        depcvs$stand!='Bp.E2',])
+qqr(Kcvdeplm)
+summary(Kcvdeplm)# without those, same effect size, lower p-value
+
 Ncvdeplm=lm(log(CV)~depth,data=depcvs[depcvs$element=='N' &
                                         depcvs$CV>0,])
 
@@ -1725,6 +1733,7 @@ Ccaov=aov(conc20~year*LU,data=dats2deps)
 summary(Ccaov) # no, maybe close to a LU effect
 library(car)
 Anova(Ccaov, type = "III") # not close to LU effect any more
+qqr(Ccaov) # horrible
 Ccaov_stand=aov(conc20~year*stand,data=dats2deps)
 summary(Ccaov_stand) # significant stand effect of course
 Ccaov_siteLU=aov(conc20~year*site*LU,data=dats2deps)
@@ -1928,14 +1937,26 @@ Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
 qqr(Csimp.lme3) # tails off, mostly ok? Log pretty good, but 1 outlier each end
 summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
 # But decreases in pasture; no change in native?
+
 Csimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
-               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
+               data=simple20_2[simple20_2$element=='C',], 
+               na.action=na.omit)
 qqr(Csimp.lme4) # tails off,esp lower
 summary(Csimp.lme4) # no effect of year on euc (p=.10) but sig neg intrxns
 #   between year and both native and pasture veg
 anova(Csimp.lme3,Csimp.lme4) # 4 has lower A/BIC
 # Yes, I think this makes more conceptual sense.
 # Wait, does that still have a random intercept? Yes
+
+# Test significance of year within each veg type by changing factor levels?
+#   Seems wrong...
+simple20_2$LU=factor(simple20_2$LU,levels=c('P','E','N'))
+simple20_2$LU=factor(simple20_2$LU,levels=c('N','E','P'))
+simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
+
+# changing factor levels: year doesn't have sig effect on pasture C or Ca
+# pasture-euc intrxn stays signif, ok
+
 
 
 Nsimp.lme3=lme(stock20~year*LU,random=~1|site2,
@@ -1970,6 +1991,7 @@ qqr(Psimp.lme4) # worse
 summary(Psimp.lme4) # no signif changes as you might expect
 anova(Psimp.lme3,Psimp.lme4) #favors 4
 
+
 Zrsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                 data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
 qqr(Zrsimp.lme3) 
@@ -1997,7 +2019,7 @@ Nbsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
 qqr(Nbsimp.lme3) 
 summary(Nbsimp.lme3) # differs between veg types but not between years
 
-CNsimp.lme=lme(log(conc20)~year*LU,random=~1|site2,
+CNsimp.lme=lme(conc20~year*LU,random=~1+year|site2,
   data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)
 summary(CNsimp.lme)
 qqr(CNsimp.lme) # decreases in N and P, no change in E
@@ -2017,6 +2039,9 @@ summary(Ksimp100.lme2) # with random slopes, no change for euc, native decr
 # Increases significantly less than the increase in euc, 
 #   but the increase in euc is not significant.
 # Ugh, am I misusing these statistics? I don't think so...
+# With native veg as the default, NO significant year effect,
+#   but significant interactions with other veg types
+# pasture: maybe marginal increase, intrxn with native veg is signif
 Ksimp100.lme0=lme(log(stock100)~year+LU,random=~1+year|site,
                   data=simp100[simp100$element=='K',], na.action=na.omit)
 qqr(Ksimp100.lme0) # mostly ok
@@ -2061,14 +2086,31 @@ summary(Csimp100.lme)
 #   but decreases in native and pasture are! 
 # with random ~1|year+site (more appropriate),
 #   only signif thing is decrease in pasture (in native, p=.08)
+# yes, when pasture or native set as default level, signif decrease
+#   also signif intrxn with euc for both
 
 # don't do log transform for P (in which nothing changes)
 Casimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='Ca2',], na.action=na.omit)
 qqr(Casimp100.lme) # some way off
 summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes 
+# year term for N or P not signif
 
-
+# Or should they be anovas, after all? Not balanced though
+Nsimp.aov=aov(log(stock20)~year*LU,
+              data=simple20_2[simple20_2$element=='N',])
+qqr(Nsimp.aov) # tails off
+summary(Nsimp.aov) # not correct I think because of lost pairing
+TukeyHSD(Nsimp.aov,which='LU') # no differences
+Casimp.aov=aov(log(stock20)~year*LU,
+              data=simple20_2[simple20_2$element=='Ca2',])
+qqr(Casimp.aov) 
+summary(Casimp.aov) # for Ca, at least, significant LU effect
+# year term p=.06
+plot(Casimp.aov,1) # that looks ok?
+plot(Nsimp.aov,1) # also ok?
+TukeyHSD(Casimp.aov,which='LU') # P diff from N, but this doesn't
+# test the changes
 
 
 
@@ -2079,11 +2121,13 @@ mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
 # remove cerrado natveg? this messes up the plot
 # only if varwidth=T: can't handle different numbers of obs 
 #   in paired boxes
+# now works with position.dodge2
 # remove pairs together?
 mr2$chgln[mr2$site2=='JP2'&mr2$depth=='0-100']=NA
 mr2$chgln[mr2$site2=='It'&mr2$depth=='0-100']=NA
 mr2=group_by(mr2,element,LU,depth) %>%
-  mutate(chglnmn = mean(chgln,na.rm=T),newnobs=n())
+  mutate(chglnmn = mean(chgln,na.rm=T),chglnmax=max(chgln,na.rm=T),
+         chglnmin=min(chgln,na.rm=T), newnobs=n())
 mr2=group_by(mr2,element) %>%
   mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
 
@@ -2097,7 +2141,7 @@ mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
 mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
 mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU!='E']='*'
-#mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
 mr2$sigyr[mr2$depth=='0-100'& mr2$element=='N' & mr2$LU=='E']='+'
 mr2$sigveg[mr2$depth=='0-100'& mr2$element=='K' & mr2$LU=='N']='*'
 mr2$sigyr[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='E']='+'
@@ -2116,7 +2160,7 @@ ggplot(data=mr2, aes(x=LUlongish, y=chgln,width=newnobs,#y=chgln20,
   geom_hline(yintercept=0,show.legend = F,colour='grey60') +
   geom_boxplot(varwidth =T,size=.8,#show.legend = F,
                position=position_dodge2(.8,preserve='single'),
-               outlier.shape = 1) +
+               outlier.shape = 1,width=.8) +
   #geom_pointrange(size=3,
   #             position=position_dodge2(1,preserve='single')) +
   #geom_point(aes(x=LUlongish,y=chglnmn,colour=LUlongish),
@@ -2158,6 +2202,64 @@ ggplot(data=mr2, aes(x=LUlongish, y=chgln,width=newnobs,#y=chgln20,
                           label = sigyr,colour=depth),
             size=6,na.rm=T,show.legend=F,#colour='black',
             position=position_dodge(.8))
+
+mr2=mr2[order(mr2$LU),]
+# plot the points instead of making boxplots:
+ggplot(data=mr2, aes(x=depth, y=chgln,#shape=depth,
+                     shape=LUlongish,colour=LUlongish))+
+  scale_x_discrete()+
+  scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+                      name='Vegetation type',
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  #scale_shape_manual(values=c(1,0),
+  #                   name='Depth (cm)')+
+  scale_shape_manual(values=c(1,5,0),
+                     name='Vegetation type',
+                     labels=c('Eucalyptus','Native vegetation',
+                              'Pasture'))+
+  
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_point(size=2.5, position=position_dodge(.8))+
+  #geom_point(aes(x=LUlongish,y=chglnmn,colour=LUlongish),
+  #           data=distinct(mr2,LUlongish,element,depth,.keep_all=T),
+  #           shape=18,size=3,show.legend = F,position=position_dodge2(.8))+
+            #without subsetting data, print all the points to make a sort of bar
+            #shape=15,size=1,show.legend = F,position=position_dodge2(.8))+
+  geom_pointrange(aes(x=depth,y=chglnmn,colour=LUlongish,ymax=chglnmax,
+                      ymin=chglnmin),
+             data=distinct(mr2,LUlongish,element,depth,.keep_all=T),
+             shape=18,show.legend = F,position=position_dodge2(.8))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Percent change in stock',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  labs(y='ln(stock in 2016 / stock in 2004)', x="Depth (cm)") +
+  #guides(colour=guide_legend(),shape=F)+
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(colour='grey80'),
+        legend.key=element_blank(),
+        legend.title=element_text(size=10))+ 
+  geom_text(mapping = aes( y=maxchgln*1.15*!is.na(sigveg),#x=LUlongish,
+                           x=depth,#colour=LUlongish,
+                          label = sigveg),
+            size=6,na.rm=T,show.legend=F,colour='black',
+            position=position_dodge(.8))+
+  geom_text(mapping = aes(y=(maxchgln)*1.15*!is.na(sigyr),#x=LUlongish, 
+                          x=depth,#colour=LUlongish,
+                          label = sigyr),
+            size=5,na.rm=T,show.legend=F, colour='black',
+            position=position_dodge(.8))
+# Too busy?
+
+
 
 # old figure: lattice
 bwplot(chgln20~LUlongish|element,ylim=c(-1,1),las=1,
@@ -2270,12 +2372,19 @@ ggplot(data=simple20_2limd, aes(x=LU3, y=mn20,colour=LU,shape=year))+
         panel.grid.major = element_blank(),
         legend.key=element_blank())
 
-ggplot(data=simple20_2lim, aes(x=LU3, y=stock20,colour=LU,shape=year))+
-  geom_point(size=4,#show.legend = F
-                  #geom_pointrange(aes(ymin=mn20-se20,ymax=mn20+se20),size=.8,#show.legend = F,
-                  position=position_dodge2(.8)) +
+# One point per stand?
+simple20_2lime=group_by(simple20_2lim,element,year,stand,LU3) %>%
+  mutate(mn20=mean(stock20,na.rm=T),nobs=n(),
+         se20=sd(stock20,na.rm=T)/sqrt(nobs),
+         min20=min(stock20,na.rm=T),
+         max20=max(stock20,na.rm=T))
+simple20_2lime=distinct(simple20_2lime,element,year,LU,LU3,.keep_all=T)
+
+
+ggplot(data=simple20_2lime, aes(x=LU3, y=mn20,colour=LU,shape=year))+
+  geom_point(size=3, position=position_dodge(.8))+
   scale_x_discrete()+
-  scale_shape_manual(values=c(5,0),
+  scale_shape_manual(values=c(18,15),
                      name='Year',labels=c('2004','2016'))+
   scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
                       name='Vegetation type',
