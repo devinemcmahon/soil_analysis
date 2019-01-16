@@ -53,7 +53,8 @@ xyplot(depth~mn*10|site,groups=stdonly,type='l',ylab='Depth (cm)',
                                                  lwd = 2)),
        auto.key=list(space='top', columns=3,lines=T, points=F))
 # Elevated N at 0-10 and 60-100 cm in TM.N and (to a lesser extent) Cr.N
-#   affected by artifacts of N drift correction
+#   affected by artifacts of N drift correction (fixed now?)
+# re-ran JP.N 60-100 but N concs still higher there than 40-60 and other veg
 xyplot(depth~repval*10|site,groups=stdonly,type='p',ylab='Depth (cm)',
        data=dats4a[dats4a$element=='N' ,],
        ylim=c(90,0),xlab='N (g / kg)',as.table=T,layout=c(3,1),

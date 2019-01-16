@@ -32,7 +32,9 @@ qqr=function(lmeobject){
 # Go with consistent conversion for all stands (all_data_10-4)
 # temporary fix: 
 # was commented out; uncommented 1-1-19 because these issues are still there!
-widedats=readRDS('all_data_10-4-18_remake.Rds')
+#widedats=readRDS('all_data_10-4-18_remake.Rds')
+widedats=readRDS('all_data_1-15-19.Rds')
+#widedats=readRDS('altv_data_1-15-19.Rds')
 #widedats$ID=as.character(widedats$ID)
 #widedats$ID[widedats$ID=='It.N.T.A.60-100.16'|
 #              widedats$ID=='It.N.TA.60-100.16']='It.N.A.5.60-100.16'
@@ -107,10 +109,12 @@ dats$value[dats$element=='P2' & dats$value>600 &
 
 # added Jan 7 2019:
 # Weird low N values (missed a decimal point?):
-dats$value[dats$ID=='Vg.E.3.40-60.04'& dats$element =='N']=NA 
-dats$value[dats$ID=='JP.P.3.0-10.04'& dats$element =='N']=NA 
-dats$value[dats$ID=='Vg.E.3.40-60.04'& dats$element =='CN']=NA 
-dats$value[dats$ID=='JP.P.3.0-10.04'& dats$element =='CN']=NA 
+# Take these back out; they were redone
+
+#dats$value[dats$ID=='Vg.E.3.40-60.04'& dats$element =='N']=NA 
+#dats$value[dats$ID=='JP.P.3.0-10.04'& dats$element =='N']=NA 
+#dats$value[dats$ID=='Vg.E.3.40-60.04'& dats$element =='CN']=NA 
+#dats$value[dats$ID=='JP.P.3.0-10.04'& dats$element =='CN']=NA 
 
 
 # Remove duplicates if just a few simple samples were analyzed 

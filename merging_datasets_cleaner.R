@@ -17,7 +17,8 @@ length(ea17$ID)
 #ea18=read.csv('CN18_to8-17.csv')
 #ea18=read.csv('CN18_to9-13.csv')
 #ea18=read.csv('CN18_to_10-2.csv')
-ea18=read.csv('CN18_to_10-2_remake.csv')
+#ea18=read.csv('CN18_to_10-2_remake.csv')
+ea18=read.csv('CN_to_1-15-19.csv')
 
 ea17=ea17[,-which(!is.element(names(ea17),names(ea18)))]
 ea=rbind(ea17,ea18)
@@ -26,26 +27,42 @@ unique(ea$stand)
 ea=ea[,-which(names(ea) %in% c('C.mg','N.mg'))]
 
 length(ea$ID)
-length(unique(ea$ID))
+length(unique(ea$ID)) 
+#18% of capsules run were analytical replicates
 
 # average duplicates
 dupIDs=ea$ID[duplicated(ea$ID)==T]
 dups=ea[ea$ID %in% dupIDs,]
 dups = dups %>% mutate_if(is.factor, as.character) 
+dups=mutate(dups,IDday=paste(ID,CNevalday,sep=''))
 dups1=group_by(dups,ID)%>%
   summarise_all(function(x){x[1]})
 dups2=group_by(dups,ID)%>%
   summarise_all(function(x){x[2]})
-dups1$ID[dups1$year=='04'] # there are no duplicates from 2004
-# not good
+
+######## Data visualization
+##################
+dups1$ID[dups1$year==4] # ok, year became numeric
+
+ndups=group_by(ea,ID) %>% summarise(ndups=n())
+table(ndups$ndups) 
+ndups$ID[ndups$ndups==3] #24 of them
+dups3=group_by(dups,ID)%>%
+  summarise_all(function(x){x[3]})
+dups3=dups3[!is.na(dups3$C),]
+dups25=dups2[dups2$ID %in% dups3$ID,]
+plot(dups25$C,dups3$C) # pretty close
+abline(0,1)
+plot(dups25$Nadj,dups3$Nadj) #mostly close
+# dups3 higher than dups25 for some reps
+# JP.E1.4.60-100.16 didn't get a value until the 3rd try
 
 length(dups1$ID)/length(ea$ID) # 14%
 summary(abs(dups1$C-dups2$C)*2/(dups1$C+dups2$C)) 
 # mean difference is 8.8%, median 4.6% (min .04%, max 66%)
+# with 1-15-19 reruns, more
 summary(abs(dups1$N-dups2$N)*2/(dups1$N+dups2$N)) 
 # mean 26%, median 16%, min =0 and max=200%
-
-
 plot(dups1$C,dups2$C/dups1$C) 
 dups1$ID[dups2$C/dups1$C>1.2]
 dups2$C[dups2$C/dups1$C>1.2]
@@ -69,7 +86,7 @@ abline(0,1)
 dups1$ID[dups2$Nadj/dups1$Nadj<.8] # 2 fewer than just N
 # take the more recent values for JP.A because those were foiled
 #   a really long time before running and some may have leaked?
-plot(dups1$N,dups2$N,col=as.numeric(as.factor(dups1$site)))
+plot(dups1$Nadj,dups2$Nadj,col=as.numeric(as.factor(dups1$site)))
 legend('topleft',col=as.numeric(as.factor(unique(dups1$site))),
        legend=unique(dups1$site),bty='n',pch=16)
 abline(0,1) # pretty ok
@@ -78,17 +95,94 @@ plot(dups1$C,dups2$C,col=as.numeric(as.factor(dups1$site)))
 legend('topleft',col=as.numeric(as.factor(unique(dups1$site))),
        legend=unique(dups1$site),bty='n',pch=16)
 abline(0,1) # nice
-# just average them together.
+##################
 
-dupsavg=group_by(dups,ID)%>%
-  summarise_all(function(x){ifelse(is.numeric(x)==T,
-                                   mean(x,na.rm=T),x[1])})
+# just average them together. 1-15-19: No, don't
+#dupsavg=group_by(dups,ID)%>%
+#  summarise_all(function(x){ifelse(is.numeric(x)==T,
+#                                   mean(x,na.rm=T),x[1])})
 # oh good, Nadj does get averaged
 
-ea=ea[-which(ea$ID %in% dupIDs),]
-ea=rbind(ea,dupsavg)
+# 1-15-19
+# More visualization
+##################
+plot(dups1$C,dups2$C,col=dups1$year)
+plot(dups1$C,dups2$C,col=as.numeric(dups2$CNevalday=='1-15')+1)
+abline(0,1)
+# mostly the re-runs are lower C
+plot(dups1$Nadj,dups2$Nadj,col=as.numeric(dups2$CNevalday=='1-15')+1)
+# and much lower N
+dups2$ID[dups2$CNevalday=='1-15']
+dups2$Nadj[dups2$CNevalday=='1-15']
+dups1$Nadj[dups2$CNevalday=='1-15']
+dups2$Nadj[dups2$CNevalday=='1-15']/dups1$Nadj[dups2$CNevalday=='1-15']
+# If redone (mostly due to questionably high N values)
+#   Are the redos better?
+# Executive decision: yes, trust redone N values more
+dups1$ID[dups1$Nadj/dups2$Nadj<.8] # 9 (plus 4 NAs)
+dups1$ID[dups2$Nadj/dups1$Nadj<.8] # 43 (plus 4 NAs)
+plot(dups1$Nadj,dups2$Nadj,col=as.numeric(dups1$Nadj/dups2$Nadj<.7)+1)
+plot(dups1$Nadj,dups2$Nadj,col=as.numeric(dups2$Nadj/dups1$Nadj<.7)+1)
+abline(0,1)
+##################
+# go with the lower values?
+# If off by more than 20%, take the lower value
+#     given that most of those I re-ran were because of weirdly high N 
+#dups2$Nadj[dups1$Nadj/dups2$Nadj<.8]=NA
+#dups1$Nadj[dups2$Nadj/dups1$Nadj<.8]=NA
+#dupsboth=rbind(dups1,dups2) 
+# just gets rid of some analytical duplicates if more than 2
+# slightly more nuanced (and with larger tolerance of deviation):
+dupsboth=dups
+hi1s=dups1$IDday[dups2$Nadj/dups1$Nadj<.7 &
+                   !is.na(dups2$Nadj/dups1$Nadj)]
+hi2s=dups2$IDday[dups1$Nadj/dups2$Nadj<.7 &
+                   !is.na(dups2$Nadj/dups1$Nadj)]
+hiboth=c(hi1s,hi2s)
+length(hiboth)# 35 samples
+# problem is two samples that were run twice on the same day
+# take these out of consideration manually
+# Also one sample where one of the reps is 0
+dupsboth$Nadj[dupsboth$IDday %in% hiboth &
+             !is.element(dupsboth$ID,c(
+               "Eu.E2.3.60-100.16","JP.P.3.0-10.04",
+               "Eu.E2.Ee1.1.10-20.16"))]=NA
+dupsboth$N[dupsboth$IDday %in% hiboth &
+                !is.element(dupsboth$ID,c(
+                  "Eu.E2.3.60-100.16","JP.P.3.0-10.04",
+                  "Eu.E2.Ee1.1.10-20.16"))]=NA
+dupsboth=group_by(dupsboth,ID)%>%
+  summarise_all(function(x){ifelse(is.numeric(x)==T,
+                                   mean(x,na.rm=T),x[2])})
+# second element of x to get the later CNevalday
+# this is wrong for the hi2s, but there are only 3 of them
+
+# Problem with NAs identified:
+#dupsboth$ID[is.na(dupsboth$Nadj)]
+#dupsboth$ID[dupsboth$Nadj==0]
+#ea$Nadj[ea$ID=="Eu.E2.Ee1.1.10-20.16"]
+#ea$Nadj[ea$ID=="Eu.E2.3.60-100.16"]
+#ea$Nadj[ea$ID=="JP.P.3.0-10.04"]
+#ea$CNevalday[ea$ID=="JP.P.3.0-10.04"]
+#ea$line[ea$ID=="JP.P.3.0-10.04"]
+#ea$N[ea$ID=="JP.P.3.0-10.04"]
+# both run twice on the same day, got quite different values
+#   because the values were so small
+# just average them 
+dupsboth=dupsboth[,-which(names(dupsboth)=='IDday')] 
+#names(dupsboth) 
+
+ea=ea[-which(ea$ID %in% dupsboth$ID),]
+#ea=rbind(ea,dupsavg)
+ea=rbind(ea,dupsboth)
 ea=mutate(ea,CNavgd=as.numeric(is.element(ID,dupIDs)))
+# This isn't entirely accurate with some of the duplicate 
+#   values excluded, but good enough
+# Actually, might be more informative to say what % of analyzed
+#   samples were analytical replicates, vs % of unique samples
+#   had at least one replicate (the 18% above)
 length(unique(ea$ID))==length(ea$ID)
+sum(ea$CNavgd)/length(ea$CNavgd) #17.7%
 
 CN04=read.csv('2004_CN_data.csv')
 names(CN04)=c('ID','N','C','BD')
@@ -140,11 +234,12 @@ Nbetas=summary(Nmethod.lm)$coef[,1]
 #########
 plot(Nadj~N.04,data=eawbs)
 abline(0,1)
-plot(Nadj~predict(Nmethod.lm),data=droplevels(eawbs),col=stand,pch=16)
-abline(0,1)
-legend('bottomright',col=as.numeric(as.factor(
-  levels(droplevels(eawbs$stand)))),
-       pch=16,legend=levels(droplevels(eawbs$stand)),ncol=2)
+#plot(Nadj~predict(Nmethod.lm),data=droplevels(eawbs),col=stand,pch=16)
+# an NA someplace breaks this predict, whatever
+#abline(0,1)
+#legend('bottomright',col=as.numeric(as.factor(
+#  levels(droplevels(eawbs$stand)))),
+#       pch=16,legend=levels(droplevels(eawbs$stand)),ncol=2)
 
 # JP.E2 all fall below the 1:1 line (predicted too low)
 
@@ -196,6 +291,8 @@ allCN=ungroup(allCN)
 #  If you want to come back to just CN data
 #allCN=readRDS('allCN_through_7-27-18.Rds')
 # saveRDS(allCN,'allCN_through_10-2-18.Rds')
+# saveRDS(allCN,'allCN_through_1-15-19.Rds')
+##saveRDS(allCN,'avgdCN_through_1-15-19.Rds') # no longer needed
 
 #xrf=readRDS('xrf_through_8-9-18.Rds')
 #xrf=readRDS('XRFdata_through_8-9-18.Rds')
@@ -216,3 +313,5 @@ head(dats)
 #saveRDS(dats,'all_data_9-29-18.Rds')
 #saveRDS(dats,'all_data_10-4-18.Rds')
 #saveRDS(dats,'all_data_10-4-18_remake.Rds')
+#saveRDS(dats,'all_data_1-15-19.Rds')
+#saveRDS(dats,'altv_data_1-15-19.Rds') # no longer needed

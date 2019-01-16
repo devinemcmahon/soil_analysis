@@ -33,7 +33,22 @@ prepnewEAdat2=function(dfr){
   newdfr$line=c(rep(0,laststd),seq(1,length(newdfr$ID)-laststd))
   newdfr
 }
-
+prepnewEAdat3=function(dfr){
+  dfr=dfr[,c(1,3,5,16,17,18,19)] 
+  # so many columns
+  names(dfr)=c('run.date','ID','Wt.mg','N.mg','C.mg','N','C')
+  dfr=dfr[-1,]
+  dfr1=dfr[,(1:2)]
+  dfr2=as.data.frame(lapply(dfr[,-(1:2)],makenumeric))
+  newdfr=cbind(dfr1,dfr2)
+  head(newdfr)
+  newdfr$ID=gsub(' ','.',newdfr$ID)
+  newdfr$ID=typofixer(newdfr$ID)
+  newdfr=strfun(newdfr)
+  laststd=min(which(newdfr$site!='std' & newdfr$site!='bypass'))-1
+  newdfr$line=c(rep(0,laststd),seq(1,length(newdfr$ID)-laststd))
+  newdfr
+}
 plotEAdat=function(dfr){
   intc=mean(dfr$N[dfr$line==0]) # ostensible intercept of regression
   plot(N~line,data=dfr[dfr$site=='std',])
@@ -123,8 +138,15 @@ ea10=read.table('EA_10-2-18.txt',header=T,sep='\t',
 ea10=prepnewEAdat2(ea10)
 ea10$Nadj=ea10$N
 
+ea11 = read.table('EA_1-15-19.txt',header=T,sep='\t',
+                  as.is=T)
+ea11=prepnewEAdat3(ea11)
+ea11$Nadj=ea11$N
+ea11=ea11[-which(ea11$ID=='JP.E1.2.0-10.16'),]
+# ran a composited sample where composited is only for XRF
+
 ea12=ea1[,which(names(ea1)%in% names(ea2))]
-newea=rbind(ea12,ea2,ea3,ea4,ea5,ea6,ea7,ea8,ea9,ea10)
+newea=rbind(ea12,ea2,ea3,ea4,ea5,ea6,ea7,ea8,ea9,ea10,ea11)
 unique(newea$site)
  
 newea$ID=typofixer(newea$ID)
@@ -178,3 +200,5 @@ newea$CNevalday[newea$CNevalday=='2-9']='9-7'
 #write.csv(newea,'CN18_to_10-2.csv')
 # 1-8-19
 #write.csv(newea,'CN18_to_10-2_remake.csv')
+# 1-15-19
+#write.csv(newea,'CN_to_1-15-19.csv')
