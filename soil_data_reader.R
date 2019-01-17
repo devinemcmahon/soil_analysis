@@ -380,7 +380,8 @@ shorttstk$element[shorttstk$element=='Ca2']='Ca'
 shorttstk$element[shorttstk$element=='Mg2']='Mg'
 
 #budgets=read.csv('nutrient_budget_summary.csv')
-budgets=read.csv('nutrient_budgets_linked_bark.csv')
+#budgets=read.csv('nutrient_budgets_linked_bark.csv')
+budgets=read.csv('nutrient_budg_semiupdated.csv')
 otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941,
                                0.000128281,0.00000841287,0.000077024, NA, NA),
                       Plconc=c(0.000599674, 0.0000700706,0.000845645,
@@ -609,11 +610,11 @@ yrdiffstockplot20_bmLUall=function(sub_ttests,label=T,fulllegend=F){
          legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
                       sep=' '))}
   # Replace std devs by std errors
-  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-2*sub_ttests$sd20_16/sqrt(3),
-           sub_ttests$stock20_04,sub_ttests$stock20_16+2*sub_ttests$sd20_16/sqrt(3),
+  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-sub_ttests$sd20_16/sqrt(3),
+           sub_ttests$stock20_04,sub_ttests$stock20_16+sub_ttests$sd20_16/sqrt(3),
            col='gray60',lwd=2)
-  segments(sub_ttests$stock20_04-2*sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
-           sub_ttests$stock20_04+2*sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+  segments(sub_ttests$stock20_04-sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           sub_ttests$stock20_04+sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
            col='gray60',lwd=2)
   points(stock20_16~stock20_04,data=sub_ttests,col=LU,
          pch=as.numeric(biome)+15,cex=2,bg=LU)

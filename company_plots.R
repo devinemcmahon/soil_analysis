@@ -125,6 +125,23 @@ ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$site=='Vg'&
                 label=ifelse(pval<0.05 &year=='16','*','')),
                 colour='black',size=6,nudge_x=-1)
 
+ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$element =='CN',])+
+  geom_line(aes(group=year),size=1.2)+
+  coord_flip()+
+  scale_x_reverse(limits = c(90, 0))+
+  facet_wrap(stand~.)+
+  theme(legend.position=c(0.9,0.3),
+        legend.background = element_blank(),
+        legend.key = element_blank())+
+  labs(y='C:N',
+       x='Profundidade (cm)')+
+  geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                width=0.2) +
+  scale_colour_discrete(labels=c('2004','2016'),
+                        guide = guide_legend(reverse=F,title=NULL))+
+  geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+    label=ifelse(pval<0.05 &year=='16','*','')),
+    colour='black',size=6,nudge_x=-1)
 
 
   labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
