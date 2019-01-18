@@ -234,17 +234,21 @@ Nbetas=summary(Nmethod.lm)$coef[,1]
 #########
 plot(Nadj~N.04,data=eawbs)
 abline(0,1)
-#plot(Nadj~predict(Nmethod.lm),data=droplevels(eawbs),col=stand,pch=16)
-# an NA someplace breaks this predict, whatever
-#abline(0,1)
-#legend('bottomright',col=as.numeric(as.factor(
-#  levels(droplevels(eawbs$stand)))),
-#       pch=16,legend=levels(droplevels(eawbs$stand)),ncol=2)
+plot(Nadj~predict(Nmethod.lm),data=droplevels(eawbs),col=stand,pch=16)
+abline(0,1)
+legend('bottomright',col=as.numeric(as.factor(
+  levels(droplevels(eawbs$stand)))),
+       pch=16,legend=levels(droplevels(eawbs$stand)),ncol=2)
 
 # JP.E2 all fall below the 1:1 line (predicted too low)
 
+
 plot(Nadj~N.04,data=eawbs[eawbs$site.04=='JP',],col=stand,pch=16)
 abline(0,1)
+summary(eawbs[eawbs$stand=='JP.E2',]$Nadj-
+          eawbs[eawbs$stand=='JP.E2',]$N.04)
+# off by -.02 on average
+
 plot(Nadj~predict(Nmethod.lm,newdata=eawbs[eawbs$site.04=='JP',]),
      data=eawbs[eawbs$site.04=='JP',],col=stand,pch=16)
 abline(0,1) # correction makes it worse for JP.E2, better for the others

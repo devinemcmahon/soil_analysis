@@ -254,49 +254,6 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   #geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
   #          na.rm=T,show.legend=F,size=8,hjust=0)
 
-names(depstksum)
-depstksum$element=as.character(depstksum$element)
-depstksum$element[depstksum$element=='Ca2']='Ca'
-depstksum$element[depstksum$element=='P2']='P'
-depstksum$element=factor(depstksum$element,levels=c('C','N','K','P','Ca'))
-depstksum$year=factor(depstksum$year,levels=c('16','04'))
-depstksum$mnstk[depstksum$element=='C']=depstksum$mnstk[depstksum$element=='C']/10
-depstksum$sestk[depstksum$element=='C']=depstksum$sestk[depstksum$element=='C']/10
-depstksumE=depstksum[depstksum$LU=='E',]
-depstksumE=mutate(depstksumE,sig=rep(NA))
-depstksumE$sig[depstksumE$depth==80&depstksumE$element=='N'&depstksumE$biome=='Cer'&
-              depstksumE$year=='16']=1
-depstksumE$sig[depstksumE$depth==80&depstksumE$element=='Ca'&
-              depstksumE$year=='16']=1
-depstksumE$sig[depstksumE$depth==20&depstksumE$element=='C'&depstksumE$biome=='Cer'&
-              depstksumE$year=='16']=1
-depstksumE$sig[depstksumE$depth==20&depstksumE$element=='Ca'&depstksumE$biome=='Cer'&
-              depstksumE$year=='16']=1
-depstksumE$sig[depstksumE$depth==20&depstksumE$element=='K'&depstksumE$biome=='AF'&
-              depstksumE$year=='16']=1
-depstksumE$sig=as.integer(depstksumE$sig)
-
-labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
-
-ggplot(data=depstksumE, aes(x=year, y=mnstk, fill=as.factor(depth))) +
-  geom_bar(stat="identity") + 
-  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
-  coord_flip() +
-  labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
-       x="Year", fill="Depth (cm)") +
-  theme(strip.text.y = element_text(angle = 0),
-        legend.position=c(0.8,0.2),
-        panel.background = element_rect(fill='white'),
-        panel.grid.major.x = element_line(colour='grey80'),
-        panel.grid.major.y = element_blank()) +
-  #geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
-  scale_fill_brewer(palette='Blues',direction = -1,
-                    labels=rev(c('0-10','10-20','20-40',
-                              '40-60','60-100')),
-                    guide = guide_legend(reverse=T))
-  #geom_point(mapping = aes(y = mnstk*(sig>0)),
-  #           shape=18,size=3,show.legend=F)
-#geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
 
 tapply(shorttstk$stock100_16,shorttstk$element,
        function(x){mean(x,na.rm=T)})
@@ -341,48 +298,12 @@ tapply(shortE$stock100_16[shortE$element=='C'],
        shortE$biome[shortE$element=='C'],
        function(x){mean(x,na.rm=T)}) 
 
-mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='C']) # 46.1
+mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='C']) # 46.0
 mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='C']) # 50.1
 
 
-
-allstks = group_by(nutstk,biome,LU,element) %>% 
-  summarise(stk20_16=mean(stock20_16),
-            stk100_16=mean(stock100_16),
-            se20_16=sd(stock20_16)/sqrt(n()),
-            se100_16=sd(stock100_16)/sqrt(n()),
-            stk20_04=mean(stock20_04),
-            stk100_04=mean(stock100_04),
-            se20_04=sd(stock20_04)/sqrt(n()),
-            se100_04=sd(stock100_04)/sqrt(n()),
-            chgrat20=mean(stk20_16/stk20_04),
-            chgrat100=mean(stk100_16/stk100_04),
-            nstands=n())
-
-
 # just-euc ratios
-Crat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                   data=euc2deps2[euc2deps2$element=='C',],na.action = na.omit)
-summary(Crat100euc.lme) # no change
-qqr(Crat100euc.lme) # a few outliers, esp at upper tail (log no help)
-Nrat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                   data=euc2deps2[euc2deps2$element=='N',],na.action = na.omit)
-summary(Nrat100euc.lme) # decrease, p=.0304 #now no change
-qqr(Nrat100euc.lme)# residuals ok
-Krat100euc.lme=lme(stockratio~year,random=~1|site/stand,
-                   data=euc2deps2[euc2deps2$element=='K',],na.action = na.omit)
-# marginally shallower, p=.0612; tails also far off; log no help
-# with 16 densities, p=.074 increase
-# now it's .066, with version control and redone N content. Why the change???
-# no change with euc2deps2?
-Krat100euc2.lme=lme(stockratio~year,random=~1|site/stand,
-                    data=euc2deps[euc2deps$element=='K'&
-                                    euc2deps$site!='Bp',],na.action = na.omit)
-# Ca: no change but residuals look pretty normal
-# When using Ca2, large increase (makes sense), p=0.0005
-# no change in P; weird residuals even when log-transformed
-
-# Wait, these are proportion data and don't come from normal distributions
+# These are proportion data and don't come from normal distributions
 # Try generalized mixed models
 #library(MASS)
 Krateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
@@ -410,9 +331,8 @@ Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
 summary(Crateuc.pql) # nada
 qqr(Crateuc.pql) # not great
 
-
-
-# No way that distribution of residuals will be normal
+######## Row position and other heterogeneity things
+##################
 Celt.lme=lme(log(value)~elt, random=~1|stand,
              data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
                          dats$element =='C',],na.action=na.omit)
@@ -634,38 +554,10 @@ tapply(droplevels(stockcvs[stockcvs$element %in%
        droplevels(stockcvs[stockcvs$element %in% 
                              c('C','N','P2','Ca2','K','S','Zn')&
                              stockcvs$LU=='E',])$element,summary)
+##################
 
 
-# Difference between euc and not
-vegrats=group_by(shorttstk, site, element) %>%
-  mutate(natrat100_16=ifelse(sum(LU=='N')>0,
-                             stock100_16/stock100_16[LU=='N'],NA),
-         natrat100_04=ifelse(sum(LU=='N')>0,
-                             stock100_04/stock100_04[LU=='N'],NA),
-         natratrat=natrat100_16/natrat100_04)
-summary(vegrats$natrat100_04[vegrats$element=='C'&vegrats$LU=='E'])
-summary(vegrats$natrat100_16[vegrats$element=='C'&vegrats$LU=='E'])
-# generally similar C in euc and native
-t.test(log(vegrats$natrat100_04[vegrats$element=='C'&vegrats$LU=='E'])) 
-# p = .88
-t.test(log(vegrats$natratrat[vegrats$element=='C'&vegrats$LU=='E']))
-# p = .10, maybe increase relative to native between 04 and 16 
-#   (CI -.01 to .12)
-
-# is this different from the lmes? 
-t.test(tstock$stock100_04[tstock$element=='C'],
-       tstock$stock100_16[tstock$element=='C'],paired=T)
-# p = .41, but .027 for N
-# different because just 1 sample per stand, not 4
-# is this more correct? probably not, doesn't include variance within site
-
-summary(vegrats$natratrat[vegrats$element=='C'&vegrats$LU=='E'])
-# median 1.07, mean 1.06, max 1.15
-summary(vegrats$natratrat[vegrats$element=='N'&vegrats$LU=='E'])
-# median 1.29, mean 1.08
-
-
-tstock$stock100_16[tstock$stand=='Eu.E2'&tstock$element=='N']
+tstock$stock100_16[tstock$stand=='Eu.E1'&tstock$element=='N']
 # E1 is the one that increased a bunch
 # Should have had a loss of 115 kg ha-1; instead gained some 3500 kg
 #   well, that isn't right
@@ -687,15 +579,6 @@ bdgsum=group_by(budgets,Nutrient)%>%
             Budget=Input-Harvest)
 print.data.frame(bdgsum)
 
-plot(Concentration~Nutrient,data=budgets)
-
-#summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
-#          budgets$Wood_m3_1[budgets$Nutrient=='N']*
-#          budgets$Concentration[budgets$Nutrient=='N']*511)
-summary(budgets$budget[budgets$Nutrient=='N']*1000)
-# overall changes
-plot(budgets$budget[budgets$Nutrient=='N'])
-abline(h=0)
 
 summary(stkchgs$minbudg[stkchgs$element=='N']*1000)
 # max N export = 478 kg ha-1 over the 12 years
@@ -732,11 +615,9 @@ tapply(stkchgs$budget,stkchgs$element,mean)
 tapply(stkchgs$efs20,stkchgs$element,mean)
 log(abs(tapply(stkchgs$budget,stkchgs$element,mean)))
 
-t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) # for all elements, p=.069
-# now it's .11 with stkchgs, .14 with stkchgs2
+t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) 
 t.test(stkchgs$chg20[stkchgs$element=='N'],
        stkchgs$budget[stkchgs$element=='N'],paired=T)
-# Ca sort of differs at p=.1, NPK don't 
 t.test(stkchgs$chg20,stkchgs$lessrotbudg,paired=T) 
 t.test(stkchgs$chg20,stkchgs$woodonlybudg,paired=T) # p=.059
 # 
@@ -744,17 +625,6 @@ t.test(stkchgs$bark20budg,stkchgs$woodonlybudg,paired=T)
 # those are different, good
 
 palette(rainbow(9))
-plot(chg100~budget,data=stkchgs[stkchgs$element=='N',],
-     pch=16,col=stand)
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n')
-abline(0,1) # yeah, not even related
-
-knowns=stkchgs[-which(stkchgs$stand %in% 
-                        c('Bp.E1','BO.E','JP.E1','JP.E2')),]
-plot(chg100~budget,data=knowns[knowns$element=='Ca',],
-     pch=16,col=stand)
-
 plot(chg100~budget,data=stkchgs,type='n', 
      xlab='Fertilizer - harvest, Mg ha-1',
      ylab='Observed change in stocks to 100 cm',las=1)
@@ -785,8 +655,8 @@ segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-#text(stkchgs$stdconcbudg,stkchgs$chg20,labels=stkchgs$element,
+#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
+text(stkchgs$plconcbudg,stkchgs$chg20,labels=stkchgs$element,
 #text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
       #cex=stkchgs$conc*1000, 
       col=as.numeric(stkchgs$stand))
@@ -802,30 +672,38 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
 #     but expected still >> observed
 # Low Ca concs in JP associated with larger-than-predicted Ca increases
 #   so again concentration doesn't seem to be the main driver. Harvested biomass, yes?
-# Or maybe they left the bark onsite in JP so increases > expected?
+# Or maybe they left the bark onsite in JP so increases > expected? No
 # Changing the concentrations to the literature values I cited for E. grandis
 #   improves Ca in BO.E, but doesn't help much with other nutrients
 
 # taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
+stkchgs3=stkchgs[stkchgs$element!='Mg',]
 
-plot(chg20~budget,data=stkchgs,type='n', 
+plot(chg20~budget,data=stkchgs3,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1,
-     xlim=c(-.2,.5),ylim=c(-.2,.5))
+     #xlim=c(-.2,.5),ylim=c(-.2,.5),
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
-         col=as.factor(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
-         y1=stkchgs$chg20+stkchgs$sdchg20,
-         col=as.factor(stkchgs$stand))
-text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-#text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
-          cex=stkchgs$conc*2000,
-     col=as.numeric(stkchgs$stand))
+segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+         col=as.factor(stkchgs3$stand))
+segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
+         y1=stkchgs3$chg20+stkchgs3$sdchg20,
+         col=as.factor(stkchgs3$stand))
+text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
+#text(stkchgs3$lessrotbudg,stkchgs3$chg20,labels=stkchgs3$element,
+          cex=stkchgs3$conc*2000,
+     col=as.numeric(stkchgs3$stand))
 # What is a realistic range of bark? How to present sensitivities?
 # Table of ratios of budget to its variations?
+
+JPchg=stkchgs3[stkchgs3$stand %in% c('JP.E1','JP.E2'),]
+#text(stkchgs3$lessrotbudget,stkchgs3$chg20,labels=stkchgs3$element,
+text(stkchgs3$moreharvbudg,stkchgs3$chg20,labels=stkchgs3$element,
+     cex=stkchgs3$conc*2000,
+     col=as.numeric(stkchgs3$stand))
+
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 
@@ -839,21 +717,14 @@ rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-#segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
-#         col=as.numeric(as.factor(stkchgs$biome))+2)
-segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
-         col=as.numeric(as.factor(stkchgs3$biome))+2)
+segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
+         col=as.numeric(as.factor(stkchgs$biome))+2)
+#segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+#         col=as.numeric(as.factor(stkchgs3$biome))+2)
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
-#arrows(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
-#         col=as.numeric(as.factor(stkchgs3$biome))+2,
-#       angle=90,lty=2,code=3,length=.05)
-#arrows(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
-#         y1=stkchgs3$chg20+stkchgs3$sdchg20,
-#         col=as.numeric(as.factor(stkchgs3$biome))+2,
-#       angle=90,lty=2,code=3,length=.05)
-# arrows are worse
+
 
 text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)#,
 #     col=as.numeric(as.factor(stkchgs3$biome))+2)
@@ -866,8 +737,10 @@ plot(chg20~budget,data=stkchgs3,type='n',
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+segments(x0=stkchgs3$minbudg,x1=stkchgs3$maxbudg,y0=stkchgs3$chg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
+#segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+#         col=as.numeric(as.factor(stkchgs3$biome))+2)
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
@@ -1071,219 +944,71 @@ table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C'])
 # Not balanced--rep 5
 
 
-Alaov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Al',])
-qqr(Alaov) # one outlier
-summary(Alaov)
-TukeyHSD(Alaov) # all different, P > E >> N
-Zraov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Zr',])
-qqr(Zraov) # mostly ok, but tails off
-summary(Zraov) # no difference
-Tiaov=aov(stock20~LU,data=simple20_2[simple20_2$element=='Ti',])
-qqr(Tiaov) # lower tail quite off
-# Ti is different at p=.035
-TukeyHSD(Tiaov) # same order as Al--but with simple20_2 (incl JP.P),
-#   only difference is N < E
-# is BD different?
-BDaov=aov(BD20~LU,data=simple20_2[simple20_2$element=='C',])
-qqr(BDaov) # tails off a bit
-summary(BDaov) # p=.0388 (with 20_2, .0001)
-TukeyHSD(BDaov) # N < P at p=.0585, ok
-# or P ~> E (p=.055) > N when including both pastures 
-# Maybe comparisons w/o year should be in concentrations?
-Alaovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='Al',])
-qqr(Alaovc) # tails a bit off
-summary(Alaovc) # no difference
-bwplot(BD20~LU|year,data=droplevels(simple20_2[simple20_2$element=='Al',]),
-       varwidth=T,las=1,xlab='Vegetation',ylab='Bulk density, g cm-3')
-# But this includes 2004 data (kept as legacy, not used in stocks)
-# Was it used to weight concentrations?
-# Makes sense that BD controls Al stocks; Al is like 15-20% of the soil
-Tiaovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='Ti',])
-qqr(Tiaovc) # tails a bit off
-summary(Tiaovc) # no difference, ok
-Caovc=aov(conc20~LU,data=simple20_2[simple20_2$element=='C',])
-qqr(Caovc) # lower tail a bit off, mostly ok
-summary(Caovc) # that is different, good
-TukeyHSD(Caovc) # N > P at p= .0019; at alpha=.11, N > E > P
-
-Cstk20blLU16.aov=aov(log(stock20)~biome*LU,
-                     data=simple20_2[simple20_2$year=='16'& 
-                                       simple20_2$element=='C',])
-qqr(Cstk20blLU16.aov) #pretty ok
-summary(Cstk20blLU16.aov) # not different
-Cstk20blLUN.aov=aov(log(stock20)~biome*LU,
-                     data=droplevels(simple20_2[simple20_2$year=='16'& 
-                                       simple20_2$element=='C'&
-                                       simple20_2$site2 %in% 
-                                       c('Vg','JP2','It','Eu'),]))
-qqr(Cstk20blLUN.aov) #ok
-summary(Cstk20blLUN.aov) # no differences
-
-
-
-bwplot(stock20~LUlong|biomelong*year,
-       data=droplevels(simple20_2[simple20_2$element=='C'&
-                                    simple20_2$site2 %in% 
-                                    c('Vg','JP2','It','Eu'),]),
-       ylab='Carbon stock (Mg ha-1), 0-20 cm',as.table=T)
-bwplot(stock100~LUlong|biomelong*year,
-       data=droplevels(simple20_2[simple20_2$element=='C'&
-                                    simple20_2$site2 %in% 
-                                    c('Vg','JP2','It','Eu'),]),
-       ylab='Carbon stock (Mg ha-1), 0-100 cm',as.table=T)
-
-
-
-Cstk20blLUN04.aov=aov(log(stock20)~biome*LU,
-                    data=droplevels(simple20_2[simple20_2$year=='04'& 
-                                                 simple20_2$element=='C'&
-                                                 simple20_2$site2 %in% 
-                                                 c('Vg','JP2','It','Eu'),]))
-qqr(Cstk20blLUN04.aov) #tails way off with JP2
-summary(Cstk20blLUN04.aov) # only sig diff btwn biomes
-TukeyHSD(Cstk20blLUN04.aov) # no signif pairwise diffs
-
-# same thing to 100 cm
-Cstk100blLU16.aov=aov(log(stock100)~biome*LU,
-                     data=simple20_2[simple20_2$year=='16'& 
-                                       simple20_2$element=='C',])
-qqr(Cstk100blLU16.aov) #pretty ok
-summary(Cstk100blLU16.aov) # not different except between biomes
-Cstk100blLUN.aov=aov(log(stock100)~biome*LU,
-                    data=droplevels(simple20_2[simple20_2$year=='16'& 
-                                                 simple20_2$element=='C'&
-                                                 simple20_2$site2 %in% 
-                                                 c('Vg','JP2','It','Eu'),]))
-qqr(Cstk100blLUN.aov) #tails a bit off
-summary(Cstk100blLUN.aov) # no differences
-
-
-Cstk100blLUN04.aov=aov(log(stock100)~biome*LU,
-                      data=droplevels(simple20_2[simple20_2$year=='04'& 
-                                                   simple20_2$element=='C'&
-                                                   simple20_2$site2 %in% 
-                                                   c('Vg','JP2','It','Eu'),]))
-qqr(Cstk100blLUN04.aov) #tails off 
-summary(Cstk100blLUN04.aov) # only sig diff btwn biomes
-TukeyHSD(Cstk100blLUN04.aov) # AF N > Cer E, ok (p=.038)
-# marginal: AF > Cer within LU
 
 simple20_2=mutate(simple20_2,pairtype=ifelse(site2 %in% c('JP','BO'),'P','N'))
 simple20_2$pairtype=factor(simple20_2$pairtype,levels=c('N','P'))
 
 # is it appropriate to group pasture with native veg? 
 # Decided that it's not (use LU, not LU2)
-Casimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
-qqr(Casimp.lme3) # good with log
-summary(Casimp.lme3) # Ca starts higher under P, increases as under E
-# starts same under N, does not increase
-# Probably better to keep the three types separate
+# Allow different year effects in different sites
 Casimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
 qqr(Casimp.lme4) # actually better than lme3
-summary(Casimp.lme4) # same signifs as lme3
-anova(Casimp.lme3,Casimp.lme4) # yes, 4 better fit
-Casimp.lme5=lme(log(stock20)~year*LU,random=~1|pairtype/site2,
-                data=simple20_2[simple20_2$element=='Ca2',], na.action=na.omit)
-# maybe underdetermined with year intercept?
-qqr(Casimp.lme5)
-summary(Casimp.lme5)# now there's a significant year effect
-anova(Casimp.lme3,Casimp.lme4,Casimp.lme5)
-# 5 has the highest IC though
-
-Csimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-               data=simple20_2[simple20_2$element=='C',], na.action=na.omit)
-qqr(Csimp.lme3) # tails off, mostly ok? Log pretty good, but 1 outlier each end
-summary(Csimp.lme3) # C increases between years if JP.E1 and E2 both included
-# But decreases in pasture; no change in native?
+summary(Casimp.lme4) # increase in euc, not signif in pasture
 
 Csimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='C',], 
                na.action=na.omit)
 qqr(Csimp.lme4) # tails off,esp lower
-summary(Csimp.lme4) # no effect of year on euc (p=.10) but sig neg intrxns
+summary(Csimp.lme4) # no effect of year on euc (p=.09) 
+# but sig neg intrxns
 #   between year and both native and pasture veg
-anova(Csimp.lme3,Csimp.lme4) # 4 has lower A/BIC
-# Yes, I think this makes more conceptual sense.
-# Wait, does that still have a random intercept? Yes
+# changing factor levels: year doesn't have sig effect on pasture C or Ca
+# pasture-euc intrxn stays signif, ok
 
 # Test significance of year within each veg type by changing factor levels?
 #   Seems wrong...
 simple20_2$LU=factor(simple20_2$LU,levels=c('P','E','N'))
 simple20_2$LU=factor(simple20_2$LU,levels=c('N','E','P'))
 simple20_2$LU=factor(simple20_2$LU,levels=c('E','N','P'))
+# Significant things to 20 cm: 
+#   increase in euc in Ca 
+#   year-native intrxn in Ca and C
+#   year-pasture intrxn in C
 
-# changing factor levels: year doesn't have sig effect on pasture C or Ca
-# pasture-euc intrxn stays signif, ok
-
-
-
-Nsimp.lme3=lme(stock20~year*LU,random=~1|site2,
-               data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
-qqr(Nsimp.lme3) # nice-ish...tails off; better without log
-summary(Nsimp.lme3) # with all sites included, starts higher in N, no change
+#Nsimp.lme3=lme(stock20~year*LU,random=~1|site2,
+#               data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
+#qqr(Nsimp.lme3) # nice-ish...tails off; better without log
+#summary(Nsimp.lme3) # with all sites included, starts higher in N, no change
 Nsimp.lme4=lme(stock20~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='N',], na.action=na.omit)
 qqr(Nsimp.lme4) 
-summary(Nsimp.lme4) # same signifs as lme3
-anova(Nsimp.lme3,Nsimp.lme4) # 4 better fit
+summary(Nsimp.lme4) # no change; started with more N in native
+#anova(Nsimp.lme3,Nsimp.lme4) # 4 better fit
 
-
-Ksimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-               data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
-qqr(Ksimp.lme3)
-summary(Ksimp.lme3)
-# no differences between types or years
 Ksimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='K',], na.action=na.omit)
-qqr(Ksimp.lme4) # much less nice than lme3
-summary(Ksimp.lme4) # same signifs as lme3
-anova(Ksimp.lme3,Ksimp.lme4) # not different
+qqr(Ksimp.lme4) 
+summary(Ksimp.lme4) # marginal year-native intrxn (p=.06)
+#anova(Ksimp.lme3,Ksimp.lme4) # not different
 
-Psimp.lme3=lme(stock20~year*LU,random=~1|site2,
-               data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
-qqr(Psimp.lme3) # both tails off
-summary(Psimp.lme3) # no signif changes as you might expect
 Psimp.lme4=lme(stock20~year*LU,random=~1+year|site2,
                data=simple20_2[simple20_2$element=='P2',], na.action=na.omit)
 qqr(Psimp.lme4) # worse
 summary(Psimp.lme4) # no signif changes as you might expect
-anova(Psimp.lme3,Psimp.lme4) #favors 4
 
-
-Zrsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-                data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
-qqr(Zrsimp.lme3) 
-summary(Zrsimp.lme3) # minor increase in other (p=.052)
-# when separated by veg type, P starts with more Zr, N with less; 
-# increases in native
 Zrsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                 data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
 qqr(Zrsimp.lme4) 
-summary(Zrsimp.lme4) #same results
+summary(Zrsimp.lme4) #marginal year-native intrxn
 
-Alsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-                data=simple20_2[simple20_2$element=='Al',], na.action=na.omit)
-qqr(Alsimp.lme3) 
-summary(Alsimp.lme3)
-# decreases overall, interaction terms marginal (p=.06 for P, .05 for N)
-#   but maybe doesn't change in those
-natAl20.lme=lme(log(stock20)~year,random=~1|stand,
-                data=nat2deps[nat2deps$element=='Al',],na.action = na.omit)
-qqr(natAl20.lme) # tails pretty off, esp one really high value
-summary(natAl20.lme) # no significant change
-
-Nbsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
-                data=simple20_2[simple20_2$element=='Nb',], na.action=na.omit)
-qqr(Nbsimp.lme3) 
-summary(Nbsimp.lme3) # differs between veg types but not between years
 
 CNsimp.lme=lme(conc20~year*LU,random=~1+year|site2,
   data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)
-summary(CNsimp.lme)
-qqr(CNsimp.lme) # decreases in N and P, no change in E
-# Removing a super low N value in JP.P: only changes in N (decrease)
+summary(CNsimp.lme) # increases in euc at p=.046
+# signif intrxn with native and pasture 
+#   but the decreases in those veg types aren't significantly nonzero
+qqr(CNsimp.lme) # pretty ok
 
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
 
@@ -1330,15 +1055,11 @@ simp100$stand[simp100$element=='K'&is.na(simp100$stock100)]
 # also missing values there for P, fewer for N
 
 Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
-                 data=simp100[simp100$element=='N',], na.action=na.omit,
-                 control = lmeControl(opt='optim'))
-# iteration limit reached--?? 
-# got rid of log transform, now works ok
-# 1-16-19: put log transform back in, with new N data, works
+                 data=simp100[simp100$element=='N',], na.action=na.omit)
 qqr(Nsimp100.lme) # ok
 summary(Nsimp100.lme)
 #With random slope, nothing significant 
-#(p for N-yr intrxn = .1, not .08, for revised data)
+#(p for N-yr intrxn = .045); also for P intrxn with N as main
 
 Csimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='C',], na.action=na.omit)
@@ -1357,24 +1078,6 @@ Casimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
 qqr(Casimp100.lme) # some way off
 summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes 
 # year term for N or P not signif
-
-# Or should they be anovas, after all? Not balanced though
-# Nope
-Nsimp.aov=aov(log(stock20)~year*LU,
-              data=simple20_2[simple20_2$element=='N',])
-qqr(Nsimp.aov) # tails off
-summary(Nsimp.aov) # not correct I think because of lost pairing
-TukeyHSD(Nsimp.aov,which='LU') # no differences
-Casimp.aov=aov(log(stock20)~year*LU,
-              data=simple20_2[simple20_2$element=='Ca2',])
-qqr(Casimp.aov) 
-summary(Casimp.aov) # for Ca, at least, significant LU effect
-# year term p=.06
-plot(Casimp.aov,1) # that looks ok?
-plot(Nsimp.aov,1) # also ok?
-TukeyHSD(Casimp.aov,which='LU') # P diff from N, but this doesn't
-# test the changes
-
 
 
 
@@ -1396,9 +1099,7 @@ mr2=group_by(mr2,element) %>%
 
 mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
-# Not with different slopes for different groups
-# Also, lme doesn't say if changes significant within N and P
-# Just focus on if euc changed and if N and P are diff from euc
+# Not with different slopes for different groups: p= .1
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='P']='-'
 mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
