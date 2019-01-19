@@ -381,7 +381,8 @@ shorttstk$element[shorttstk$element=='Mg2']='Mg'
 
 #budgets=read.csv('nutrient_budget_summary.csv')
 #budgets=read.csv('nutrient_budgets_linked_bark.csv')
-budgets=read.csv('nutrient_budg_semiupdated.csv')
+#budgets=read.csv('nutrient_budg_semiupdated.csv')
+budgets=read.csv('nutrient_budg_semi_AGB.csv')
 otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941,
                                0.000128281,0.00000841287,0.000077024, NA, NA),
                       Plconc=c(0.000599674, 0.0000700706,0.000845645,
@@ -427,28 +428,23 @@ budgets=mutate(budgets,
                                     (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                          Concentration*511)/1000))
 )
-shorterstk=merge(shorttstk,budgets,by.x=c('stand','element'),
-                 by.y=c('Stand','Nutrient'))
 
-stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
+stkchgs=group_by(shorttstk,stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
             chg20=stock20_16-stock20_04,stk20_16=stock20_16,
             sdchg20=sqrt(sd20_04^2+sd20_16^2)/2, 
             # = sqrt(sd04^2/n04+sd16^2/n16), assuming n=4
             sdchg100=sqrt(sd100_04^2+sd100_16^2)/2,
-            stk20_04=stock20_04,efs20=log((stk20_04+budget)/stk20_04),
+            stk20_04=stock20_04,
             chgrt100=(stock100_16-stock100_04)/stock100_04,
             chgrt20=(stock20_16-stock20_04)/stock20_04,
             chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04),
-            #budget=Budget/1000,
-            budget=budget,
-            grandconcbudg=grandconcbudg, plconcbudg=plconcbudg,
-            denserbudg=denserbudg, lessrotbudg=lessrotbudg,
-            lessdensebudg=lessdensebudg,conc=Concentration,
-            lessharvbudg=lessharvbudg,moreharvbudg=moreharvbudg,
-            woodonlybudg=woodonlybudg,bark5budg=bark5budg,
-            bark20budg=bark20budg,modconcbudg=modconcbudg,
+            chgln20=log(stock20_16/stock20_04))
+
+stkchgs=merge(stkchgs,budgets,by.x=c('stand','element'),
+                 by.y=c('Stand','Nutrient'),all.x=F,all.y=F)
+
+stkchgs=group_by(droplevels(stkchgs),stand,element) %>% mutate(conc=Concentration,
             minbudg=min(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
                         modconcbudg,lessrotbudg,lessharvbudg,moreharvbudg,
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
@@ -460,7 +456,8 @@ stkchgs=group_by(droplevels(shorterstk),stand,element,biome)%>%
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
             maxbudgconc=max(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
                         modconcbudg,#lessrotbudg,lessharvbudg,moreharvbudg,
-                        woodonlybudg,bark5budg,bark20budg,budget,na.rm=T))#,
+                        woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
+            efs20=log((stk20_04+budget)/stk20_04))#,
            # whichminconc=names(stkchgs)[which.min(c(grandconcbudg,plconcbudg,denserbudg,
            #                                lessdensebudg,modconcbudg,woodonlybudg,
            #                                bark5budg,bark20budg,budget))])

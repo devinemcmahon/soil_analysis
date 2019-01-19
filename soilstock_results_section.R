@@ -662,6 +662,8 @@ text(stkchgs$plconcbudg,stkchgs$chg20,labels=stkchgs$element,
       col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)
+# taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
+
 # Concentration matters? Higher estimated wood associated with larger N increases
 #   than expected (lower concs would make expected losses less in Vg.E and Eu.E2)
 # And lower N conc in BO.E could be associated with underestimated expected losses?
@@ -676,7 +678,30 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
 # Changing the concentrations to the literature values I cited for E. grandis
 #   improves Ca in BO.E, but doesn't help much with other nutrients
 
-# taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
+# Rough cut of budgets incorporating changes in biomass:
+stkchgs$AGBbudg=stkchgs$Budg_w_AGB/1000
+plot(chg20~AGBbudg,data=stkchgs,type='n', 
+     xlab='Budget with fertilizer, harvest, biomass change, Mg ha-1',
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',
+     #ylim=c(-1,1.8),
+     las=1)
+rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
+segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
+         col=as.numeric(stkchgs$stand))
+segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
+         y1=stkchgs$chg20+stkchgs$sdchg20,
+         col=as.numeric(stkchgs$stand))
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+text(stkchgs$AGBbudg,stkchgs$chg20,labels=stkchgs$element,
+     #cex=stkchgs$conc*1000, 
+     col=as.numeric(stkchgs$stand))
+legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
+       legend=levels(stkchgs$stand),bty='n',ncol=2)
+# That did help with N a little..definitely in It.E2 and Eu.E2.
+# But not with Ca. Figures for Ca additions in Its just wrong?
+
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 
 plot(chg20~budget,data=stkchgs3,type='n', 
