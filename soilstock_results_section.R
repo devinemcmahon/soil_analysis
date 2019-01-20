@@ -679,8 +679,7 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
 #   improves Ca in BO.E, but doesn't help much with other nutrients
 
 # Rough cut of budgets incorporating changes in biomass:
-stkchgs$AGBbudg=stkchgs$Budg_w_AGB/1000
-plot(chg20~AGBbudg,data=stkchgs,type='n', 
+plot(chg20~agbbudg,data=stkchgs,type='n', 
      xlab='Budget with fertilizer, harvest, biomass change, Mg ha-1',
      ylab='Observed change in stocks to 20 cm, Mg ha-1',
      #ylim=c(-1,1.8),
@@ -694,7 +693,7 @@ segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
 abline(h=0,lty=3)
 abline(v=0,lty=3)
 abline(0,1)
-text(stkchgs$AGBbudg,stkchgs$chg20,labels=stkchgs$element,
+text(stkchgs$agbbudg,stkchgs$chg20,labels=stkchgs$element,
      #cex=stkchgs$conc*1000, 
      col=as.numeric(stkchgs$stand))
 legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),

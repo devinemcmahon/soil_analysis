@@ -110,6 +110,15 @@ plot(resid(allC20.lme)~dats2deps$LU[dats2deps$element=='C' &
 qqnorm(resid(allC20.lme))
 qqline(resid(allC20.lme)) # upper tail off but probably ok
 
+allC20.lme2=lme(log(stock20)~year,random=~1+year|site/stand,
+               data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
+summary(allC20.lme2) 
+# with latest data, not even marginally
+qqr(allC20.lme2)
+anova(allC20.lme,allC20.lme2) # better to allow random slopes?
+# I don't want this analysis anyway.
+
+
 
 allC20LU.lme=lme(stock20~year*LU,random=~1|site/stand,
                  data=dats2deps[dats2deps$element=='C',],na.action = na.omit)
@@ -1429,6 +1438,28 @@ bdgsum=group_by(budgets,Nutrient)%>%
 print.data.frame(bdgsum)
 
 plot(Concentration~Nutrient,data=budgets)
+
+plot(stkchgs$budget/stkchgs$chg20)
+stkchgs$stand[stkchgs$budget/stkchgs$chg20< -3]
+# Way off: Ca in It.E1, K in BO.E, also N in Eu.E2
+plot(stkchgs$Budg_w_AGB/(1000*stkchgs$chg20))
+stkchgs$stand[stkchgs$Budg_w_AGB/(1000*stkchgs$chg20) > 8]
+# Ca in It.E1, K in It.E2
+plot(chg20~budget,data=stkchgs[stkchgs$element=='N',])
+abline(0,1)
+plot(chg20~I((AGB_04-AGB_16)/1000),data=stkchgs,
+     col=as.factor(element),pch=16)#[stkchgs$element=='N',])
+abline(0,1)
+plot(chg20~I(Budg_w_AGB/1000),data=stkchgs,
+     col=as.factor(element),pch=16)#[stkchgs$element=='N',])
+summary(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16))
+# Change in AGB usu < fertilizer effect? Makes sense.
+plot(budget~agbchg,data=stkchgs,col=stand,pch=16)
+
+ggplot(data=stkchgs[stkchgs$element=='N'], aes(x=year, y=stock, fill=depth)) +
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  
 
 #summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
 #          budgets$Wood_m3_1[budgets$Nutrient=='N']*

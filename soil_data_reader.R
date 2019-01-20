@@ -423,10 +423,9 @@ budgets=mutate(budgets,
                bark5budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                             (Conc_wood*.95+Conc_bark*.05)*511)/1000,
                # Pick more probable values based on plots
-               budget=ifelse(Stand=='Bp.E1',lessharvbudg,
-                             ifelse(Stand=='BO.E',bark5budg,
+               budget=ifelse(Stand=='BO.E',bark5budg,
                                     (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                         Concentration*511)/1000))
+                         Concentration*511)/1000)
 )
 
 stkchgs=group_by(shorttstk,stand,element,biome)%>%
@@ -457,7 +456,9 @@ stkchgs=group_by(droplevels(stkchgs),stand,element) %>% mutate(conc=Concentratio
             maxbudgconc=max(grandconcbudg,plconcbudg,denserbudg,lessdensebudg,
                         modconcbudg,#lessrotbudg,lessharvbudg,moreharvbudg,
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
-            efs20=log((stk20_04+budget)/stk20_04))#,
+            efs20=log((stk20_04+budget)/stk20_04),
+            agbbudg=Budg_w_AGB/1000,
+            agbchg=(AGB_04-AGB_16)/1000)#,
            # whichminconc=names(stkchgs)[which.min(c(grandconcbudg,plconcbudg,denserbudg,
            #                                lessdensebudg,modconcbudg,woodonlybudg,
            #                                bark5budg,bark20budg,budget))])
