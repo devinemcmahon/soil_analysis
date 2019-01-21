@@ -1452,9 +1452,11 @@ plot(chg20~I((AGB_04-AGB_16)/1000),data=stkchgs,
 abline(0,1)
 plot(chg20~I(Budg_w_AGB/1000),data=stkchgs,
      col=as.factor(element),pch=16)#[stkchgs$element=='N',])
-summary(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16))
+summary(abs(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16)))
+hist(abs(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16)),breaks=30)
 # Change in AGB usu < fertilizer effect? Makes sense.
 plot(budget~agbchg,data=stkchgs,col=stand,pch=16)
+
 
 ggplot(data=stkchgs[stkchgs$element=='N'], aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 

@@ -773,6 +773,30 @@ legend('bottomleft',legend='b',cex=1.2,bty='n')
 par(mfrow=c(1,1),mar=c(4,4,1,1))
 
 
+stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
+chgtypes=group_by(stkchgs3,stand,element, biome, chg20) %>%
+  summarise(standing=agbchg,
+            harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
+            fertilizer=(In_kgha_1+In_kgha_2)/1000)
+
+#require(reshape2)
+chgtypesm=melt(chgtypes,id.vars = c('stand','element', 'biome', 'chg20'))
+
+ggplot(chgtypesm,aes(x=element,y=value,fill=variable))+
+  geom_bar(stat = "identity",color="white")+
+  facet_wrap(~stand)+
+  geom_point(aes(y=chg20))
+
+chgtypes1per=group_by(chgtypes,element,biome) %>%
+  summarise_if(is.numeric, mean, na.rm=T)
+chgtypes1perm=melt(chgtypes1per,
+                   id.vars = c('element', 'biome', 'chg20'))
+
+ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
+  geom_bar(stat = "identity",color="white")+
+  facet_wrap(~biome)+
+  geom_point(aes(y=chg20))
+
 plot(chg100~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
      ylab='Observed change in stocks to 100 cm, Mg ha-1',las=1,
