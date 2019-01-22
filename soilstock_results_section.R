@@ -774,28 +774,79 @@ par(mfrow=c(1,1),mar=c(4,4,1,1))
 
 
 stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
-chgtypes=group_by(stkchgs3,stand,element, biome, chg20) %>%
+chgtypes=group_by(stkchgs3,stand,element, biome, chg20,
+                  sdchg20,minbudg,minbudgconc,maxbudg,
+                  maxbudgconc,budget) %>%
   summarise(standing=agbchg,
             harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
             fertilizer=(In_kgha_1+In_kgha_2)/1000)
 
 #require(reshape2)
-chgtypesm=melt(chgtypes,id.vars = c('stand','element', 'biome', 'chg20'))
+chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
+
+chgerrs=group_by(stkchgs3,stand,element, biome) %>%
+  summarise(standing=agbchg, # some estimate of error on each pool
+            harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
+            fertilizer=(In_kgha_1+In_kgha_2)/1000)
+
+chgerrsm=melt(chgerrs,id.vars = c('stand','element','biome','sdchg20'))
+chgtypesw=merge(chgtypesm,chgerrsm,by=c('stand','element','variable'))
 
 ggplot(chgtypesm,aes(x=element,y=value,fill=variable))+
-  geom_bar(stat = "identity",color="white")+
+  geom_bar(stat = "identity")+
   facet_wrap(~stand)+
-  geom_point(aes(y=chg20))
+  #geom_point(aes(y=chg20))+
+  #geom_point(aes(y=budget),shape=1)+
+  #geom_errorbar(aes(ymin=minbudg,ymax=maxbudg),width=.2)
+  scale_fill_brewer(palette='Dark2',name='Pool')+
+  coord_cartesian(ylim=c(-1,2))+
+  geom_point(aes(y=chg20),position=position_nudge(x=.1),
+             show.legend = F)+
+  geom_point(aes(y=budget,color='Budget'),
+             position=position_nudge(x=-.1),
+             show.legend = F)+
+  geom_errorbar(aes(ymin=minbudg,ymax=maxbudg,color='Budget'),
+                width=.2,position=position_nudge(x=-.1))+
+  geom_errorbar(aes(ymin=chg20-sdchg20,ymax=chg20+sdchg20,
+                    color='Observed'),
+                width=.2,position=position_nudge(x=.1))+
+  scale_colour_manual(name="Change in stock",
+                      values=c(Budget="darkviolet", 
+                               Observed="darkblue"))+
+  geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
+                color='orchid',
+                width=.2,position=position_nudge(x=-.1))
+  
 
-chgtypes1per=group_by(chgtypes,element,biome) %>%
+chgtypes1per=group_by(chgtypes,element) %>%
   summarise_if(is.numeric, mean, na.rm=T)
 chgtypes1perm=melt(chgtypes1per,
-                   id.vars = c('element', 'biome', 'chg20'))
+                   measure.vars = c('standing','harvest','fertilizer'))
 
 ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
-  geom_bar(stat = "identity",color="white")+
-  facet_wrap(~biome)+
-  geom_point(aes(y=chg20))
+  geom_bar(stat = "identity")+
+  #facet_wrap(~biome)+
+  geom_point(aes(y=chg20,colour='Observed'),size=2,
+             show.legend = F,position=position_nudge(x=.1))+
+  scale_fill_brewer(palette='Dark2',name='Pool')+
+  geom_point(aes(y=budget,colour='Budget'),size=2,
+             position=position_nudge(x=-.1),show.legend = F)+
+  geom_errorbar(aes(ymin=minbudg,ymax=maxbudg,
+                color='Budget'),width=.2,size=1,
+                position=position_nudge(x=-.1))+
+  geom_errorbar(aes(ymin=chg20-sdchg20,ymax=chg20+sdchg20,
+                color='Observed'),width=.2,size=1,
+                position=position_nudge(x=.1))+
+  scale_colour_manual(name="Change in stock",
+                      values=c(Budget="blue", Observed="black"))+
+  theme(legend.position=c(0.2,0.8),
+        #legend.spacing.y = unit(1.2,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank())+
+  geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
+                color='orchid',
+                width=.2,position=position_nudge(x=-.1))
 
 plot(chg100~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
