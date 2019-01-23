@@ -634,6 +634,10 @@ abline(h=0,lty=3)
 abline(v=0,lty=3)
 text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
      col=as.numeric(stkchgs$stand))
+text(stkchgs$agbbudg,stkchgs$chg100,labels=stkchgs$element,
+     col=as.numeric(stkchgs$stand))
+points(stkchgs$agbbudg,stkchgs$chg100,
+     col=as.numeric(stkchgs$stand),pch=18)
 
 
 segments(x0=stkchgs$bark20budg,x1=stkchgs$woodonlybudg,y0=stkchgs$chg20,
@@ -700,12 +704,13 @@ legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
        legend=levels(stkchgs$stand),bty='n',ncol=2)
 # That did help with N a little..definitely in It.E2 and Eu.E2.
 # But not with Ca. Figures for Ca additions in Its just wrong?
+# Ca in bark not retained onsite in Eu.E2?
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 
 plot(chg20~budget,data=stkchgs3,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     #xlim=c(-.2,.5),ylim=c(-.2,.5),
+     xlim=c(-.2,.5),ylim=c(-.2,.5),
      ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
 abline(h=0,lty=3)
 abline(v=0,lty=3)
@@ -715,9 +720,10 @@ segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.factor(stkchgs3$stand))
-text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
+#text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
+text(stkchgs3$agbbudg,stkchgs3$chg20,labels=stkchgs3$element,
 #text(stkchgs3$lessrotbudg,stkchgs3$chg20,labels=stkchgs3$element,
-          cex=stkchgs3$conc*2000,
+          #cex=stkchgs3$conc*2000,
      col=as.numeric(stkchgs3$stand))
 # What is a realistic range of bark? How to present sensitivities?
 # Table of ratios of budget to its variations?
@@ -772,14 +778,24 @@ text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)
 legend('bottomleft',legend='b',cex=1.2,bty='n')
 par(mfrow=c(1,1),mar=c(4,4,1,1))
 
+# most recent rotation
+summary(c(budgets$In_kgha_2[budgets$In_kgha_2!=0],
+          budgets$In_kgha_1[budgets$In_kgha_2==0])) # by nutrient tho
 
 stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
-chgtypes=group_by(stkchgs3,stand,element, biome, chg20,
+chgtypes=group_by(stkchgs3,stand,element, biome, chg20,agbbudg,
                   sdchg20,minbudg,minbudgconc,maxbudg,
                   maxbudgconc,budget) %>%
   summarise(standing=agbchg,
             harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
             fertilizer=(In_kgha_1+In_kgha_2)/1000)
+
+tapply(chgtypes$budget*1000,chgtypes$element,summary)
+tapply(chgtypes$harvest*1000,chgtypes$element,summary)
+tapply(chgtypes$fertilizer*1000,chgtypes$element,summary)
+tapply(stkchgs3$conc*1000,stkchgs3$element,summary)
+tapply(stkchgs3$agbchg*-1000,stkchgs3$element,summary)
+tapply(chgtypes$agbbudg*1000,chgtypes$element,summary)
 
 #require(reshape2)
 chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
@@ -791,6 +807,8 @@ chgerrs=group_by(stkchgs3,stand,element, biome) %>%
 
 chgerrsm=melt(chgerrs,id.vars = c('stand','element','biome','sdchg20'))
 chgtypesw=merge(chgtypesm,chgerrsm,by=c('stand','element','variable'))
+
+tapply(chgtypes$budget,chgtypes$element,summary)
 
 ggplot(chgtypesm,aes(x=element,y=value,fill=variable))+
   geom_bar(stat = "identity")+
@@ -811,17 +829,23 @@ ggplot(chgtypesm,aes(x=element,y=value,fill=variable))+
                     color='Observed'),
                 width=.2,position=position_nudge(x=.1))+
   scale_colour_manual(name="Change in stock",
-                      values=c(Budget="darkviolet", 
-                               Observed="darkblue"))+
-  geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
-                color='orchid',
-                width=.2,position=position_nudge(x=-.1))
+                      values=c(Budget="deepskyblue", 
+                               Observed="darkblue"))#+
+  #geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
+  #              color='orchid',
+  #              width=.2,position=position_nudge(x=-.1))
   
 
 chgtypes1per=group_by(chgtypes,element) %>%
   summarise_if(is.numeric, mean, na.rm=T)
 chgtypes1perm=melt(chgtypes1per,
                    measure.vars = c('standing','harvest','fertilizer'))
+
+chgtypes1permed=group_by(chgtypes,element) %>%
+  summarise_if(is.numeric, median, na.rm=T)
+chgtypes1permedm=melt(chgtypes1permed,
+                   measure.vars = c('standing','harvest','fertilizer'))
+
 
 ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
   geom_bar(stat = "identity")+
@@ -831,6 +855,8 @@ ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
   scale_fill_brewer(palette='Dark2',name='Pool')+
   geom_point(aes(y=budget,colour='Budget'),size=2,
              position=position_nudge(x=-.1),show.legend = F)+
+  geom_point(aes(y=agbbudg,colour='Budget_standing'),
+             size=3,show.legend = T)+
   geom_errorbar(aes(ymin=minbudg,ymax=maxbudg,
                 color='Budget'),width=.2,size=1,
                 position=position_nudge(x=-.1))+
@@ -838,15 +864,18 @@ ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
                 color='Observed'),width=.2,size=1,
                 position=position_nudge(x=.1))+
   scale_colour_manual(name="Change in stock",
-                      values=c(Budget="blue", Observed="black"))+
-  theme(legend.position=c(0.2,0.8),
+                      values=c(Budget="blue", Observed="black",
+                               Budget_standing = 'red'))+
+  theme(#legend.position=c(0.2,0.8),
+        legend.position=c(0.4,0.8),
         #legend.spacing.y = unit(1.2,'lines'), 
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_blank(),
-        legend.key=element_blank())+
+        legend.key=element_blank())#+
   geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
                 color='orchid',
                 width=.2,position=position_nudge(x=-.1))
+
 
 plot(chg100~budget,data=stkchgs,type='n', 
      xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
