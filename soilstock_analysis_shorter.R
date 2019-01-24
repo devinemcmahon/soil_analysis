@@ -1455,8 +1455,14 @@ plot(chg20~I(Budg_w_AGB/1000),data=stkchgs,
 summary(abs(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16)))
 hist(abs(stkchgs$budget*1000/(stkchgs$AGB_04-stkchgs$AGB_16)),breaks=30)
 # Change in AGB usu < fertilizer effect? Makes sense.
+palette(rainbow(9))
 plot(budget~agbchg,data=stkchgs,col=stand,pch=16)
 
+plot(agbbudg~modconcagbbudg,data=stkchgs,col=stand,
+     pch=as.character(element))
+plot(less16more04budg~less04more16budg,data=stkchgs,col=stand,
+     pch=as.character(element))
+# only really matters for Ca in Eu?
 
 ggplot(data=stkchgs[stkchgs$element=='N'], aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 

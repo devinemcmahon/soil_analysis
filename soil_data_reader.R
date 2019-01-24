@@ -5,7 +5,8 @@
 library(dplyr)
 library(lattice)
 library(nlme)
-library(reshape)
+#library(reshape)
+library(reshape2)
 library(RColorBrewer)
 library(MASS)
 library(ggplot2)
@@ -64,11 +65,13 @@ widedats1=mutate(widedats1,Ca2=ifelse(is.na(Ca) & !is.na(Ca_dl),
 
 # seperate ppm columns are unneccessary
 # "Melt" the data frame into a long format
+# Change
 dats=melt(widedats1,id.vars=c('ID','run.date','CNevalday','CNavgd',
                               'measured_in','Method',
                               'Eval.Date','evaldate',
                               'xrfavgd','recent','avgBD','BDsd'),
-          na.rm=F,variable_name = 'element')
+          na.rm=F)#,variable_name = 'element') reshape version
+names(dats)[names(dats)=='variable']='element'
 # Restore the columns made from the ID
 dats=strfun(dats)
 dats=eltfun(dats)
@@ -396,15 +399,42 @@ otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941
 # Pl from Plantar data (NUTREEcalc 2015 for Itacambira)
 # Missing bark values (BO and Eu) filled with Plantar bark values
 budgets=merge(budgets,otherconcs,by='Nutrient')
+# Excel formulas: IMA_1 = Wood_m3_1 (volume @ first harvest) / Age_1
+# Budget = In_kgha_1 + In_kgha_2 - (Wood_m3_1 + Wood_m3_2)*Nomin_density*
+#     (Conc_bark*Nomin_bark_fraction + Conc_wood*(1-Nomin_bark_fraction))
+# Budget_1conc = In_kgha_1 + In_kgha_2 - (Wood_m3_1 + Wood_m3_2)*Nomin_density*
+#     Concentration
+# Vol_04_ish = Age_04*IMA_1 
+# Vol_16 = Age_16*IMA_2 or IMA_1 if 2 not known, or known volume
+# Wood_04 = if Age_04 < 3.5, proports$Stemwood_conc_div_age6.75[age==2.5]*
+#   Vol_04_ish*Conc_wood*Nomin_density;
+#   if Age_04>= 3.5 & Age_04<5.5, same with age==4.5;
+#   if Age_04 >=5.5, Vol* Conc_wood*Nomin_density
+# AGB_04 = Wood_04 * (1+proports$notwood_div_wood[corresponding age])
+# Same deal for Wood_16 and AGB_16
+# Budg_w_AGB = AGB_04 - AGB_16 + Budget 
+# Assumes non-harvested biomass nutrients come from the soil+fertilizer
+#   and are returned to the soil if 2004 biomass > 2016 biomass
 
+# For sensitivity analysis: Vary Age_04 +/- 2 yr (same proportions)
+# Change proportions (use age 6.75 always or 2.5 always)
+# Make 
+#proports=read.csv('Leite_2011_proportions.csv')
+useprops=read.csv('Leite_2011_derived.csv')
+budgets= merge(budgets,useprops, by='Nutrient')
 
+# use IMA_1 for everything?
+# If age was estimated as just after 0 at sampling time, 
+# to estimate range, assume the trees hadn't been harvested yet
+budgets$In_kgha_2[budgets$Nutrient=='Ca'&budgets$Stand %in% 
+                    c('It.E1','It.E2')]=0
 budgets=mutate(budgets,
                grandconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                              Egrandconc*511)/1000,
+                                Egrandconc*511)/1000,
                modconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                                SantanaMG*511)/1000,
+                              SantanaMG*511)/1000,
                plconcbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                                Plconc*511)/1000,
+                             Plconc*511)/1000,
                denserbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                              Concentration*560)/1000,
                lessdensebudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
@@ -419,16 +449,117 @@ budgets=mutate(budgets,
                                (Wood_m3_1*1.5+Wood_m3_2*Past_harvests_known)*
                                Concentration*511)/1000,
                woodonlybudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                             Conc_wood*511)/1000,
+                               Conc_wood*511)/1000,
                bark20budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                               (Conc_wood*.8+Conc_bark*.2)*511)/1000,
+                             (Conc_wood*.8+Conc_bark*.2)*511)/1000,
                bark5budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                             (Conc_wood*.95+Conc_bark*.05)*511)/1000,
                # Pick more probable values based on plots
                budget=ifelse(Stand=='BO.E',bark5budg,
-                                    (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
-                         Concentration*511)/1000)
+                             (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                Concentration*511)/1000),
+               modconcagbbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                 SantanaMG*511+(Wood_04-Wood_16)*
+                                 SantanaMG/Conc_wood)/1000
 )
+budgets=group_by(budgets,Stand,Nutrient) %>%
+  mutate(lessyragb04=ifelse(Age_04<=1,Age_1*IMA_1*Conc_wood*
+                              Nomin_density*(1+notwood_div_wood_6.75),
+                            ifelse((Age_04-2)<3.5, (Age_04-2)*IMA_1*Conc_wood*
+                            Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse((Age_04-2)>=3.5&(Age_04-2)<5.5, 
+                                   (Age_04-2)*IMA_1*Conc_wood*
+                                     Nomin_density*Stemwood_4.5_div6.75*
+                                     (1+notwood_div_wood_4.5),
+                                   ifelse((Age_04-2)>15,
+                                          (Age_04-2)*IMA_1*Conc_wood*
+                                            Nomin_density*0.75*
+                                            (1+notwood_div_wood_6.75),
+                                          (Age_04-2)*IMA_1*Conc_wood*
+                                      Nomin_density*(1+notwood_div_wood_6.75))))),
+         moreyragb04=ifelse((Age_04+2)<3.5, (Age_04+2)*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse((Age_04+2)>=3.5&(Age_04+2)<5.5, 
+                                   (Age_04+2)*IMA_1*Conc_wood*
+                                     Nomin_density*Stemwood_4.5_div6.75*
+                                     (1+notwood_div_wood_4.5),
+                                   ifelse((Age_04+2)>15,
+                                          (Age_04+2)*IMA_1*Conc_wood*
+                                            Nomin_density*0.75*
+                                            (1+notwood_div_wood_6.75),
+                                          (Age_04+2)*IMA_1*Conc_wood*
+                                            Nomin_density*(1+notwood_div_wood_6.75)))),
+         lessyragb16=ifelse(Age_16<=1,Age_2*IMA_1*Conc_wood*
+                              Nomin_density*(1+notwood_div_wood_6.75),
+                            ifelse((Age_16-2)<3.5, (Age_16-2)*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse((Age_16-2)>=3.5&(Age_16-2)<5.5, 
+                                   (Age_16-2)*IMA_1*Conc_wood*
+                                     Nomin_density*Stemwood_4.5_div6.75*
+                                     (1+notwood_div_wood_4.5),
+                                   ifelse((Age_16-2)>15,
+                                          (Age_16-2)*IMA_1*Conc_wood*
+                                            Nomin_density*0.75*
+                                            (1+notwood_div_wood_6.75),
+                                          (Age_16-2)*IMA_1*Conc_wood*
+                                            Nomin_density*(1+notwood_div_wood_6.75))))),
+         moreyragb16=ifelse((Age_16+2)<3.5, (Age_16+2)*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse((Age_16+2)>=3.5&(Age_16+2)<5.5, 
+                                   (Age_16+2)*IMA_1*Conc_wood*
+                                     Nomin_density*Stemwood_4.5_div6.75*
+                                     (1+notwood_div_wood_4.5),
+                                   ifelse((Age_16+2)>15,
+                                          (Age_16+2)*IMA_1*Conc_wood*
+                                            Nomin_density*0.75*
+                                            (1+notwood_div_wood_6.75),
+                                          (Age_16+2)*IMA_1*Conc_wood*
+                                            Nomin_density*(1+notwood_div_wood_6.75)))),
+         less04more16budg=lessyragb04-moreyragb16+budget*1000,
+         less16more04budg=moreyragb04-lessyragb16+budget*1000,
+         youngconc04=ifelse(Age_04<5.5, Age_04*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse(Age_04>15,Age_04*IMA_1*Conc_wood*
+                                            Nomin_density*0.75*
+                                            (1+notwood_div_wood_4.5),
+                                          Age_04*IMA_1*Conc_wood*
+                                            Nomin_density*Stemwood_4.5_div6.75*
+                                            (1+notwood_div_wood_4.5))),
+         youngconc16=ifelse(Age_16<5.5, Age_16*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_2.5_div6.75*
+                              (1+notwood_div_wood_2.5),
+                            ifelse(Age_16>15,Age_16*IMA_1*Conc_wood*
+                                     Nomin_density*0.75*
+                                     (1+notwood_div_wood_4.5),
+                                   Age_16*IMA_1*Conc_wood*
+                                     Nomin_density*Stemwood_4.5_div6.75*
+                                     (1+notwood_div_wood_4.5))),
+         oldconc04=ifelse(Age_04<3.5, Age_04*IMA_1*Conc_wood*
+                              Nomin_density*Stemwood_4.5_div6.75*
+                              (1+notwood_div_wood_4.5),
+                            ifelse(Age_04>15,Age_04*IMA_1*Conc_wood*
+                                     Nomin_density*0.75*
+                                     (1+notwood_div_wood_6.75),
+                                   Age_04*IMA_1*Conc_wood*
+                                     Nomin_density*1+notwood_div_wood_6.75)),
+         oldconc16=ifelse(Age_16<3.5, Age_16*IMA_1*Conc_wood*
+                            Nomin_density*Stemwood_4.5_div6.75*
+                            (1+notwood_div_wood_4.5),
+                          ifelse(Age_16>15,Age_16*IMA_1*Conc_wood*
+                                   Nomin_density*0.75*
+                                   (1+notwood_div_wood_6.75),
+                                 Age_16*IMA_1*Conc_wood*
+                                   Nomin_density*1+notwood_div_wood_6.75)),
+         oldconcagbbudg=oldconc04-oldconc16+budget*1000,
+         youngconcagbbudg=youngconc04-youngconc16+budget*1000)
+
+
+
 
 stkchgs=group_by(shorttstk,stand,element,biome)%>%
   summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
@@ -459,8 +590,16 @@ stkchgs=group_by(droplevels(stkchgs),stand,element) %>% mutate(conc=Concentratio
                         modconcbudg,#lessrotbudg,lessharvbudg,moreharvbudg,
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
             efs20=log((stk20_04+budget)/stk20_04),
-            agbbudg=Budg_w_AGB/1000,
-            agbchg=(AGB_04-AGB_16)/1000)#,
+            agbchg=(AGB_04-AGB_16)/1000,
+            agbbudg=agbchg/1000+budget,
+            minagbbudg=ifelse(!is.na(Budg_w_AGB),
+                              min(agbbudg*1000,less04more16budg,less16more04budg,
+                           oldconcagbbudg,youngconcagbbudg,
+                           modconcagbbudg*1000,na.rm=T)/1000,NA),
+            maxagbbudg=ifelse(!is.na(Budg_w_AGB),
+                              max(agbbudg*1000,less04more16budg,less16more04budg,
+                                  oldconcagbbudg,youngconcagbbudg,
+                                  modconcagbbudg*1000,na.rm=T)/1000,NA))#,
            # whichminconc=names(stkchgs)[which.min(c(grandconcbudg,plconcbudg,denserbudg,
            #                                lessdensebudg,modconcbudg,woodonlybudg,
            #                                bark5budg,bark20budg,budget))])
@@ -825,3 +964,51 @@ depstksum=group_by(datsstk5ok,year,element,LU,biome,depth) %>%
 depstkts=group_by(datsstk5ok,element,LU,biome,depth) %>%
   summarise(tstat=t.test(stock[year=='16'],stock[year=='04'])$statistic,
             pval=t.test(stock[year=='16'],stock[year=='04'])$p.value)
+
+# Visualization of change at a given depth in each stand
+pts=ttests[,c('stand','element','depth','pval','tstat')]
+datsmnok2=merge(datsmnok,pts,by=c('stand','element','depth'),all.x=T)
+datsmnok2=datsmnok2[order(datsmnok2$depth),]
+datsmnok2=mutate(datsmnok2,element2=element)
+datsmnok2$element2[datsmnok2$element=='Ca2']='Ca'
+datsmnok2$element2[datsmnok2$element=='P2']='P'
+
+mygg=function(rockder,mysite){
+  lmts=c('C','N')
+  if(rockder==T) lmts=c('K','P2','Ca2')
+  mysub=datsmnok2[datsmnok2$site==mysite & datsmnok2$element %in% lmts,]
+  mysub=mutate(mysub,element2=element)
+  mysub$element2[mysub$element=='Ca2']='Ca'
+  mysub$element2[mysub$element=='P2']='P'
+  if(rockder==T) mysub$element2=factor(mysub$element2,
+                                       levels=c('K','Ca','P'))
+  mysub=mysub[order(mysub$depth),]
+  ggplot(aes(x=depth,y=mn,colour=year),data=mysub)+
+    geom_line(aes(group=year),size=1.2)+
+    coord_flip()+
+    scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+    facet_grid(stand~element2,scales = 'free_x')+
+    theme(legend.position=c(0.9,0.1),
+          legend.background = element_blank(),
+          legend.key = element_blank())+
+    labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
+                  'Concentração (g elemento / 100g solo)'),
+         x='Profundidade (cm)')+
+    geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                  width=0.2) +
+    scale_colour_discrete(labels=c('2004','2016'),
+                          guide = guide_legend(reverse=F,title=NULL))+
+    geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+      label=ifelse(pval<0.05 &year=='16','*','')),
+      colour='black',size=6,nudge_x=-1)
+}
+
+stkchgs3=stkchgs[stkchgs$element!='Mg',]
+stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
+chgtypes=group_by(stkchgs3,stand,element, biome, chg20,agbbudg,
+                  sdchg20,minbudg,minbudgconc,maxbudg,
+                  maxbudgconc,budget,minagbbudg,maxagbbudg) %>%
+  summarise(standing=agbchg,
+            harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
+            fertilizer=(In_kgha_1+In_kgha_2)/1000)
+chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
