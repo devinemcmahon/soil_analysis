@@ -581,33 +581,8 @@ print.data.frame(bdgsum)
 
 
 summary(stkchgs$minbudg[stkchgs$element=='N']*1000)
-# max N export = 478 kg ha-1 over the 12 years
+# max net N export = 478 kg ha-1 over the 12 years
 
-summary(I((stkchgs$maxbudgconc-stkchgs$minbudgconc)/stkchgs$budget))
-# -10.6 to +4.3 -- times, not %. Mean -5%, median + 45%
-
-plot(Concentration~Egrandconc,data=budgets,pch=as.character(Nutrient),col=Nutrient)
-abline(0,1)
-# K and N vary a lot; one very low Ca value = BO.E (no bark measured)
-# My measured N is almost always lower than Pagano estimate
-# So if using their estimate, even larger N decreases would be predicted
-# Plantar data has much less N, more K than my estimates
-plot(Concentration~SantanaMG,data=budgets,pch=as.character(Nutrient),col=Nutrient)
-# More N and Ca than Egrand; more of everything than my measurements
-budgets$Stand[budgets$Concentration<.0008 & budgets$Nutrient=='Ca']
-plot(budget~plconcbudg,data=budgets,pch=as.character(Nutrient),col=Nutrient)
-abline(0,1)
-# N and sometimes K influence the budget a lot.
-plot(denserbudg~lessdensebudg,data=budgets,
-     pch=as.character(Nutrient),col=Nutrient)
-abline(0,1) # pretty close; only matters for C and N
-
-# variation in percent bark could also be important
-plot(bark20budg~bark5budg,data=budgets,
-     pch=as.character(Nutrient),col=Nutrient)
-abline(0,1)
-abline(v=0,lty=3)
-abline(h=0,lty=3)# but not that important? mostly matters for K, sometimes Ca
 
 tapply(stkchgs$chgrt20,stkchgs$element,mean)
 tapply(stkchgs$chgln20,stkchgs$element,mean)
@@ -618,174 +593,43 @@ log(abs(tapply(stkchgs$budget,stkchgs$element,mean)))
 t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) 
 t.test(stkchgs$chg20[stkchgs$element=='N'],
        stkchgs$budget[stkchgs$element=='N'],paired=T)
+t.test(stkchgs$chg20[stkchgs$element=='P'],
+       stkchgs$budget[stkchgs$element=='P'],paired=T)
+t.test(stkchgs$chg20[stkchgs$element=='K'],
+       stkchgs$budget[stkchgs$element=='K'],paired=T)
+t.test(stkchgs$chg20[stkchgs$element=='Ca'],
+       stkchgs$budget[stkchgs$element=='Ca'],paired=T)
+t.test(stkchgs$chg20[stkchgs$element=='Ca'],
+       stkchgs$agbbudg[stkchgs$element=='Ca'],paired=T)
+# No significant differences
+qqnorm(stkchgs$chg20[stkchgs$element=='K'])
+qqline(stkchgs$chg20[stkchgs$element=='K'])
+qqnorm(stkchgs$budget[stkchgs$element=='K'])
+qqline(stkchgs$budget[stkchgs$element=='K']) # not terrible
+
 t.test(stkchgs$chg20,stkchgs$lessrotbudg,paired=T) 
 t.test(stkchgs$chg20,stkchgs$woodonlybudg,paired=T) # p=.059
 # 
 t.test(stkchgs$bark20budg,stkchgs$woodonlybudg,paired=T) 
 # those are different, good
 
-palette(rainbow(9))
-plot(chg100~budget,data=stkchgs,type='n', 
-     xlab='Fertilizer - harvest, Mg ha-1',
-     ylab='Observed change in stocks to 100 cm',las=1)
-rect(xleft=-1, ybottom=-1, xright=2, ytop=2,border='gray50')
-abline(0,1)
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
-     col=as.numeric(stkchgs$stand))
-text(stkchgs$agbbudg,stkchgs$chg100,labels=stkchgs$element,
-     col=as.numeric(stkchgs$stand))
-points(stkchgs$agbbudg,stkchgs$chg100,
-     col=as.numeric(stkchgs$stand),pch=18)
-
-
-segments(x0=stkchgs$bark20budg,x1=stkchgs$woodonlybudg,y0=stkchgs$chg20,
-         col=as.numeric(stkchgs$stand))
-
-
-plot(chg20~budget,data=stkchgs,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',
-     #ylim=c(-1,1.8),
-     las=1)
-rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
-         col=as.numeric(stkchgs$stand))
-# Much cleaner with conc
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
-         y1=stkchgs$chg20+stkchgs$sdchg20,
-         col=as.numeric(stkchgs$stand))
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-#text(stkchgs$budget,stkchgs$chg20,labels=stkchgs$element,
-text(stkchgs$plconcbudg,stkchgs$chg20,labels=stkchgs$element,
-#text(stkchgs$lessrotbudg,stkchgs$chg20,labels=stkchgs$element,
-      #cex=stkchgs$conc*1000, 
-      col=as.numeric(stkchgs$stand))
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n',ncol=2)
-# taking out the second rotation helps for Ca, K in BO.E and Bp.E1, not for JPs or N
-
-# Concentration matters? Higher estimated wood associated with larger N increases
-#   than expected (lower concs would make expected losses less in Vg.E and Eu.E2)
-# And lower N conc in BO.E could be associated with underestimated expected losses?
-#   Number of harvests/harvested volume more important
-# but large observed Ca losses in Eu.E2 associated with high Ca concs 
-#       (i.e. estimated losses should be large, too)
-# High Ca concs in Bp.E1 and It.E1 also should offset large expected increases,
-#     but expected still >> observed
-# Low Ca concs in JP associated with larger-than-predicted Ca increases
-#   so again concentration doesn't seem to be the main driver. Harvested biomass, yes?
-# Or maybe they left the bark onsite in JP so increases > expected? No
-# Changing the concentrations to the literature values I cited for E. grandis
-#   improves Ca in BO.E, but doesn't help much with other nutrients
-
-# Rough cut of budgets incorporating changes in biomass:
-plot(chg20~agbbudg,data=stkchgs,type='n', 
-     xlab='Budget with fertilizer, harvest, biomass change, Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',
-     #ylim=c(-1,1.8),
-     las=1)
-rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
-         col=as.numeric(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
-         y1=stkchgs$chg20+stkchgs$sdchg20,
-         col=as.numeric(stkchgs$stand))
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-text(stkchgs$agbbudg,stkchgs$chg20,labels=stkchgs$element,
-     #cex=stkchgs$conc*1000, 
-     col=as.numeric(stkchgs$stand))
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n',ncol=2)
-# That did help with N a little..definitely in It.E2 and Eu.E2.
-# But not with Ca. Figures for Ca additions in Its just wrong?
-# Ca in bark not retained onsite in Eu.E2?
-plot(chg20~agbbudg,data=stkchgs,type='n', 
-     xlab='Budget with fertilizer, harvest, biomass change, Mg ha-1',
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',
-     #ylim=c(-1,1.8),
-     las=1)
-rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
-segments(x0=stkchgs$minagbbudg,x1=stkchgs$maxagbbudg,y0=stkchgs$chg20,
-         col=as.numeric(stkchgs$stand))
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,
-         y0=stkchgs$chg20-.02,
-         col=as.numeric(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg20-stkchgs$sdchg20,
-         y1=stkchgs$chg20+stkchgs$sdchg20,
-         col=as.numeric(stkchgs$stand))
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-text(stkchgs$agbbudg,stkchgs$chg20,labels=stkchgs$element,
-     #cex=stkchgs$conc*1000, 
-     col=as.numeric(stkchgs$stand))
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n',ncol=2)
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 
-plot(chg20~budget,data=stkchgs3,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     xlim=c(-.2,.5),ylim=c(-.2,.5),
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
-         col=as.factor(stkchgs3$stand))
-segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
-         y1=stkchgs3$chg20+stkchgs3$sdchg20,
-         col=as.factor(stkchgs3$stand))
-#text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
-text(stkchgs3$agbbudg,stkchgs3$chg20,labels=stkchgs3$element,
-#text(stkchgs3$lessrotbudg,stkchgs3$chg20,labels=stkchgs3$element,
-          #cex=stkchgs3$conc*2000,
-     col=as.numeric(stkchgs3$stand))
-# What is a realistic range of bark? How to present sensitivities?
-# Table of ratios of budget to its variations?
-
-par(mar=c(4,4,1,1))
-palette(rainbow(4))
-plot(chg20~budget,data=stkchgs3,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     #xlim=c(-.2,.5),ylim=c(-.2,.5),
-     ylab='Observed change in stocks to 20 cm, Mg ha-1',las=1)
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-segments(x0=stkchgs3$minbudg,x1=stkchgs3$maxbudg,y0=stkchgs3$chg20,
-         col=as.numeric(as.factor(stkchgs3$element)))
-segments(x0=stkchgs3$minagbbudg,x1=stkchgs3$maxagbbudg,
-         y0=stkchgs3$chg20-.02,
-         col=as.numeric(as.factor(stkchgs3$element)))
-segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
-         y1=stkchgs3$chg20+stkchgs3$sdchg20,
-         col=as.numeric(as.factor(stkchgs3$element)))
-text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
-     col=as.numeric(as.factor(stkchgs3$element)))
-points(stkchgs3$agbbudg,stkchgs3$chg20-.02,pch=16,
-     col=as.numeric(as.factor(stkchgs3$element)))
-     #text(stkchgs3$lessrotbudg,stkchgs3$chg20,labels=stkchgs3$element,
-     #cex=stkchgs3$conc*2000,
-# no, that is still really ugly
-     
+summary(I(abs(stkchgs3$maxbudgconc-stkchgs3$minbudgconc)/
+            abs(stkchgs3$budget)))
+summary(I(abs(stkchgs3$maxbudg-stkchgs3$minbudg)/
+            abs(stkchgs3$budget)))
+summary(I(abs(stkchgs3$maxagbbudg-stkchgs3$minagbbudg)/
+            abs(stkchgs3$agbbudg)))
+summary(I((stkchgs3$chg20-stkchgs3$budget)/
+            stkchgs3$budget))
+summary(I((stkchgs3$chg20-stkchgs3$agbbudg)/
+            stkchgs3$agbbudg))
 
 
-JPchg=stkchgs3[stkchgs3$stand %in% c('JP.E1','JP.E2'),]
-#text(stkchgs3$lessrotbudget,stkchgs3$chg20,labels=stkchgs3$element,
-text(stkchgs3$moreharvbudg,stkchgs3$chg20,labels=stkchgs3$element,
-     cex=stkchgs3$conc*2000,
-     col=as.numeric(stkchgs3$stand))
-
-
-stkchgs3=stkchgs[stkchgs$element!='Mg',]
-
+# Deprecated Figure 5
+#######################
 palette('default')
 
 par(mar=c(4,4,0.5,0.5),mfrow=c(1,2))
@@ -803,7 +647,6 @@ segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
 segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
          y1=stkchgs3$chg20+stkchgs3$sdchg20,
          col=as.numeric(as.factor(stkchgs3$biome))+2)
-
 
 text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)#,
 #     col=as.numeric(as.factor(stkchgs3$biome))+2)
@@ -826,6 +669,7 @@ segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
 text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)
 legend('bottomleft',legend='b',cex=1.2,bty='n')
 par(mfrow=c(1,1),mar=c(4,4,1,1))
+#######################
 
 # most recent rotation
 summary(c(budgets$In_kgha_2[budgets$In_kgha_2!=0],
@@ -847,49 +691,134 @@ tapply(stkchgs3$conc*1000,stkchgs3$element,summary)
 tapply(stkchgs3$agbchg*-1000,stkchgs3$element,summary)
 tapply(chgtypes$agbbudg*1000,chgtypes$element,summary)
 
-#require(reshape2)
+sensit=group_by(stkchgs3,element,stand)%>%
+  summarise(mindivagb=minagbbudg/agbbudg, maxdivagb=maxagbbudg/agbbudg,
+         mindiv=minbudg/budget, maxdiv=maxbudg/budget,
+         mindivconc=minbudgconc/budget, maxdivconc=maxbudgconc/budget)
+sensitsum=group_by(sensit,element)%>%
+  summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
+  mutate_if(is.numeric,round,digits=2)
+data.frame(t(sensitsum[,order(names(sensitsum))])) #TMI
+
+sensit2=group_by(stkchgs3,element,stand) %>%
+  summarise(budgsens=abs(maxbudg-minbudg)/abs(budget),
+         concsens=abs(maxbudgconc-minbudgconc)/abs(budget),
+         agbsens=abs(maxagbbudg-minagbbudg)/abs(agbbudg))
+sensitsum=group_by(sensit2,element)%>%
+  summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
+  mutate_if(is.numeric,round,digits=2)
+data.frame(t(sensitsum[,order(names(sensitsum))]))
+
+obsdif=group_by(stkchgs3,element,stand) %>%
+  summarise(budgdif=(chg20-budget)/budget,
+            agbdif=(chg20-agbbudg)/agbbudg)
+obsdifsum=group_by(obsdif,element)%>%
+  summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
+  mutate_if(is.numeric,round,digits=2)
+data.frame(t(obsdifsum[,order(names(obsdifsum))]))
+data.frame(obsdifsum[,order(names(obsdifsum))])
+
+summary(I((stkchgs3$chg20-stkchgs3$budget)/
+            stkchgs3$budget))
+summary(I((stkchgs3$chg20-stkchgs3$agbbudg)/
+            stkchgs3$agbbudg))
+
+obsdifm=melt(obsdif,id.vars=c('element','stand'),value.name = 'disc')
+obsdifm2=merge(obsdifm,obsdifsum,by='element')
+obsdifm2a=obsdifm2[obsdifm2$variable=='agbdif',
+                   -which(names(obsdifm2) %in% 
+                           c('budgdif_min','budgdif_median',
+                             'budgdif_mean','budgdif_max'))]
+obsdifm2b=obsdifm2[obsdifm2$variable=='budgdif',
+                   -which(names(obsdifm2) %in% 
+                            c('agbdif_min','agbdif_median',
+                              'agbdif_mean','agbdif_max'))]
+names(obsdifm2a)
+names(obsdifm2b)
+names(obsdifm2a)=c('element','stand','budgtype','disc',
+                   'min','median','mean','max')
+names(obsdifm2b)=c('element','stand','budgtype','disc',
+                   'min','median','mean','max')
+obsdifm3=data.frame(rbind(obsdifm2b,obsdifm2a))
+
+ggplot(obsdifm,aes(x=element,y=disc,color=variable))+
+  geom_boxplot()
+
+ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
+  scale_color_manual(values=c('darkblue','darkgreen'),
+                      name='Budget',
+                      labels=c('Fertilizer - Harvest',
+                               'Fertilizer - Harvest +\nInput from biomass change'))+
+  guides(color=guide_legend())+
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_point(size=3, shape=1,position=position_dodge(.3),show.legend = F)+
+  geom_pointrange(aes(x=element,y=median,colour=budgtype,ymax=max,
+                      ymin=min),fatten=6,size=.8,
+                  data=distinct(obsdifm3,element,budgtype,.keep_all=T),
+                  shape=18,show.legend = T,position=position_dodge2(.3))+
+  labs(y='(Observed change in soil stock - Budget) / Budget', x=NULL) +
+  theme(legend.position=c(0.22,0.9),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(colour='grey80'),
+        legend.key=element_blank(),
+        legend.title=element_text(size=10)) 
+  
+  
+
+
 chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
 
-#chgerrs=group_by(stkchgs3,stand,element, biome) %>%
-#  summarise(standing=agbchg, # some estimate of error on each pool
-#            harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
-#            fertilizer=(In_kgha_1+In_kgha_2)/1000)
-
-#chgerrsm=melt(chgerrs,id.vars = c('stand','element','biome','sdchg20'))
-#chgtypesw=merge(chgtypesm,chgerrsm,by=c('stand','element','variable'))
-
 tapply(chgtypes$budget,chgtypes$element,summary)
+stdlabls <- c(Eu.E1 = "Atlantic Forest example", 
+           It.E2 = "Cerrado example")
 
-ggplot(chgtypesm,aes(x=element,y=value,fill=variable))+
-  geom_bar(stat = "identity")+
-  facet_wrap(~stand)+
+ggplot(chgtypesm[chgtypesm$stand %in% c('Eu.E1','It.E2'),],
+       #[chgtypesm$stand %in% c('Eu.E2','It.E2','JP.E2'),],
+       aes(x=element,y=value,fill=variable))+
+  #geom_bar(stat = "identity")+
+  facet_wrap(~stand, labeller=labeller(stand=stdlabls))+
+  #facet_grid(rows=vars(stand))+
   #geom_point(aes(y=chg20))+
   #geom_point(aes(y=budget),shape=1)+
   #geom_errorbar(aes(ymin=minbudg,ymax=maxbudg),width=.2)
-  scale_fill_brewer(palette='Dark2',name=NULL,#name='Change in pool',
-                    labels=c('Transfer to/from biomass',
-                             'Removal in harvested wood',
-                             'Addition in fertilizer'))+
-  coord_cartesian(ylim=c(-1,2))+
-  geom_point(aes(y=chg20),position=position_nudge(x=.3),
+  #scale_fill_brewer(palette='Dark2',name=NULL,#name='Change in pool',
+  #                  labels=c('Transfer to/from biomass',
+  #                           'Removal in harvested wood',
+  #                           'Addition in fertilizer'))+
+  coord_cartesian(ylim=c(-1,1))+
+  geom_hline(yintercept=0,color='gray50')+
+  geom_point(aes(y=chg20),position=position_nudge(x=.2),
              show.legend = F)+
   geom_point(aes(y=budget,color='Budget'),
-             position=position_nudge(x=-.3),
+             position=position_nudge(x=-.2),
              show.legend = F)+
   geom_errorbar(aes(ymin=minbudg,ymax=maxbudg,color='Budget'),
-                width=.2,position=position_nudge(x=-.3),size=1)+
-  geom_errorbar(aes(ymin=chg20-sdchg20,ymax=chg20+sdchg20,
+                width=.2,position=position_nudge(x=-.2),size=1)+
+  geom_errorbar(aes(ymin=chg20-sdchg20/2,ymax=chg20+sdchg20/2,
                     color='Observed'),size=1,
-                width=.2,position=position_nudge(x=.3))+
+                width=.2,position=position_nudge(x=.2))+
   geom_errorbar(aes(ymin=minagbbudg,ymax=maxagbbudg,
                     color='Budget_standing'),width=.2,size=1)+
   geom_point(aes(y=agbbudg,colour='Budget_standing'),
              size=2,show.legend = F)+
-  labs(x='',y='Change in soil nutrient stocks (Mg/ha), 0-20 cm')+
-  scale_colour_manual(name=NULL,#name="Change in stock",
+  labs(x='',y='Change in soil nutrient stocks (Mg / ha), 0-20 cm')+
+  scale_colour_manual(name=NULL,
                       values=c(Budget="deepskyblue", 
                                Observed="darkblue",
-                               Budget_standing='lightgreen'))#+
+                               Budget_standing='lightgreen'),
+                      labels=c('Budget (fertilizer - harvest)',
+                               'Budget + change in standing biomass',
+                               'Observed change in soil stock'))+
+  theme(legend.position=c(0.75,0.2),
+    #legend.position=c(0.55,0.8),
+    legend.spacing.y = unit(.8,'lines'), 
+    panel.background = element_rect(fill='white'),
+    #panel.grid.major = element_blank(),
+    legend.key=element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(size=11))#+
   #geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
   #              color='orchid',
   #              width=.2,position=position_nudge(x=-.1))
@@ -954,201 +883,6 @@ ggplot(chgtypes1perm,aes(x=element,y=value,fill=variable))+
   geom_errorbar(aes(ymin=minbudgconc,ymax=maxbudgconc),
                 color='orchid',
                 width=.2,position=position_nudge(x=-.1))
-
-
-plot(chg100~budget,data=stkchgs,type='n', 
-     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
-     ylab='Observed change in stocks to 100 cm, Mg ha-1',las=1,
-     ylim=c(-3,5.5))
-     #xlim=c(-.2,.5),ylim=c(-.2,.5))
-abline(h=0,lty=3)
-abline(v=0,lty=3)
-abline(0,1)
-#segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg20,
-#         col=as.numeric(as.factor(stkchgs$biome))+2)
-segments(x0=stkchgs$minbudgconc,x1=stkchgs$maxbudgconc,y0=stkchgs$chg20,
-         col=as.numeric(as.factor(stkchgs$biome))+2)
-segments(x0=stkchgs$budget,y0=stkchgs$chg100-stkchgs$sdchg100,
-         y1=stkchgs$chg100+stkchgs$sdchg100,
-         col=as.numeric(as.factor(stkchgs$biome))+2)
-text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
-     col=as.numeric(as.factor(stkchgs$biome))+2)
-legend('bottomright',pch=15,col=c(3,4),
-       legend=c('Atlantic Forest','Cerrado'),bty='n')
-
-segments(x0=stkchgs$minbudg,x1=stkchgs$maxbudg,y0=stkchgs$chg100,
-         col=as.factor(stkchgs$stand))
-segments(x0=stkchgs$budget,y0=stkchgs$chg100-stkchgs$sdchg100,
-         y1=stkchgs$chg100+stkchgs$sdchg100,
-         col=as.factor(stkchgs$stand))
-text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
-     col=as.numeric(stkchgs$stand))
-
-
-
-
-stkchgs2=stkchgs[stkchgs$stand!='It.E1',]
-plot(chg100~budget,data=stkchgs,type='n', 
-     xlab='Fertilizer - harvest, Mg ha-1',
-     ylab='Observed change in stocks to 100 cm',las=1,
-     ylim=c(-1,2),xlim=c(-1,2))
-text(stkchgs$budget,stkchgs$chg100,labels=stkchgs$element,
-     col=as.numeric(stkchgs$stand))
-legend('bottomright',pch=15,col=as.factor(levels(stkchgs$stand)),
-       legend=levels(stkchgs$stand),bty='n',ncol=2)
-
-
-# Plots showing average change for different nutrients?
-tapply(stkchgs$chgrt100,stkchgs$element,mean) # each stand gets weight of 1
-tapply(stkchgs$chgrt20,stkchgs$element,mean)
-barplot(tapply(stkchgs2$chgln20,stkchgs2$element,mean))
-sds20=tapply(stkchgs2$chgln20,stkchgs2$element,function(x){sd(x,na.rm=T)})
-
-plot(unique(as.numeric(as.factor(stkchgs2$element))),
-     tapply(stkchgs2$chgln20,stkchgs2$element,mean), ylim=c(-.4,2),
-     las=1,xaxt='n',xlab='Element',ylab='Change in 20 cm stock (log ratio)')
-segments(x0=seq(1,length(unique(stkchgs2$element))),
-         y0=tapply(stkchgs2$chgln20,stkchgs2$element,mean)-
-           tapply(stkchgs2$chgln20,stkchgs2$element,sefun),
-         y1=tapply(stkchgs2$chgln20,stkchgs2$element,mean)+
-           tapply(stkchgs2$chgln20,stkchgs2$element,sefun))
-abline(h=0,lty=2)
-axis(side=1,at=seq(1,length(unique(stkchgs2$element))),
-     labels = unique(stkchgs2$element))
-
-sefun=function(x){sd(x)/sqrt(length(x)-1)}
-
-plot(unique(as.numeric(as.factor(stkchgs2$element))),
-     tapply(stkchgs2$chgln100,stkchgs2$element,mean), ylim=c(-0.5,1.5),
-     las=1,xaxt='n',xlab='Element',ylab='Change in 100 cm stock (log ratio)')
-segments(x0=seq(1,length(unique(stkchgs2$element))),
-         y0=tapply(stkchgs2$chgln100,stkchgs2$element,mean)-
-           tapply(stkchgs2$chgln100,stkchgs2$element,sefun),
-         y1=tapply(stkchgs2$chgln100,stkchgs2$element,mean)+
-           tapply(stkchgs2$chgln100,stkchgs2$element,sefun))
-abline(h=0,lty=2)
-axis(side=1,at=seq(1,length(unique(stkchgs2$element))),
-     labels = unique(stkchgs2$element))
-
-bwplot(chgln100~element,data=stkchgs2)
-
-simp2deps=droplevels(dats2deps[dats2deps$stand %in% 
-                                c('BO.E','BO.P','Vg.E','Vg.N',
-                                  'JP.E1','JP.N','It.E1','It.N'),])
-simp2deps=mutate(simp2deps,LU2=ifelse(LU=='E','E','O'))
-
-simpstks=droplevels(shorttstk[shorttstk$stand %in% 
-                                 c('BO.E','BO.P','Vg.E','Vg.N',
-                                   'JP.E1','JP.N','It.E1','It.N'),])
-simpstks=mutate(simpstks,LU2=ifelse(LU=='E','E','O'))
-
-
-simpchgs=group_by(simpstks,stand,LU2,element)%>%
-  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
-            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
-            chgrt100=(stock100_16-stock100_04)/stock100_04,
-            chgrt20=(stock20_16-stock20_04)/stock20_04,
-            chgln100=log(stock100_16/stock100_04),
-            chgln20=log(stock20_16/stock20_04))
-
-bwplot(chgln20~element|LU2,data=simpchgs)
-bwplot(chgln20~LU2|element,data=simpchgs) # neither very informative
-
-
-
-# Power tests
-summary(tstock$sd100_16[tstock$element=='C']/
-          tstock$stock100_16[tstock$element=='C']) 
-# 1.5% to 18%, mean and median 8.7%
-
-summary(tstock$sd100_16[tstock$element=='N']/
-          tstock$stock100_16[tstock$element=='N']) 
-# median 7.2%, mean 8.6% (1.3 to 25%)
-
-# Most elements have med/mean around 8% (more for K if Bp.E2 included)
-# Ca: median is 36%
-
-# Anovas: Concentration in top 20 cm
-Ccaov=aov(conc20~year*LU,data=dats2deps)
-summary(Ccaov) # no, maybe close to a LU effect
-library(car)
-Anova(Ccaov, type = "III") # not close to LU effect any more
-qqr(Ccaov) # horrible
-Ccaov_stand=aov(conc20~year*stand,data=dats2deps)
-summary(Ccaov_stand) # significant stand effect of course
-Ccaov_siteLU=aov(conc20~year*site*LU,data=dats2deps)
-summary(Ccaov_siteLU) # only site is significant
-# I want mixed effects
-
-# Conc in top 20 cm
-
-Cc20.lme=lme(log(conc20)~year*LU,random=~1|site/stand,
-               data=dats2deps[dats2deps$element=='C',],
-             na.action = na.omit)
-summary(Cc20.lme) # concentration increases significantly
-# greatest increase in euc: decreases in pasture, small decrease in N
-qqr(Cc20.lme) # nice with log transform
-plot(resid(Cc20.lme)~dats2deps$conc20[dats2deps$element=='C' &
-                                        !is.na(dats2deps$conc20)]) #ok
-
-plot(resid(Cc20.lme)~dats2deps$site[dats2deps$element=='C' &
-                                        !is.na(dats2deps$conc20)]) 
-# pretty ok
-euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
-test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
-euc2deps2=droplevels(test2deps[test2deps$LU=='E',]) 
-
-Cc20euc.lme=lme(log(conc20)~year,random=~1|site/stand,
-                data=euc2deps[euc2deps$element=='C',],
-                na.action = na.omit)
-summary(Cc20euc.lme) # yes, signif increase
-qqr(Cc20euc.lme) # what are the outliers? still there without It.E1
-qqnorm(resid(Cc20euc.lme),pch=as.character(
-  dats2deps$site[dats2deps$element=='C' &
-                   !is.na(dats2deps$conc20)]))
-# some I and B: not sure
-
-Nc20.lme=lme(log(conc20)~year*LU,random=~1|site/stand,
-             data=dats2deps[dats2deps$element=='N',],
-             na.action = na.omit)
-summary(Nc20.lme) # no change but maybe small increase in N (p=.07)
-qqr(Nc20.lme)
-
-Nc20euc.lme=lme(log(conc20)~year,random=~1|site/stand,
-                data=euc2deps[euc2deps$element=='N',],
-                na.action = na.omit)
-summary(Nc20euc.lme) # marginal increase, p = .08
-qqr(Nc20euc.lme) # pretty good
-# Looks like the increases are Vg.E, Eu.E1, It.E1 
-# Increased litterfall, recent fertilization?
-
-# P: no change; log-transformed residuals still way not normal
-# K: no log and no Bp = increase at p=0.041
-# Ca: log transform, big increase
-
-# Next up: superficiality metric based on concentration, 
-#   without It.E1 and N? Or with pit data substituted in for those
-# Also amended stocks using BD from 2016 in all cases
-
-Ccrat.lme=lme(log(concrat2)~year,random=~1|site/stand,
-              data=euc2deps2[euc2deps2$element=='C',],
-              na.action = na.omit)
-qqr(Ccrat.lme) # tails way off, ok with log
-summary(Ccrat.lme) # no change; is concratio w/o log best?
-
-# maybe do stock ratios, but with fixed bulk density?
-# that's misleading if change in OM really changed BD
-#   could be the case in BO, maybe Vg
-# I think it's ok
-
-Ceucrat.lme=lme(log(concratio)~year,random=~1|site/stand,
-              data=euc2deps2[euc2deps2$element=='C',],
-              na.action = na.omit)
-summary(Ceucrat.lme) # no change
-
-
-table(simple20$LU2[simple20$element=='C'],simple20$year[simple20$element=='C']) 
-# Not balanced--rep 5
 
 
 

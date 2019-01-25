@@ -591,7 +591,7 @@ stkchgs=group_by(droplevels(stkchgs),stand,element) %>% mutate(conc=Concentratio
                         woodonlybudg,bark5budg,bark20budg,budget,na.rm=T),
             efs20=log((stk20_04+budget)/stk20_04),
             agbchg=(AGB_04-AGB_16)/1000,
-            agbbudg=agbchg/1000+budget,
+            agbbudg=agbchg+budget,
             minagbbudg=ifelse(!is.na(Budg_w_AGB),
                               min(agbbudg*1000,less04more16budg,less16more04budg,
                            oldconcagbbudg,youngconcagbbudg,
