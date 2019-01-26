@@ -2311,6 +2311,10 @@ Nbsimp.lme3=lme(log(stock20)~year*LU,random=~1|site2,
                 data=simple20_2[simple20_2$element=='Nb',], na.action=na.omit)
 qqr(Nbsimp.lme3) 
 summary(Nbsimp.lme3) # differs between veg types but not between years
+Nbsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+                data=simple20_2[simple20_2$element=='Nb',], na.action=na.omit)
+qqr(Nbsimp.lme4) 
+summary(Nbsimp.lme4) #same results
 
 CNsimp.lme=lme(conc20~year*LU,random=~1+year|site2,
   data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)

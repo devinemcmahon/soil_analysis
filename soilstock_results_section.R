@@ -941,8 +941,23 @@ summary(Psimp.lme4) # no signif changes as you might expect
 Zrsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
                 data=simple20_2[simple20_2$element=='Zr',], na.action=na.omit)
 qqr(Zrsimp.lme4) 
-summary(Zrsimp.lme4) #marginal year-native intrxn
+summary(Zrsimp.lme4) # significant year-native intrxn
 
+Nbsimp.lme4=lme(log(stock20)~year*LU,random=~1+year|site2,
+                data=simple20_2[simple20_2$element=='Nb',], na.action=na.omit,
+                control = lmeControl(opt = 'optim'))
+qqr(Nbsimp.lme4) 
+summary(Nbsimp.lme4) # no year or interaction effects
+# but initially lower value in native and higher in pasture
+# is that also true within pairs?
+plot(conc20~as.numeric(as.factor(site2)),col=as.factor(LU),
+     data=simple20_2[simple20_2$element=='Nb',],pch=as.numeric(as.factor(year)))
+plot(conc20~as.factor(site2),col=as.factor(LU),
+     data=simple20_2[simple20_2$element=='Nb',],pch=as.numeric(as.factor(year)))
+# Changes similarly in both in Vg, more in euc in JP.E2 than in JP.N (both yrs),
+#   more in JP.E1 than JP.P both years
+# Makes sense that JP pairing less accurate: paired stands more spatially separated,
+#   lower element concentrations and sandier soil increase measurement error
 
 CNsimp.lme=lme(conc20~year*LU,random=~1+year|site2,
   data=simple20_2[simple20_2$element=='CN',], na.action=na.omit)
