@@ -115,20 +115,28 @@ Krateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      na.action = na.omit,family='quasibinomial')
 summary(Krateuc2.pql) 
 
-Nrateuc2.pql=glmmPQL(stockratio~year,random=~1|site/stand,
+Nrateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='N',],
                      na.action = na.omit,family='quasibinomial')
 summary(Nrateuc2.pql) 
+qqr(Nrateuc2.pql) #decreases in AF, no change in Cerrado
 
-Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
-                    data=euc2deps2[euc2deps2$element=='C',],
-                    na.action = na.omit,family='quasibinomial')
-summary(Crateuc.pql) 
+Crateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='C',],
+                     na.action = na.omit,family='quasibinomial')
+summary(Crateuc2.pql) # nada
+qqr(Crateuc2.pql) # slightly better than with no biome term
 
-Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
-                    data=euc2deps2[euc2deps2$element=='Ca2',],
-                    na.action = na.omit,family='quasibinomial')
-summary(Crateuc.pql) 
+Carateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                      data=euc2deps2[euc2deps2$element=='Ca2',],
+                      na.action = na.omit,family='quasibinomial')
+summary(Carateuc2.pql) # increases a bunch in Cerrado only
+
+Prateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='P2',],
+                     na.action = na.omit,family='quasibinomial')
+summary(Prateuc2.pql) # no significant terms
+
 
 # Vegetation type interactions
 # Not enough sites to do year*land use*biome
