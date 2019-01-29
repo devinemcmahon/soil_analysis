@@ -238,10 +238,14 @@ summary(eucP100bm.lme2)
 table(shorttstk$stockunit,shorttstk$element)
 nutstk=group_by(dats2deps[dats2deps$element %in% c('C','N','K','P2','Ca2') &
                             dats2deps$stand !='It.E1',],
-                element,LU,biome,year)
+                element,LU,biome,year)%>%
+  mutate(mnrat=mean(stockratio,na.rm=T),
+         #serat=sd(stockratio,na.rm=T)/sqrt(sum(!is.na(stockratio))-1))
+         serat=sd(stockratio,na.rm=T)/sqrt(sum(!is.na(stockratio))))
 nutstk$stock100[nutstk$site=='Bp'&nutstk$element=='K']=NA
 nutstk$stock20[nutstk$site=='Bp'&nutstk$element=='K']=NA
-nutstk= summarise(nutstk,stk20down=mean(stock100-stock20,na.rm=T),
+nutstk=group_by(nutstk,element,LU,biome,year,mnrat,serat)%>%
+  summarise(stk20down=mean(stock100-stock20,na.rm=T),
             stk20up=mean(stock20,na.rm=T),
             stk100=mean(stock100,na.rm=T),
             nobs=n(),
@@ -274,11 +278,14 @@ nutstk2$se[nutstk2$element=='C']=nutstk2$se[nutstk2$element=='C']/10
 nutstk2$stk100[nutstk2$element=='C']=nutstk2$stk100[nutstk2$element=='C']/10
 nutstk2=mutate(nutstk2,hibar=ifelse(depth=='20up',stock+se,stk100+se),
                lobar=ifelse(depth=='20up',stock-se,stk100-se))
+#nutstk2=group_by(nutstk2,element,biome)%>%
+#               mutate(maxhibar=max(hibar))
+nutstk2=group_by(nutstk2,biome)%>%mutate(maxhibar=max(hibar))
 nutstkE=nutstk2[nutstk2$LU=='E',]
 #plot(stock~element,data=nutstkE)
 #library(ggplot2)
 nutstkE <- with(nutstkE, nutstkE[order(element,year,depth),])
-nutstkE=mutate(nutstkE,sig=rep(NA))
+nutstkE=mutate(nutstkE,sig=rep(NA),sigrat=rep(''))
 nutstkE$sig[nutstkE$depth=='20down'&nutstkE$element=='N'&nutstkE$biome=='AF'&
               nutstkE$year=='16']=1
 nutstkE$sig[nutstkE$element=='Ca'& nutstkE$biome=='Cer'&
@@ -288,6 +295,16 @@ nutstkE$sig[nutstkE$element=='C'&nutstkE$biome=='Cer'&
 nutstkE$sig[nutstkE$element=='K'&nutstkE$biome=='AF'&
               nutstkE$year=='16']=1 # both depths
 nutstkE$sig=as.integer(nutstkE$sig)
+nutstkE$sigrat[nutstkE$depth=='20down'&nutstkE$element=='N'&
+                 nutstkE$biome=='AF'&
+                 nutstkE$year=='16']='*'
+nutstkE$sigrat[nutstkE$depth=='20down'&nutstkE$element=='K'&
+                 nutstkE$biome=='AF'&
+                 nutstkE$year=='16']='*'
+nutstkE$sigrat[nutstkE$depth=='20down'&nutstkE$element=='Ca'&
+                 nutstkE$biome=='Cer'&
+                 nutstkE$year=='16']='*'
+
 labls <- c(AF = "Atlantic Forest", Cer = "Cerrado")
 
 ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
@@ -297,7 +314,7 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
        x="Year", fill="Depth") +
   theme(strip.text.y = element_text(angle = 0),
-        legend.position=c(0.8,0.1),
+        legend.position=c(0.75,0.14),
         panel.background = element_rect(fill='white'),
         panel.grid.major.x = element_line(colour='grey80'),
         panel.grid.major.y = element_blank()) +
@@ -306,9 +323,14 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
                       labels=c('20-100 cm','0-20 cm'),
                       guide = guide_legend(reverse=TRUE,title=NULL))+
   geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
-             shape=18,size=3,show.legend=F)
-  #geom_text(mapping = aes(y = (hibar+1)*(sig>0)), label = '*',
-  #          na.rm=T,show.legend=F,size=8,hjust=0)
+             shape=18,size=3,show.legend=F)+
+  geom_text(mapping = aes(y = maxhibar-7,
+                          label = paste(round((mnrat*100),0),' (',
+                                        round((serat*100),0),')',
+                                        sigrat,sep='')), 
+            nudge_x = .3,data=nutstkE[nutstkE$depth=='20down',],
+            na.rm=T,parse=F,show.legend=F,size=3.5,hjust=0)
+
 
 
 tapply(shorttstk$stock100_16,shorttstk$element,
@@ -343,10 +365,13 @@ tapply(shorttstk$stock20_04[shorttstk$LU=='E'],
        shortE$element[shorttstk$LU=='E'],
        function(x){mean(x,na.rm=T)})
 
+sefun=function(x){sd(x,na.rm=T)/sqrt(sum(!is.na(x))-1)}
+
 tapply(shortE$rat_16,shortE$element,
        function(x){mean(x,na.rm=T)})
 tapply(shortE$rat_16,shortE$element,
        function(x){sd(x,na.rm=T)})
+tapply(shortE$rat_16,shortE$element,sefun)
 mean(shortE$BD100_16[shortE$element=='C'])
 sd(shortE$BD100_16[shortE$element=='C'])
 
@@ -398,6 +423,44 @@ Crateuc2.lme=lme(log(stockratio)~year*biome,random=~1|site/stand,
                      na.action = na.omit)
 summary(Crateuc2.lme) # nada
 qqr(Crateuc2.lme) # slightly better than pql
+
+Carateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='Ca2',],
+                     na.action = na.omit,family='quasibinomial')
+summary(Carateuc2.pql) # increases a bunch in Cerrado only
+qqr(Carateuc2.pql) # ok
+Carateuc2.lme=lme(log(stockratio)~year*biome,random=~1|site/stand,
+                  data=euc2deps2[euc2deps2$element=='Ca2',],
+                  na.action = na.omit)
+summary(Carateuc2.lme) # similar
+qqr(Carateuc2.lme) # worse than pql
+
+Carateuc3.pql=glmmPQL(stockratio~year*biome,random=~1+year|site/stand,
+                      data=euc2deps2[euc2deps2$element=='Ca2',],
+                      na.action = na.omit,family='quasibinomial',
+                      control=lmeControl(opt = 'optim'))
+summary(Carateuc3.pql) # increases a bunch in Cerrado, lower p-value
+qqr(Carateuc3.pql) # ok except 1 outlier
+Carateuc3.lme=lme(stockratio~year*biome,random=~1+year|site/stand,
+                 data=euc2deps2[euc2deps2$element=='Ca2',],
+                 na.action = na.omit,
+                 control=lmeControl(opt = 'optim'))
+qqr(Carateuc3.lme) # bad with log, doesn't converge without
+
+
+Prateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='P2',],
+                     na.action = na.omit,family='quasibinomial')
+summary(Prateuc2.pql) # no significant terms
+qqr(Prateuc2.pql) # messed up as usual
+Prateuc3.pql=glmmPQL(stockratio~year*biome,random=~1+year|site/stand,
+                      data=euc2deps2[euc2deps2$element=='P2',],
+                      na.action = na.omit,family='quasibinomial',
+                      control=lmeControl(opt = 'optim'))
+summary(Prateuc3.pql) 
+qqr(Prateuc3.pql) # not an improvement
+
+
 
 ######## Row position and other heterogeneity things
 ##################
