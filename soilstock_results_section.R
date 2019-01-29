@@ -26,6 +26,62 @@ legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='f',cex=1.5)
 par(mfrow=c(1,1))
 
+sum(is.na(dats2deps$stock20[dats2deps$element=='P']))
+sum(is.na(dats2deps$stock20[dats2deps$element=='P2']))
+length(unique(widedats$ID[is.na(widedats$P)&!is.na(widedats$P_dl) &
+                            widedats$stand!='JP.A'&
+                            !is.element(widedats$site,c('Cr','TM'))]))
+length(unique(widedats$ID[is.na(widedats$Ca)&!is.na(widedats$Ca_dl)&
+                            widedats$stand!='JP.A'&
+                            !is.element(widedats$site,c('Cr','TM'))]))
+length(unique(widedats$ID[!is.na(widedats$P)&!is.na(widedats$P_dl)&
+                            widedats$stand!='JP.A'&
+                            !is.element(widedats$site,c('Cr','TM'))]))
+length(unique(widedats$ID[is.na(widedats$Ca)&!is.na(widedats$P)&
+                            widedats$stand!='JP.A'&
+                            !is.element(widedats$site,c('Cr','TM'))]))
+length(unique(widedats$ID[is.na(widedats$P)&!is.na(widedats$Ca)&
+                            widedats$stand!='JP.A'&
+                            !is.element(widedats$site,c('Cr','TM'))]))
+table(widedats$stand[is.na(widedats$P)])
+length(unique(widedats$P_dl[is.na(widedats$P)&widedats$stand!='JP.A'&
+                     !is.element(widedats$site,c('Cr','TM'))])) # just 6
+length(unique(widedats$Ca_dl[is.na(widedats$Ca)&widedats$stand!='JP.A'&
+                              !is.element(widedats$site,c('Cr','TM'))])) # just 10
+table(widedats$stand[is.na(widedats$P)],widedats$P_dl[is.na(widedats$P)])
+# almost always .0003
+table(widedats$stand[is.na(widedats$Ca)],widedats$Ca_dl[is.na(widedats$Ca)])
+# usually .001 except in Bp.E1? Mostly an issue in Vg and Bp, some It.E2 and BO
+
+# Year trends between stocks in eucalyptus stands
+eucC20.lme=lme(log(stock20)~year,data=euc2deps[euc2deps$element=='C',],
+               random=~1|site/stand,na.action=na.omit)
+summary(eucC20.lme) 
+qqr(eucC20.lme) # upper tail still off
+summary(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='04'])
+summary(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='16'])
+exp(3.7818) # estimate for 2004
+exp(3.7818)*exp(.1014) # estimate for 2016
+# these are slightly lower than just taking the mean
+
+eucN20.lme=lme(log(stock20)~year,random=~1|site/stand,
+                data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
+qqr(eucN20.lme) 
+summary(eucN20.lme)
+eucP20.lme=lme(log(stock20)~year,random=~1|site/stand,
+                data=euc2deps[euc2deps$element=='P2',],na.action = na.omit)
+qqr(eucP20.lme) # tails off with or without log
+summary(eucP20.lme)
+eucK20.lme=lme(log(stock20)~year,data=euc2deps[euc2deps$element=='K' &
+                                                 euc2deps$site!='Bp',],
+               random=~1|site/stand,na.action=na.omit)
+summary(eucK20.lme) 
+qqr(eucK20.lme) 
+eucCa20.lme=lme(log(stock20)~year,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
+qqr(eucCa20.lme) # tails a bit off
+summary(eucCa20.lme)
+
 
 # Year trends between stocks in each biome (Figure 3)
 
@@ -156,7 +212,7 @@ eucP100bm.lme=lme(stock100~year*biome,
                   data=euc2deps2[euc2deps2$element=='P2',],
                   random=~1|site/stand,na.action=na.omit)
 qqr(eucP100bm.lme) # quite bad
-summary(eucP100bm.lme) 
+summary(eucP100bm.lme) # now significant! increases in AF
 eucP100bm.lme2=lme(stock100~year*biome,
                   data=euc2deps2[euc2deps2$element=='P2'&
                                    euc2deps2$site!='Eu',],
@@ -306,9 +362,11 @@ mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='C']) # 50.1
 # These are proportion data and don't come from normal distributions
 # Try generalized mixed models
 #library(MASS)
+euc2deps2$biome=factor(euc2deps2$biome,levels=c('Cer','AF'))
+euc2deps2$biome=factor(euc2deps2$biome,levels=c('AF','Cer'))
+
 Krateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
-                     data=euc2deps2[euc2deps2$element=='K' &
-                                      euc2deps2$site!='Bp',],
+                     data=euc2deps2[euc2deps2$element=='K' ,],
                      na.action = na.omit,family='quasibinomial')
 summary(Krateuc2.pql) # same deal as lme, increases at p=.07
 qqr(Krateuc2.pql)
@@ -319,17 +377,27 @@ Nrateuc2.pql=glmmPQL(stockratio~year,random=~1|site/stand,
                      na.action = na.omit,family='quasibinomial')
 summary(Nrateuc2.pql) # again, same as lme: decreases, p=.026
 qqr(Nrateuc2.pql) #ok
+Nrateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='N',],
+                     na.action = na.omit,family='quasibinomial')
+summary(Nrateuc2.pql) 
+qqr(Nrateuc2.pql) #decreases in AF, no change in Cerrado
 
 Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
                     data=euc2deps2[euc2deps2$element=='C',],
                     na.action = na.omit,family='quasibinomial')
 summary(Crateuc.pql) # nada
 qqr(Crateuc.pql) # not great
-Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
+Crateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                     data=euc2deps2[euc2deps2$element=='C',],
                     na.action = na.omit,family='quasibinomial')
-summary(Crateuc.pql) # nada
-qqr(Crateuc.pql) # not great
+summary(Crateuc2.pql) # nada
+qqr(Crateuc2.pql) # slightly better
+Crateuc2.lme=lme(log(stockratio)~year*biome,random=~1|site/stand,
+                     data=euc2deps2[euc2deps2$element=='C',],
+                     na.action = na.omit)
+summary(Crateuc2.lme) # nada
+qqr(Crateuc2.lme) # slightly better than pql
 
 ######## Row position and other heterogeneity things
 ##################
@@ -966,7 +1034,46 @@ summary(CNsimp.lme) # increases in euc at p=.046
 #   but the decreases in those veg types aren't significantly nonzero
 qqr(CNsimp.lme) # pretty ok
 
+nat2deps=droplevels(dats2deps[dats2deps$LU=='N',])
+natC20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
+qqr(natC20bm.lme) # tails a bit off
+summary(natC20bm.lme) # marginal decrease in AF, def increase in cerrado
+natC20.lme=lme(log(stock20)~year,random=~1|stand,
+               data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
+qqr(natC20.lme) # ok
+summary(natC20.lme) # no significant change
+
+natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
+                 data=nat2deps[nat2deps$element=='N',],na.action = na.omit)
+qqr(natN20bm.lme) # nice
+summary(natN20bm.lme) # marginal decrease in AF, def increase in cerrado
+# also marginal decrease in AF (p=.076), strong increase in Cerrado
+
+natCN20bm.lme=lme(log(conc20)~year*biome,random=~1|stand,
+                  data=nat2deps[nat2deps$element=='CN',],na.action = na.omit)
+qqr(natCN20bm.lme) # ok?
+summary(natCN20bm.lme) # marginal decrease in Cerrado (p=.07)
+
+# Removed pairs with known issues below 20 cm
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
+# Fix unbalanced design that causes spurious decreases in K
+#   because there are fewer measurements of rock-derived nutrients
+#   in Vg.N than in Eu.N in 04 (but not in 16) due to one missing sample
+# No, that wasn't the problem. Don't do this.
+#simp100$stock100[simp100$element=='K'&simp100$year=='04'&
+#                   simp100$stand=='Vg.N'&simp100$rep==1]=
+#  mean(simp100$stock100[simp100$element=='K'&simp100$year=='04'&
+#                          simp100$stand=='Vg.N'&simp100$rep!=1],na.rm=T)
+#simp100$stock100[simp100$element=='P2'&simp100$year=='04'&
+#                   simp100$stand=='Vg.N'&simp100$rep==1]=
+#  mean(simp100$stock100[simp100$element=='P2'&simp100$year=='04'&
+#                          simp100$stand=='Vg.N'&simp100$rep!=1],na.rm=T)
+#simp100$stock100[simp100$element=='Ca2'&simp100$year=='04'&
+#                   simp100$stand=='Vg.N'&simp100$rep==1]=
+#  mean(simp100$stock100[simp100$element=='Ca2'&simp100$year=='04'&
+#                          simp100$stand=='Vg.N'&simp100$rep!=1],na.rm=T)
+
 
 Ksimp100.lme=lme(log(stock100)~year*LU,random=~1|site,
                  data=simp100[simp100$element=='K',], na.action=na.omit)
@@ -975,7 +1082,14 @@ summary(Ksimp100.lme) # with random intercept only, euc increases, others not di
 Ksimp100.lme2=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='K',], na.action=na.omit)
 qqr(Ksimp100.lme2) # mostly ok
-summary(Ksimp100.lme2) # with random slopes, no change for euc, native decr
+summary(Ksimp100.lme2) # with random slopes, no change for euc, 
+# signif negative native-euc term
+# but when N set to default, decrease is not significant
+# error on estimates means that when they're added, mean chg comes out wrong
+# K in N increases less than in either E or P
+# ok
+###### native decr #### not really a problem? skip exploration below
+##################
 # Wait, decreases? No, it doesn't
 # Increases significantly less than the increase in euc, 
 #   but the increase in euc is not significant.
@@ -988,6 +1102,7 @@ Ksimp100.lme0=lme(log(stock100)~year+LU,random=~1+year|site,
 qqr(Ksimp100.lme0) # mostly ok
 summary(Ksimp100.lme0) # no effect of year
 anova(Ksimp100.lme0,Ksimp100.lme2)
+anova(Ksimp100.lme,Ksimp100.lme2) # 2 is better
 Ksimp100.lm=lm(log(stock100)~year*LU*site,
                 data=simp100[simp100$element=='K',], na.action=na.omit)
 qqr(Ksimp100.lm)
@@ -1009,6 +1124,39 @@ summary(mrstkchgs$chgln100[mrstkchgs$element=='K'])
 simp100$stand[simp100$element=='K'&is.na(simp100$stock100)]
 # several. What's up with that? Two BO.E, one JP.E1, one Vg.E, two Vg.N
 # also missing values there for P, fewer for N
+# But the decrease is really down to the big change in Eu.N 0-10 cm
+# Does lme get thrown off by different number of reps in Eu vs Vg in 04?
+#   because of the missing values in 04? Seems like it shouldn't
+summary(simp100$stock100[simp100$element=='K'&simp100$year=='04'&
+                           simp100$LU=='N'])
+summary(simp100$stock100[simp100$element=='K'&simp100$year=='16'&
+                           simp100$LU=='N']) # median and mean decrease
+# now median decreases barely, mean increases barely with balanced design
+
+Ksimp100.lme$coefficients
+# just down to differences between sites, I think
+# the mean effect is less than the site effect
+#   which is why the change without site effect is different
+# also the euc year estimate is .07 +/- .08
+# intrxn estimate -.13 +/- .06
+exp(.14)*exp(-.13) # increase
+# leave as is?
+
+simp100$stock100[simp100$element=='K'&simp100$year=='04'&
+                   simp100$stand=='Eu.N']
+simp100$stock100[simp100$element=='K'&simp100$year=='16'&
+                   simp100$stand=='Eu.N']
+simp100$stock100[simp100$element=='K'&simp100$year=='04'&
+                   simp100$stand=='Vg.N']
+simp100$stock100[simp100$element=='K'&simp100$year=='16'&
+                   simp100$stand=='Vg.N']
+
+# 04 = 4 samples of high-K Eu and 3 of low-Ca Vg
+# 16 = 4 samples of each
+# so K decreases
+# should also be a problem for Ca and P
+##################
+
 
 Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='N',], na.action=na.omit)
