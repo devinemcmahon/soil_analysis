@@ -387,6 +387,13 @@ eucK20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                                   euc2deps$site!='Bp',],na.action = na.omit)
 qqr(eucK20bm.lme)
 summary(eucK20bm.lme) # increases in AF only
+eucK20bm2.lme=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=droplevels(euc2deps[euc2deps$element=='K'&
+                                 euc2deps$site!='Bp',]),
+                 na.action = na.omit,control = lmeControl(opt='optim'))
+# error, "message =  "
+qqr(eucK20bm.lme)
+summary(eucK20bm.lme) # increases in AF only
 
 eucMg20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Mg2',],na.action = na.omit)
@@ -1464,9 +1471,9 @@ plot(less16more04budg~less04more16budg,data=stkchgs,col=stand,
      pch=as.character(element))
 # only really matters for Ca in Eu?
 
-ggplot(data=stkchgs[stkchgs$element=='N'], aes(x=year, y=stock, fill=depth)) +
+ggplot(data=stkchgs[stkchgs$element=='N',], aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
-  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  facet_grid(element~biome,labeller = labeller(biome=labls))  
   
 
 #summary(budgets$In_kgha_1[budgets$Nutrient=='N']-
@@ -2402,6 +2409,15 @@ Nsimp.aov=aov(log(stock20)~year*LU,
 qqr(Nsimp.aov) # tails off
 summary(Nsimp.aov) # not correct I think because of lost pairing
 TukeyHSD(Nsimp.aov,which='LU') # no differences
+
+Nsimp.aov=aov(log(stock20)~year*LU+Error(site2),
+              data=simple20_2[simple20_2$element=='N',])
+qqr(Nsimp.aov) # doesn't work
+summary(Nsimp.aov) # signif LU effect
+TukeyHSD(Nsimp.aov) # doesn't work
+
+
+
 Casimp.aov=aov(log(stock20)~year*LU,
               data=simple20_2[simple20_2$element=='Ca2',])
 qqr(Casimp.aov) 

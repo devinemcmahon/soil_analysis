@@ -1098,6 +1098,7 @@ summary(CNsimp.lme) # increases in euc at p=.046
 qqr(CNsimp.lme) # pretty ok
 
 nat2deps=droplevels(dats2deps[dats2deps$LU=='N',])
+nat2deps$biome=factor(nat2deps$biome,levels=c('Cer','AF'))
 natC20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
                  data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
 qqr(natC20bm.lme) # tails a bit off
@@ -1117,6 +1118,12 @@ natCN20bm.lme=lme(log(conc20)~year*biome,random=~1|stand,
                   data=nat2deps[nat2deps$element=='CN',],na.action = na.omit)
 qqr(natCN20bm.lme) # ok?
 summary(natCN20bm.lme) # marginal decrease in Cerrado (p=.07)
+
+natCa20.lme=lme(log(stock20)~year*biome,random=~1|stand,
+               data=nat2deps[nat2deps$element=='Ca2',],na.action = na.omit)
+qqr(natCa20.lme) # ok
+summary(natCa20.lme) # no significant change
+
 
 # Removed pairs with known issues below 20 cm
 simp100=simple20_2[simple20_2$site2!='JP2' & simple20_2$site2!='It',]
