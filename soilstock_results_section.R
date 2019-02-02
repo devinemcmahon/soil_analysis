@@ -102,23 +102,32 @@ eucC20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                     data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
 summary(eucC20bm.lme) # increase in Cerrado only (also if using euc2deps2)
 qqr(eucC20bm.lme) # again, log tranform helps a bit, increases significance
-#eucC20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
-#                 data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
-#summary(eucC20bm.lme2) # increase in Cerrado now barely signif (p=.046)
-#qqr(eucC20bm.lme2) # slightly better?
-#anova(eucC20bm.lme,eucC20bm.lme2) # not different
+eucC20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
+summary(eucC20bm.lme2) # increase in Cerrado now barely signif (p=.046)
+qqr(eucC20bm.lme2) # slightly better?
+anova(eucC20bm.lme,eucC20bm.lme2) # not different
+intervals(eucC20bm.lme2) # near-perfect correlations between year and intercept
+# for random effects--overfit?
+
+lmesum=summary(eucC20bm.lme)
+lmesum$tTable
+
 
 # N: doesn't converge with a random slope (does with optim)
-eucN20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
+eucN20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
 summary(eucN20bm.lme) # no change
 qqr(eucN20bm.lme) # mostly ok
+intervals(eucN20bm.lme)
 
-#eucN20bm.lme2=lme(stock20~year*biome,random=~1+year|site/stand,
-#                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
-#summary(eucN20bm.lme2) # no change
-#qqr(eucN20bm.lme2) # tails off
-#anova(eucN20bm.lme,eucN20bm.lme2)
+#eucN20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+#                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit,
+#                  control=lmeControl(opt='optim'))
+# ambiguous error message with log transform
+summary(eucN20bm.lme2) # no change
+qqr(eucN20bm.lme2) # tails off without log
+anova(eucN20bm.lme,eucN20bm.lme2)
 # 2 has lower AIC but higher BIC; differ at p=.02 (no longer; 2 is worse)
 
 eucP20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
@@ -126,6 +135,7 @@ eucP20bm.lme=lme(stock20~year*biome,random=~1|site/stand,
                  na.action = na.omit)
 qqr(eucP20bm.lme) # tails off without Eu, but much less bad
 summary(eucP20bm.lme) # no change
+intervals(eucP20bm.lme)
 #eucP20bm.lme2=lme(stock20~year*biome,random=~1|site/stand,
 #                 data=euc2deps[euc2deps$element=='P2'&
 #                                 euc2deps$site!='Eu',],na.action = na.omit)
@@ -140,15 +150,19 @@ eucCa20bm.lme=lme(log(stock20)~year*biome,random=~1|site/stand,
                   na.action = na.omit)#,control = lmeControl(opt='optim'))
 qqr(eucCa20bm.lme)
 summary(eucCa20bm.lme) # maybe increase in AF (p=.07), increase in Cer (.0005)
-#eucCa20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
-#                 data=euc2deps[euc2deps$element=='Ca2',],
-#                 na.action = na.omit,control = lmeControl(opt='optim'))
+intervals(eucCa20bm.lme)
+eucCa20bm.lme2=lme(log(stock20)~year*biome,random=~1+year|site/stand,
+                 data=euc2deps[euc2deps$element=='Ca2',],
+                 na.action = na.omit,control = lmeControl(opt='optim'))
 #qqr(eucCa20bm.lme2)
 #summary(eucCa20bm.lme2) 
-#anova(eucCa20bm.lme,eucCa20bm.lme2)
+intervals(eucCa20bm.lme2) # year16 effect and intercept highly correlated
+anova(eucCa20bm.lme,eucCa20bm.lme2)
 # with a random slope, no signif effects
 # but that seems wrong, clearly a lot of Ca was added in the Cerrado
 # although not consistently across cerrado stands, hence loss of significance?
+# Or is it just not meaningful to allow a different change between
+#   the four observations in each site--not enough data to fit this?
 # go with just a random intercept?
 # I think that is correct, just random intercepts
 
