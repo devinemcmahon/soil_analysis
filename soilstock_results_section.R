@@ -3,6 +3,15 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
+# clay content 0-10 cm
+clay = data.frame(stand=c('EuA','EuB','BO','Vg',
+                          'BpA','BpB','ItA','ItB',
+                          'JPA','JPB'),
+                  pct5=c(15,18,58,74,85,88,77,65,15,16),
+                  pct80=c(35,41,72,74,77,87,79,74,18,22))
+summary(clay$pct5)
+summary(clay$pct80)
+
 # Figure 2
 par(mfrow=c(2,3))
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = F)
@@ -190,6 +199,68 @@ eucCN20bm.lme=lme(conc20~year*biome,random=~1|site/stand,
 summary(eucCN20bm.lme) # no change in AF, increases in Cer
 qqr(eucCN20bm.lme) # ok
 
+# From t-tables in lme_tables_printing: magnitude of signif chg
+# C in Cerrado:
+exp(-.062)*exp(.272) # 23% increase
+# K in AF
+exp(.181) #20% 
+# Ca in Cerrado:
+exp(.512)*exp(1.34) # 530% increase
+# Ca in AF
+
+
+# or:
+summary(stkchgs$chgrt20[stkchgs$element=='N']) # not all the stands
+stkchgsall=group_by(shorttstk,stand,element,biome,LU)%>%
+  summarise(chg100=stock100_16-stock100_04,stk100_16=stock100_16,
+            chg20=stock20_16-stock20_04,stk20_16=stock20_16,
+            sdchg20=sqrt(sd20_04^2+sd20_16^2)/2, 
+            # = sqrt(sd04^2/n04+sd16^2/n16), assuming n=4
+            sdchg100=sqrt(sd100_04^2+sd100_16^2)/2,
+            stk20_04=stock20_04,
+            chgrt100=(stock100_16-stock100_04)/stock100_04,
+            chgrt20=(stock20_16-stock20_04)/stock20_04,
+            chgln100=log(stock100_16/stock100_04),
+            chgln20=log(stock20_16/stock20_04))
+summary(stkchgsall$chgrt20[stkchgsall$LU=='E'&
+                             stkchgsall$element=='C'&
+                             stkchgsall$biome=='Cer'])
+# lme estimates are more representative of change?
+# If expressing change as a percent, use mean?
+# But log transform is better
+# should lme estimates be the basis for Figure 2, too?
+# Don't think so because that's stocks
+exp(summary(stkchgsall$chgln20[stkchgsall$LU=='E'&
+                             stkchgsall$element=='C'&
+                             stkchgsall$biome=='Cer']))
+# this matches the lmes more closely, ok
+exp(summary(stkchgsall$chgln20[stkchgsall$LU=='E'&
+                                 stkchgsall$element=='Ca'&
+                                 stkchgsall$biome=='Cer']))
+# not equivalent, though
+# use same values as in text--pick one and stick with it
+# maybe use the lme outputs because they match the stats
+summary(stkchgsall$stk20_16[stkchgsall$LU=='E'&
+                              stkchgsall$element=='C'&
+                              stkchgsall$biome=='Cer'])
+exp(4.017)*exp(-.062)*exp(-.44)*exp(.272) #(lme est)
+# not quite the median or mean, but close
+# oh, they're different because of when the avg is taken
+# diff no. of reps per stand, diff outlier weighting
+# ok.
+# Ca in AF to 100 cm:
+exp(.266) #wait
+exp(summary(stkchgsall$chgln100[stkchgsall$LU=='P'&
+                              stkchgsall$element=='C']))
+# 16% decrease
+summary(Csimp100.lme)
+exp(-.0847)*exp(-.1394) #20% decrease
+# mean 16/mean 04:
+summary(simp100$stock100[simp100$element=='C'&simp100$LU=='P'&
+                           simp100$year=='16'])/
+  summary(simp100$stock100[simp100$element=='C'& simp100$LU=='P'&
+                            simp100$year=='04'])
+# change in mean is minus 21%
 
 # 0-100 cm
 eucCN100bm.lme=lme(conc100~year*biome,random=~1|site/stand,
@@ -197,6 +268,29 @@ eucCN100bm.lme=lme(conc100~year*biome,random=~1|site/stand,
 summary(eucCN100bm.lme) # decreases in AF, increases in Cer
 qqr(eucCN100bm.lme) # one point off at each tail, upper far off
 plot(eucCN100bm.lme)
+mean(euc2deps2$conc100[euc2deps2$element=='CN'&
+                         euc2deps2$year=='04'&
+                         euc2deps2$biome=='AF'],na.rm=T)
+# 16.3
+# lme estimate: equivalent to mean
+# ok. makes sense to call the lme estimates means
+# they're just means of all the replicates, not first avgd by stand
+# and I guess they're really medians for ln convert-backs?
+median(euc2deps2$conc100[euc2deps2$element=='CN'&
+                         euc2deps2$year=='04'&
+                         euc2deps2$biome=='AF'],na.rm=T)
+# 16.8
+mean(euc2deps2$conc100[euc2deps2$element=='CN'&
+                         euc2deps2$year=='16'&
+                         euc2deps2$biome=='AF'],na.rm=T)
+mean(euc2deps2$conc100[euc2deps2$element=='CN'&
+                         euc2deps2$year=='04'&
+                         euc2deps2$biome=='Cer'],na.rm=T)
+mean(euc2deps2$conc100[euc2deps2$element=='CN'&
+                         euc2deps2$year=='16'&
+                         euc2deps2$biome=='Cer'],na.rm=T)
+
+
 
 eucK100bm.lme=lme(log(stock100)~year*biome,
                 data=euc2deps2[euc2deps2$element=='K'&euc2deps2$site!='Bp',],
@@ -214,7 +308,7 @@ eucCa100bm.lme=lme(log(stock100)~year*biome,
                    data=euc2deps2[euc2deps2$element=='Ca2',],
                  random=~1|site/stand,na.action=na.omit)
 summary(eucCa100bm.lme) # increases at p < 0.0001 in Cerrado only
-qqr(eucCa100bm.lme)
+qqr(eucCa100bm.lme) 
 
 eucN100bm.lme=lme(log(stock100)~year*biome,
                    data=euc2deps2[euc2deps2$element=='N',],
@@ -233,6 +327,19 @@ eucP100bm.lme2=lme(stock100~year*biome,
                   random=~1|site/stand,na.action=na.omit)
 qqr(eucP100bm.lme2) # one outlier each end; almost signif in AF w/o Eu
 summary(eucP100bm.lme2)
+
+# N change to 100 cm in AF
+exp(summary(stkchgsall$chgln100[stkchgsall$LU=='E'&
+                               stkchgsall$element=='N'&
+                               stkchgsall$biome=='AF']))
+# +12% median, +18% mean
+exp(.161) #+17%
+exp(.161-.046) #Minus 1 standard error = +12% 
+exp(.161+.046) #+23%
+# Ca in Cer
+exp(.266)*exp(1.17) # +320%
+
+
 
 # significant changes (year effect) at 20 cm: C in Cerrado +
 # Ca in AF (-) p=.075, Ca in Cer + (p=.0005)
@@ -406,30 +513,31 @@ euc2deps2$biome=factor(euc2deps2$biome,levels=c('AF','Cer'))
 
 Krateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='K' ,],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
+# using quasibinomial = same result, but I don't understand it as well
 summary(Krateuc2.pql) # same deal as lme, increases at p=.07
 qqr(Krateuc2.pql)
 # with Bp included, same result, somewhat smaller increase
 
 Nrateuc2.pql=glmmPQL(stockratio~year,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='N',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Nrateuc2.pql) # again, same as lme: decreases, p=.026
 qqr(Nrateuc2.pql) #ok
 Nrateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='N',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Nrateuc2.pql) 
 qqr(Nrateuc2.pql) #decreases in AF, no change in Cerrado
 
 Crateuc.pql=glmmPQL(stockratio~year,random=~1|site/stand,
                     data=euc2deps2[euc2deps2$element=='C',],
-                    na.action = na.omit,family='quasibinomial')
+                    na.action = na.omit,family='binomial')
 summary(Crateuc.pql) # nada
 qqr(Crateuc.pql) # not great
 Crateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                     data=euc2deps2[euc2deps2$element=='C',],
-                    na.action = na.omit,family='quasibinomial')
+                    na.action = na.omit,family='binomial')
 summary(Crateuc2.pql) # nada
 qqr(Crateuc2.pql) # slightly better
 Crateuc2.lme=lme(log(stockratio)~year*biome,random=~1|site/stand,
@@ -440,7 +548,7 @@ qqr(Crateuc2.lme) # slightly better than pql
 
 Carateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='Ca2',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Carateuc2.pql) # increases a bunch in Cerrado only
 qqr(Carateuc2.pql) # ok
 Carateuc2.lme=lme(log(stockratio)~year*biome,random=~1|site/stand,
@@ -451,7 +559,7 @@ qqr(Carateuc2.lme) # worse than pql
 
 Carateuc3.pql=glmmPQL(stockratio~year*biome,random=~1+year|site/stand,
                       data=euc2deps2[euc2deps2$element=='Ca2',],
-                      na.action = na.omit,family='quasibinomial',
+                      na.action = na.omit,family='binomial',
                       control=lmeControl(opt = 'optim'))
 summary(Carateuc3.pql) # increases a bunch in Cerrado, lower p-value
 qqr(Carateuc3.pql) # ok except 1 outlier
@@ -464,17 +572,24 @@ qqr(Carateuc3.lme) # bad with log, doesn't converge without
 
 Prateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='P2',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Prateuc2.pql) # no significant terms
 qqr(Prateuc2.pql) # messed up as usual
 Prateuc3.pql=glmmPQL(stockratio~year*biome,random=~1+year|site/stand,
                       data=euc2deps2[euc2deps2$element=='P2',],
-                      na.action = na.omit,family='quasibinomial',
+                      na.action = na.omit,family='binomial',
                       control=lmeControl(opt = 'optim'))
 summary(Prateuc3.pql) 
 qqr(Prateuc3.pql) # not an improvement
 
-
+# How do these really work?
+summary(Nrateuc2.pql) 
+summary(euc2deps2$stockratio[euc2deps2$element=='N'&euc2deps2$year=='04'&
+                               euc2deps2$biome=='AF'])
+exp(-.642)/(exp(-.642)+1) #the mean, approx
+summary(euc2deps2$stockratio[euc2deps2$element=='N'&euc2deps2$year=='16'&
+                               euc2deps2$biome=='AF'])
+(exp(-.642-.221)/(exp(-.642-.221)+1)) #ok
 
 ######## Row position and other heterogeneity things
 ##################
@@ -1117,6 +1232,9 @@ natC20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
                  data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
 qqr(natC20bm.lme) # tails a bit off
 summary(natC20bm.lme) # marginal decrease in AF, def increase in cerrado
+exp(-.1835)-1 # mean change in AF = 1
+exp(-.1835)*exp(.3062)-1 # in Cerrado
+
 natC20.lme=lme(log(stock20)~year,random=~1|stand,
                data=nat2deps[nat2deps$element=='C',],na.action = na.omit)
 qqr(natC20.lme) # ok
@@ -1127,6 +1245,9 @@ natN20bm.lme=lme(log(stock20)~year*biome,random=~1|stand,
 qqr(natN20bm.lme) # nice
 summary(natN20bm.lme) # marginal decrease in AF, def increase in cerrado
 # also marginal decrease in AF (p=.076), strong increase in Cerrado
+
+exp(-.1615)-1 # mean change in AF = 15% decrease
+exp(-.1615)*exp(.6178)-1 # in Cerrado
 
 natCN20bm.lme=lme(log(conc20)~year*biome,random=~1|stand,
                   data=nat2deps[nat2deps$element=='CN',],na.action = na.omit)
@@ -1172,6 +1293,9 @@ summary(Ksimp100.lme2) # with random slopes, no change for euc,
 # error on estimates means that when they're added, mean chg comes out wrong
 # K in N increases less than in either E or P
 # ok
+exp(.071)
+exp(.071)*exp(-.131)
+# so is it misleading to estimate effect size from lme?
 ###### native decr #### not really a problem? skip exploration below
 ##################
 # Wait, decreases? No, it doesn't
@@ -1203,6 +1327,20 @@ summary(simp100$stock100[simp100$element=='K'&simp100$year=='04'])
 summary(simp100$stock100[simp100$element=='K'&simp100$year=='16'])
 # The median decreases, what do you know
 #  bunch of NAs in 2004...
+summary(simp100$stock100[simp100$element=='K'&
+                           simp100$LU=='E'&
+                           simp100$year=='04'])
+summary(simp100$stock100[simp100$element=='K'&
+                           simp100$LU=='E'&
+                           simp100$year=='16']) #median decr
+summary(simp100$stock100[simp100$element=='K'&
+                           simp100$LU=='N'&
+                           simp100$year=='04'])
+summary(simp100$stock100[simp100$element=='K'&
+                           simp100$LU=='N'&
+                           simp100$year=='16']) #also
+
+# mean and median thrown off by diff. no. of reps, lme estimates not
 summary(mrstkchgs$chgln100[mrstkchgs$element=='K']) 
 # median change is positive, change in medians is negative
 simp100$stand[simp100$element=='K'&is.na(simp100$stock100)]
@@ -1239,6 +1377,16 @@ simp100$stock100[simp100$element=='K'&simp100$year=='16'&
 # 16 = 4 samples of each
 # so K decreases
 # should also be a problem for Ca and P
+# just for summary stats, not for lmes
+Ksimp100AF.lme=lme(log(stock100)~year*LU,random=~1+year|site,
+                  data=simp100[simp100$element=='K'&
+                                 simp100$biome=='AF',],
+                  na.action=na.omit)
+qqr(Ksimp100AF.lme) # mostly ok
+summary(Ksimp100AF.lme) #  marginal increase in euc, not in nat
+# change in nat still a little negative
+# increase in P? just the one pasture, yeah
+
 ##################
 
 
@@ -1247,7 +1395,6 @@ Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
 qqr(Nsimp100.lme) # ok
 summary(Nsimp100.lme)
 #With random slope, nothing significant 
-#(p for N-yr intrxn = .045); also for P intrxn with N as main
 
 Csimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='C',], na.action=na.omit)
@@ -1256,9 +1403,16 @@ summary(Csimp100.lme)
 # with random ~1|site, increase in euc isn't signif, 
 #   but decreases in native and pasture are! 
 # with random ~1|year+site (more appropriate),
-#   only signif thing is decrease in pasture (in native, p=.08)
-# yes, when pasture or native set as default level, signif decrease
-#   also signif intrxn with euc for both
+#   only signif thing is decrease in pasture (in native, intrxn p=.07)
+#   and when native set to default level, no year effect
+summary(simp100$stock100[simp100$element=='C'&
+                           simp100$LU=='P'&
+                           simp100$year=='04'])
+summary(simp100$stock100[simp100$element=='C'&
+                           simp100$LU=='P'&
+                           simp100$year=='16']) # both have 8 reps ok
+
+
 
 # don't do log transform for P (in which nothing changes)
 Casimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
@@ -1293,8 +1447,9 @@ mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='E']='+'
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='P']='+'
 mr2$sigveg[mr2$depth=='0-20'& mr2$element=='Ca' & mr2$LU=='N']='*'
 mr2$sigveg[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU!='E']='*'
-mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-'
-mr2$sigyr[mr2$depth=='0-100'& mr2$element=='N' & mr2$LU=='E']='+'
+#mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU!='E']='-' nope
+mr2$sigyr[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU=='P']='-'
+#mr2$sigyr[mr2$depth=='0-100'& mr2$element=='N' & mr2$LU=='E']='+' nope
 mr2$sigveg[mr2$depth=='0-100'& mr2$element=='K' & mr2$LU=='N']='*'
 mr2$sigyr[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='E']='+'
 #mr2$sigveg[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='N']='*' nope
@@ -1589,7 +1744,7 @@ ggplot(data=simp100limd, aes(x=LU3, y=mn100,colour=LU,shape=year))+
 
 Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='K',],
-                        na.action = na.omit,family='quasibinomial')
+                        na.action = na.omit,family='binomial')
 qqr(Krat100simp.pql) # ok? upper tail off
 summary(Krat100simp.pql) # ratio starts bigger in noneuc (p=.053)
 #   and decreases (p=.027)
@@ -1598,29 +1753,33 @@ summary(Krat100simp.pql) # ratio starts bigger in noneuc (p=.053)
 
 Crat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='C',],
-                        na.action = na.omit,family='quasibinomial')
+                        na.action = na.omit,family='binomial')
 qqr(Crat100simp.pql) # ok
 summary(Crat100simp.pql) # no change
 
 Nrat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='N',],
-                        na.action = na.omit,family='quasibinomial')
+                        na.action = na.omit,family='binomial')
 qqr(Nrat100simp.pql) # tails quite off; ok without Cerr nat
 summary(Nrat100simp.pql) # with JP2 and It, decreases overall
 # without, no change
 
 Carat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                         data=simp100[simp100$element=='Ca',],
-                        na.action = na.omit,family='quasibinomial')
-qqr(Carat100simp.pql) 
+                        na.action = na.omit,family='binomial')
+qqr(Carat100simp.pql) #good
 summary(Carat100simp.pql) # marginal increase in euc, decrease in non
 # starts higher in non
 # without Cerr nat, same deal, but changes are signif only for pasture
 # (marginally higher starting value p=.083 and decrease p=.067 in nat)
+tapply(simp100$stockratio[simp100$element=='Ca'&simp100$year=='04'],
+       simp100$LU[simp100$element=='Ca'&simp100$year=='04'],summary)
+tapply(simp100$stockratio[simp100$element=='Ca'&simp100$year=='16'],
+       simp100$LU[simp100$element=='Ca'&simp100$year=='16'],summary)
 
 Prat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
                          data=simp100[simp100$element=='P2',],
-                         na.action = na.omit,family='quasibinomial')
+                         na.action = na.omit,family='binomial')
 qqr(Prat100simp.pql) 
 summary(Prat100simp.pql) # shallower under non-euc (if using P not P2), no change
 

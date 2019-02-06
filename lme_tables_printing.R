@@ -142,29 +142,29 @@ write.csv(allT100s,'allT100s.csv',row.names = F)
 Krateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='K',],# &
                      #                 euc2deps2$site!='Bp',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Krateuc2.pql) 
 
 Nrateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='N',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Nrateuc2.pql) 
 qqr(Nrateuc2.pql) #decreases in AF, no change in Cerrado
 
 Crateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='C',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Crateuc2.pql) # nada
 qqr(Crateuc2.pql) # slightly better than with no biome term
 
 Carateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                       data=euc2deps2[euc2deps2$element=='Ca2',],
-                      na.action = na.omit,family='quasibinomial')
+                      na.action = na.omit,family='binomial')
 summary(Carateuc2.pql) # increases a bunch in Cerrado only
 
 Prateuc2.pql=glmmPQL(stockratio~year*biome,random=~1|site/stand,
                      data=euc2deps2[euc2deps2$element=='P2',],
-                     na.action = na.omit,family='quasibinomial')
+                     na.action = na.omit,family='binomial')
 summary(Prateuc2.pql) # no significant terms
 
 allTrats=data.frame(rbind(round(summary(Crateuc2.pql)$tTable,3),
@@ -244,8 +244,6 @@ qqr(Csimp100.lme)
 summary(Csimp100.lme) 
 # with random ~1|year+site (more appropriate),
 #   only signif thing is decrease in pasture (in native, p=.08)
-# yes, when pasture or native set as default level, signif decrease
-#   also signif intrxn with euc for both
 
 Nsimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                  data=simp100[simp100$element=='N',], na.action=na.omit)
@@ -253,7 +251,7 @@ summary(Nsimp100.lme)
 
 Ksimp100.lme=lme(log(stock100)~year*LU,random=~1+year|site,
                   data=simp100[simp100$element=='K',], na.action=na.omit)
-summary(Ksimp100.lme) # native veg mean chnage comes out negative
+summary(Ksimp100.lme) # native veg mean change comes out negative
 # but when you take into account the site effects, positive in both AF reserves
 # when native = default factor level, not significant
 Ksimp100.lme$coefficients
