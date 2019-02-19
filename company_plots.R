@@ -73,6 +73,26 @@ myxy=function(rockder,mysite){
 myxy(F,'Vg')
 myxy(T,'JP')
 
+standlong=datsmnok2$stand
+standlong=gsub("Vg.E","Talhão 8 Cataquinho",standlong)
+standlong=gsub("Vg.N","Reserva Cataquinho",standlong)
+standlong=gsub("BO.E","Talhão 30 Lagoa Cristal",standlong)
+standlong=gsub("BO.P","Pastagem Lagoa Cristal",standlong)
+standlong=gsub("Eu.E1","Talhão 23 Sucupira",standlong)
+standlong=gsub("Eu.E2","Talhão 19 Inhaíba",standlong)
+standlong=gsub("Eu.N","Reserva Inhaíba",standlong)
+standlong=gsub("Bp.E2","Talhão 683 Garça",standlong)
+standlong=gsub("Bp.E1","Talhão 567 Extrema",standlong)
+standlong=gsub("It.E1","Talhão 401 Itacambira",standlong)
+standlong=gsub("It.E2","Talhão 123 Itacambira",standlong)
+standlong=gsub("It.N","Reserva Pau Preto",standlong)
+standlong=gsub("JP.E1","Talhão 1423 Campo Alegre",standlong)
+standlong=gsub("JP.E2","Talhão 1671 Campo Alegre",standlong)
+standlong=gsub("JP.P","Pastagem Fazenda Pontes",standlong)
+standlong=gsub("JP.N","Reserva Campo Alegre",standlong)
+datsmnok2$standlong=standlong
+
+
 mygg=function(rockder,mysite){
   lmts=c('C','N')
   if(rockder==T) lmts=c('K','P2','Ca2')
@@ -87,7 +107,7 @@ mygg=function(rockder,mysite){
     geom_line(aes(group=year),size=1.2)+
     coord_flip()+
     scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
-    facet_grid(stand~element2,scales = 'free_x')+
+    facet_grid(standlong~element2,scales = 'free_x')+
     theme(legend.position=c(0.9,0.1),
           legend.background = element_blank(),
           legend.key = element_blank())+
