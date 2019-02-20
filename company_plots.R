@@ -29,11 +29,33 @@ myplot=function(dats,stand,lmt){
 myplot(ttests,'BO.E','C')
 
 pts=ttests[,c('stand','element','depth','pval','tstat')]
-datsmnok2=merge(datsmnok,pts,by=c('stand','element','depth'),all.x=T)
-datsmnok2=datsmnok2[order(datsmnok2$depth),]
-datsmnok2=mutate(datsmnok2,element2=element)
-datsmnok2$element2[datsmnok2$element=='Ca2']='Ca'
+names(pts)[which(names(pts)=='element')]='element2'
+
+datsmnok2=mutate(datsmnok,element2=element)
 datsmnok2$element2[datsmnok2$element=='P2']='P'
+datsmnok2=merge(datsmnok2,pts,by=c('stand','element2','depth'),all.x=T)
+datsmnok2$element2[datsmnok2$element=='Ca2']='Ca'
+datsmnok2=datsmnok2[order(datsmnok2$depth),]
+# rearranged this part to attach significance from P to P2
+standlong=datsmnok2$stand
+standlong=gsub("Vg.E","Talhão 8 Cataquinho",standlong)
+standlong=gsub("Vg.N","Reserva Cataquinho",standlong)
+standlong=gsub("BO.E","Talhão 30 Lagoa Cristal",standlong)
+standlong=gsub("BO.P","Pastagem Lagoa Cristal",standlong)
+standlong=gsub("Eu.E1","Talhão 23 Sucupira",standlong)
+standlong=gsub("Eu.E2","Talhão 19 Inhaíba",standlong)
+standlong=gsub("Eu.N","Reserva Inhaíba",standlong)
+standlong=gsub("Bp.E2","Talhão 683 Garça",standlong)
+standlong=gsub("Bp.E1","Talhão 567 Extrema",standlong)
+standlong=gsub("It.E1","Talhão 401 Itacambira",standlong)
+standlong=gsub("It.E2","Talhão 123 Itacambira",standlong)
+standlong=gsub("It.N","Reserva Pau Preto",standlong)
+#standlong=gsub("JP.E1","Talhão 1423 Campo Alegre",standlong)
+standlong=gsub("JP.E1","Talhão 1423",standlong)
+standlong=gsub("JP.E2","Talhão 1671",standlong)
+standlong=gsub("JP.P","Pastagem Faz. Pontes",standlong)
+standlong=gsub("JP.N","Reserva Campo Alegre",standlong)
+datsmnok2$standlong=standlong
 
 myxy=function(rockder,mysite){
   lmts=c('C','N')
@@ -73,24 +95,6 @@ myxy=function(rockder,mysite){
 myxy(F,'Vg')
 myxy(T,'JP')
 
-standlong=datsmnok2$stand
-standlong=gsub("Vg.E","Talhão 8 Cataquinho",standlong)
-standlong=gsub("Vg.N","Reserva Cataquinho",standlong)
-standlong=gsub("BO.E","Talhão 30 Lagoa Cristal",standlong)
-standlong=gsub("BO.P","Pastagem Lagoa Cristal",standlong)
-standlong=gsub("Eu.E1","Talhão 23 Sucupira",standlong)
-standlong=gsub("Eu.E2","Talhão 19 Inhaíba",standlong)
-standlong=gsub("Eu.N","Reserva Inhaíba",standlong)
-standlong=gsub("Bp.E2","Talhão 683 Garça",standlong)
-standlong=gsub("Bp.E1","Talhão 567 Extrema",standlong)
-standlong=gsub("It.E1","Talhão 401 Itacambira",standlong)
-standlong=gsub("It.E2","Talhão 123 Itacambira",standlong)
-standlong=gsub("It.N","Reserva Pau Preto",standlong)
-standlong=gsub("JP.E1","Talhão 1423 Campo Alegre",standlong)
-standlong=gsub("JP.E2","Talhão 1671 Campo Alegre",standlong)
-standlong=gsub("JP.P","Pastagem Fazenda Pontes",standlong)
-standlong=gsub("JP.N","Reserva Campo Alegre",standlong)
-datsmnok2$standlong=standlong
 
 
 mygg=function(rockder,mysite){

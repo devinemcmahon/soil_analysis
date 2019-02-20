@@ -148,3 +148,22 @@ xyplot(depth~avgBD|site,groups=stdonly,type='l',ylab='Depth (cm)',
 #     where euc soil is densest and N and As least dense
 # TM: little variation within or among stands
 
+ggplot(aes(x=depth,y=mn,colour=LU),
+       data=abdatsmn[abdatsmn$element %in% c('C','N','K','P','Ca'),])+
+  geom_line(aes(group=stand),size=1.2)+
+  coord_flip()+
+  scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+  facet_grid(site~element,scales = 'free_x')+
+  theme(legend.position=c(0.9,0.1),
+        legend.background = element_blank(),
+        legend.key = element_blank())+
+  #labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
+  #              'Concentração (g elemento / 100g solo)'),
+  #     x='Profundidade (cm)')+
+  geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                width=0.2) 
+  scale_colour_discrete(labels=c('2004','2016'),
+                        guide = guide_legend(reverse=F,title=NULL))+
+  geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+    label=ifelse(pval<0.05 &year=='16','*','')),
+    colour='black',size=6,nudge_x=-1)
