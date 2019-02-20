@@ -184,3 +184,9 @@ shortsum=shorttstk[shorttstk$element%in%
 View(shortsum)
 shortsumr=round(shortsum,2)
 #write.csv(shortsum,'allcos_stocksummaries.csv')
+
+
+stkchgs$element[stkchgs$stand=='BO.E']
+stkchgs$sdchg20[stkchgs$stand=='BO.E']
+stkchgs$maxbudg[stkchgs$stand=='BO.E']-
+  stkchgs$minbudg[stkchgs$stand=='BO.E']
