@@ -473,9 +473,8 @@ budgets=group_by(budgets,Stand,Nutrient) %>%
                                      Nomin_density*Stemwood_4.5_div6.75*
                                      (1+notwood_div_wood_4.5),
                                    ifelse((Age_04-2)>15,
-                                          (Age_04-2)*IMA_1*Conc_wood*
-                                            Nomin_density*0.75*
-                                            (1+notwood_div_wood_6.75),
+                                          (Age_04-2)*IMA_2*Conc_wood*
+                                            Nomin_density*(1+notwood_div_wood_6.75),
                                           (Age_04-2)*IMA_1*Conc_wood*
                                       Nomin_density*(1+notwood_div_wood_6.75))))),
          moreyragb04=ifelse((Age_04+2)<3.5, (Age_04+2)*IMA_1*Conc_wood*
@@ -486,9 +485,8 @@ budgets=group_by(budgets,Stand,Nutrient) %>%
                                      Nomin_density*Stemwood_4.5_div6.75*
                                      (1+notwood_div_wood_4.5),
                                    ifelse((Age_04+2)>15,
-                                          (Age_04+2)*IMA_1*Conc_wood*
-                                            Nomin_density*0.75*
-                                            (1+notwood_div_wood_6.75),
+                                          (Age_04+2)*IMA_2*Conc_wood*
+                                            Nomin_density*(1+notwood_div_wood_6.75),
                                           (Age_04+2)*IMA_1*Conc_wood*
                                             Nomin_density*(1+notwood_div_wood_6.75)))),
          lessyragb16=ifelse(Age_16<=1,Age_2*IMA_1*Conc_wood*
@@ -500,12 +498,15 @@ budgets=group_by(budgets,Stand,Nutrient) %>%
                                    (Age_16-2)*IMA_1*Conc_wood*
                                      Nomin_density*Stemwood_4.5_div6.75*
                                      (1+notwood_div_wood_4.5),
-                                   ifelse((Age_16-2)>15,
+                                   #ifelse((Age_16-2)>15,
+                                    #      (Age_16-2)*IMA_1*Conc_wood*
+                                     #       Nomin_density*0.75*
+                                    #        (1+notwood_div_wood_6.75),
+                                   # No cases where Age_16-2 is > 15
+                                   # Replaced arbitrary .75 multiplier with 
+                                   #    (low) IMA_2 from resprout for It.E2
                                           (Age_16-2)*IMA_1*Conc_wood*
-                                            Nomin_density*0.75*
-                                            (1+notwood_div_wood_6.75),
-                                          (Age_16-2)*IMA_1*Conc_wood*
-                                            Nomin_density*(1+notwood_div_wood_6.75))))),
+                                            Nomin_density*(1+notwood_div_wood_6.75)))),
          moreyragb16=ifelse((Age_16+2)<3.5, (Age_16+2)*IMA_1*Conc_wood*
                               Nomin_density*Stemwood_2.5_div6.75*
                               (1+notwood_div_wood_2.5),
