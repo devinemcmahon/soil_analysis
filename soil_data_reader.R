@@ -404,7 +404,8 @@ budgets=merge(budgets,otherconcs,by='Nutrient')
 #     (Conc_bark*Nomin_bark_fraction + Conc_wood*(1-Nomin_bark_fraction))
 # Budget_1conc = In_kgha_1 + In_kgha_2 - (Wood_m3_1 + Wood_m3_2)*Nomin_density*
 #     Concentration
-# Vol_04_ish = Age_04*IMA_1 
+# Vol_04_ish = Age_04*IMA_1 (Age_04*IMA_2 for It.E2 
+#     to reflect low productivity of old resprout--probably still overest.)
 # Vol_16 = Age_16*IMA_2 or IMA_1 if 2 not known, or known volume
 # Wood_04 = if Age_04 < 3.5, proports$Stemwood_conc_div_age6.75[age==2.5]*
 #   Vol_04_ish*Conc_wood*Nomin_density;
