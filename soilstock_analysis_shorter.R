@@ -1471,6 +1471,16 @@ plot(less16more04budg~less04more16budg,data=stkchgs,col=stand,
      pch=as.character(element))
 # only really matters for Ca in Eu?
 
+plot(chg20~agbchg,data=stkchgs,col=as.numeric(Wood_m3_2>0)+1,
+     pch=as.character(element))
+abline(0,1)
+plot(chg20~agbchg,data=stkchgs,col=as.numeric(In_kgha_2>0)+1,
+     pch=as.character(element))
+abline(0,1) # more likely to observe losses in stands harvested twice
+plot(budget~agbchg,data=stkchgs,col=as.numeric(Wood_m3_2>0)+1,
+     pch=as.character(element))
+abline(0,1) # bigger AGB changes with 2 harvests, ok
+
 ggplot(data=stkchgs[stkchgs$element=='N',], aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
   facet_grid(element~biome,labeller = labeller(biome=labls))  
