@@ -1004,6 +1004,7 @@ obsdifm3=data.frame(rbind(obsdifm2b,obsdifm2a))
 ggplot(obsdifm,aes(x=element,y=disc,color=variable))+
   geom_boxplot()
 
+# Figure 4
 ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
   scale_color_manual(values=c('darkblue','darkgreen'),
                       name='Budget',

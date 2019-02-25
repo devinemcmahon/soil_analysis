@@ -386,7 +386,8 @@ shorttstk$element[shorttstk$element=='Mg2']='Mg'
 #budgets=read.csv('nutrient_budgets_linked_bark.csv')
 #budgets=read.csv('nutrient_budg_semiupdated.csv')
 #budgets=read.csv('nutrient_budg_semi_AGB.csv')
-budgets=read.csv('nutrient_budg_updated_1-22-19.csv')
+#budgets=read.csv('nutrient_budg_updated_1-22-19.csv')
+budgets=read.csv('nutrient_budg_updated_2-24-19.csv')
 otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941,
                                0.000128281,0.00000841287,0.000077024, NA, NA),
                       Plconc=c(0.000599674, 0.0000700706,0.000845645,
