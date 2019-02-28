@@ -92,7 +92,7 @@ qqr(eucCa20.lme) # tails a bit off
 summary(eucCa20.lme)
 
 
-# Year trends between stocks in each biome (Figure 3)
+# Year trends between stocks in each biome (Figure 2)
 
 # Added a random slope (year) to these models, 12-29-18
 # Does that make sense? I do want to know the overall effect of year
@@ -480,13 +480,17 @@ tapply(shortE$stock20_16,shortE$element,
        function(x){sd(x,na.rm=T)})
 
 tapply(shorttstk$stock20_16[shorttstk$LU=='E'],
-       shortE$element[shorttstk$LU=='E'],
+       shorttstk$element[shorttstk$LU=='E'],
        function(x){mean(x,na.rm=T)})
 tapply(shorttstk$stock20_04[shorttstk$LU=='E'],
-       shortE$element[shorttstk$LU=='E'],
+       shorttstk$element[shorttstk$LU=='E'],
        function(x){mean(x,na.rm=T)})
 
 sefun=function(x){sd(x,na.rm=T)/sqrt(sum(!is.na(x))-1)}
+tapply(shorttstk$stock20_16[shorttstk$LU=='E'],
+       shorttstk$element[shorttstk$LU=='E'],sefun)
+tapply(shorttstk$stock20_04[shorttstk$LU=='E'],
+       shorttstk$element[shorttstk$LU=='E'],sefun)
 
 tapply(shortE$rat_16,shortE$element,
        function(x){mean(x,na.rm=T)})
@@ -502,6 +506,31 @@ tapply(shortE$stock100_16[shortE$element=='C'],
 
 mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='C']) # 46.0
 mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='C']) # 50.1
+mean(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='K'&
+                            shorttstk$site!='Bp']) 
+mean(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='K'&
+                            shorttstk$site!='Bp']) 
+sefun(shorttstk$stock20_04[shorttstk$LU=='E' & shorttstk$element=='K'&
+                            shorttstk$site!='Bp']) 
+sefun(shorttstk$stock20_16[shorttstk$LU=='E' & shorttstk$element=='K'&
+                            shorttstk$site!='Bp']) 
+
+tapply(shortE$stock100_16[shortE$biome=='AF'],
+       shortE$element[shortE$biome=='AF'],
+       function(x){mean(x,na.rm=T)})
+tapply(shortE$stock100_16[shortE$biome=='AF'],
+       shortE$element[shortE$biome=='AF'],sefun)
+
+tapply(shortE$stock100_04[shortE$biome=='Cer'],
+       shortE$element[shortE$biome=='Cer'],
+       function(x){mean(x,na.rm=T)})
+tapply(shortE$stock100_04[shortE$biome=='Cer'],
+       shortE$element[shortE$biome=='Cer'],sefun)
+tapply(shortE$stock100_16[shortE$biome=='Cer'],
+       shortE$element[shortE$biome=='Cer'],
+       function(x){mean(x,na.rm=T)})
+tapply(shortE$stock100_16[shortE$biome=='Cer'],
+       shortE$element[shortE$biome=='Cer'],sefun)
 
 
 # just-euc ratios
@@ -1167,6 +1196,7 @@ summary(Csimp.lme4) # no effect of year on euc (p=.09)
 #   between year and both native and pasture veg
 # changing factor levels: year doesn't have sig effect on pasture C or Ca
 # pasture-euc intrxn stays signif, ok
+median()
 
 # Test significance of year within each veg type by changing factor levels?
 #   Seems wrong...
@@ -1457,6 +1487,21 @@ mr2$sigyr[mr2$depth=='0-100'& mr2$element=='Ca' & mr2$LU=='E']='+'
 mr2$sigveg[mr2$depth=='0-100'& mr2$element=='C' & mr2$LU=='P']='*'
 
 mr2$depth=factor(mr2$depth,levels=c('0-20','0-100'))
+
+median(exp(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='E']))
+mean(exp(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='E']))
+exp(median(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='E']))
+exp(mean(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='E']))
+exp(.159) #estimate for year effect from lme
+# super close to exp(mean), ok
+exp(mean(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='N']))
+exp(mean(mr2$chgln[mr2$element=='C'&mr2$depth=='0-20'&mr2$LU=='P']))
+exp(mean(mr2$chgln[mr2$element=='Ca'&mr2$depth=='0-20'&mr2$LU=='P']))
+exp(mean(mr2$chgln[mr2$element=='Ca'&mr2$depth=='0-20'&mr2$LU=='E']))
+# From lm table instead:
+exp(1.029) # C in euc
+exp(1.029)*exp(-.775) # in pasture
+
 
 # ggplot version
 

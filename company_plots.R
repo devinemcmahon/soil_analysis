@@ -172,7 +172,7 @@ ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$element =='CN',])+
 
 ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
-  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  facet_grid(element~biome,labeller = labeller(biome=labls))  
   
 
 shortsum=shorttstk[shorttstk$element%in%
@@ -188,5 +188,5 @@ shortsumr=round(shortsum,2)
 
 stkchgs$element[stkchgs$stand=='BO.E']
 stkchgs$sdchg20[stkchgs$stand=='BO.E']
-stkchgs$maxbudg[stkchgs$stand=='BO.E']-
-  stkchgs$minbudg[stkchgs$stand=='BO.E']
+stkchgs$maxbudg[stkchgs$stand=='BO.E']
+stkchgs$minbudg[stkchgs$stand=='BO.E']
