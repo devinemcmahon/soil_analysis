@@ -2,10 +2,44 @@ source('soil_data_reader.R')
 
 dats4a=dats4[is.element(dats4$site, c('TM','Cr','JP'))&
                !is.element(dats4$stand,c('JP.P'))&dats4$year==16,]
+dats4a$LU=factor(dats4a$LU,levels=c('E','N','A'))
 
+library(broom)
+library(car)
+#anova4a=group_by(droplevels(dats4a[dats4a$element %in% c('C','N','P','K','Ca'),]),
+#                depth,element,unit,site) %>%
+#  summarise(pval=anova(aov(repval~LU,data = .))$`Pr(>F)`[1]) #no
+head(anova4a)
+
+dats4asimp=droplevels(dats4a[dats4a$element %in% c('C','N','P','K','Ca'),])
+anova4a=group_by(dats4asimp,depth,element,site) %>%
+  do(tidy(Anova(aov(repval~LU,data = .),type="III"))) %>% filter(term=="LU")
+anova4asig=anova4a[anova4a$p.value<0.05,]
+View(anova4asig)
+#anova4a=group_by(dats4asimp,depth,element,site) %>%
+#  group_map(~anova(aov(repval~LU,data=.x))) 
+# works, but doesn't keep the term names
+
+dats4asig=merge(dats4asimp,anova4a,by=c('depth','element','site'))
+
+
+library(dplyr)
 Pdepaov=aov(repval~depth*LU,data=dats4a[dats4a$element=='P',])
 qqr(Pdepaov) # pretty ok!
 summary(Pdepaov) # depth effect, no LU effect or interaction
+
+Cdepaov_JP=aov(repval~depth*LU,data=dats4a[dats4a$element=='C' &
+                                          dats4a$site=='JP',])
+qqr(Cdepaov_JP) 
+summary(Cdepaov_JP) 
+Anova(Cdepaov_JP)
+anova(Cdepaov_JP)
+C5aov_JP=aov(repval~LU,data=dats4a[dats4a$element=='C' &dats4a$depth==5&
+                                             dats4a$site=='JP',])
+Anova(C5aov_JP,type='III')
+anova(C5aov_JP) # same thing except Anova also includes info on the intercept
+qqr(C5aov_JP)
+TukeyHSD(C5aov_JP)
 
 Pdeplme=lme(repval~depth*LU+I(depth^2),data=dats4a[dats4a$element=='P',],
             random=~depth|site,na.action=na.omit)
@@ -147,23 +181,35 @@ xyplot(depth~avgBD|site,groups=stdonly,type='l',ylab='Depth (cm)',
 # Cr: generally denser in N, except at surface, 
 #     where euc soil is densest and N and As least dense
 # TM: little variation within or among stands
+abdatsmn$mn[abdatsmn$element %in% c('C','N')]=
+  abdatsmn$mn[abdatsmn$element %in% c('C','N')]*10000
+abdatsmn$sd[abdatsmn$element %in% c('C','N')]=
+  abdatsmn$sd[abdatsmn$element %in% c('C','N')]*10000
+abdatsmn$LU=factor(abdatsmn$LU,levels=c('E','N','A'))
+
+abdatsmnsig=merge(abdatsmn,anova4a,by=c('depth','element','site'))
+abdatsmnsig=group_by(abdatsmnsig,element,site)%>%
+  mutate(maxval=max(mn,na.rm=T))
 
 ggplot(aes(x=depth,y=mn,colour=LU),
-       data=abdatsmn[abdatsmn$element %in% c('C','N','K','P','Ca'),])+
+       data=abdatsmnsig[abdatsmnsig$site=='Cr',])+
+       #data=abdatsmn[abdatsmn$element %in% c('C','N','K','P','Ca')&#,])+
+        #               abdatsmn$site=='JP',])+
   geom_line(aes(group=stand),size=1.2)+
   coord_flip()+
   scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
-  facet_grid(site~element,scales = 'free_x')+
-  theme(legend.position=c(0.9,0.1),
+#  facet_grid(site~element,scales = 'free_x')+
+  facet_wrap(~element,scales = 'free_x')+
+  theme(legend.position=c(0.85,0.2),
         legend.background = element_blank(),
         legend.key = element_blank())+
-  #labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
-  #              'Concentração (g elemento / 100g solo)'),
-  #     x='Profundidade (cm)')+
+  labs(y='Concentração (mg elemento / kg solo)',
+       x='Profundidade (cm)')+
   geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
-                width=0.2) 
-  scale_colour_discrete(labels=c('2004','2016'),
+                width=0.2)+ 
+  scale_colour_discrete(labels=c('Manejo ativo','Reserva nativa',
+                                 'Abandonado'),
                         guide = guide_legend(reverse=F,title=NULL))+
-  geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
-    label=ifelse(pval<0.05 &year=='16','*','')),
+  geom_text(aes(y=maxval*1.1,
+    label=ifelse(p.value<0.05 &LU=='N','*','')),
     colour='black',size=6,nudge_x=-1)
