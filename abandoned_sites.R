@@ -41,6 +41,16 @@ anova(C5aov_JP) # same thing except Anova also includes info on the intercept
 qqr(C5aov_JP)
 TukeyHSD(C5aov_JP)
 
+Pdepaov_TM=aov(log(repval)~depth*LU,data=dats4a[dats4a$element=='P' &
+                                             dats4a$site=='TM',])
+qqr(Pdepaov_TM) # pretty ok; log maybe not needed
+TukeyHSD(Pdepaov_TM,which='LU') 
+# all different; native vs aband most different
+Cdepaov_TM=aov(log(repval)~depth*LU,data=dats4a[dats4a$element=='C' &
+                                             dats4a$site=='TM',])
+qqr(Cdepaov_TM) # upper tail is off; log is good
+TukeyHSD(Cdepaov_TM,which='LU') # A has least, N=E
+
 Pdeplme=lme(repval~depth*LU+I(depth^2),data=dats4a[dats4a$element=='P',],
             random=~depth|site,na.action=na.omit)
 qqr(Pdeplme) # high outlier
@@ -192,7 +202,7 @@ abdatsmnsig=group_by(abdatsmnsig,element,site)%>%
   mutate(maxval=max(mn,na.rm=T))
 
 ggplot(aes(x=depth,y=mn,colour=LU),
-       data=abdatsmnsig[abdatsmnsig$site=='Cr',])+
+       data=abdatsmnsig[abdatsmnsig$site=='JP',])+
        #data=abdatsmn[abdatsmn$element %in% c('C','N','K','P','Ca')&#,])+
         #               abdatsmn$site=='JP',])+
   geom_line(aes(group=stand),size=1.2)+
@@ -213,3 +223,53 @@ ggplot(aes(x=depth,y=mn,colour=LU),
   geom_text(aes(y=maxval*1.1,
     label=ifelse(p.value<0.05 &LU=='N','*','')),
     colour='black',size=6,nudge_x=-1)
+
+ab2deps=group_by(datsstk[is.element(datsstk$site,c('TM','Cr','JP'))&
+                              datsstk$stand!='JP.P',],stand,year,rep,
+                   element,site,LU,biome,unit,stockunit) %>% 
+  summarise(ndeps20=length(unique(inc_to[inc_to<=20])),
+            stock20=ifelse(ndeps20==2,sum(stock[inc_to<=20]),NA),
+            stocklo20=ifelse(ndeps20==2,sum(stocklo[inc_to<=20]),NA),
+            stockhi20=ifelse(ndeps20==2,sum(stockhi[inc_to<=20]),NA),
+            oldBDstock20=ifelse(ndeps20==2,sum(oldBDstock[inc_to<=20]),NA),
+            conc20=ifelse(ndeps20==2,
+                          sum(repval[inc_to<=20]*inc[inc_to<=20]*BD16[inc_to<=20])/
+                            sum(inc[inc_to<=20]*BD16[inc_to<=20]),NA),
+            # weight concentrations by mass of soil in each layer
+            # to get average density of the whole 1-m block of soil
+            BD20=ifelse(ndeps20==2,
+                        sum(avgBD[inc_to<=20]*inc[inc_to<=20])/
+                          sum(inc[inc_to<=20]),NA),
+            #BDsd20=ifelse(ndeps20==2,
+            #           sum(BDsd[inc_to<=20]*inc[inc_to<=20])/
+            #             sum(inc[inc_to<=20]),NA),
+            BDsd20=ifelse(ndeps20==2,sqrt(sum(BDsd[inc_to<=20])^2),NA),
+            stocksd20=ifelse(ndeps20==2,sqrt(sum(stockvar[inc_to<=20])),NA),
+            # Variance of sum = sum of variances; check how best to do this
+            ndeps100=length(unique(inc_to)),
+            stock100=ifelse(ndeps100==5,sum(stock),NA),
+            #ifelse(maxrep==5 & year=='16',
+            #       sum(stock[inc_to<=40])+sum(stock),NA)),
+            
+            stocklo100=ifelse(ndeps100==5,sum(stocklo),NA),
+            stockhi100=ifelse(ndeps100==5,sum(stockhi),NA),
+            oldBDstock100=ifelse(ndeps100==5,sum(oldBDstock),NA),
+            #conc100=ifelse(ndeps100==5,
+            #               sum(repval*inc*avgBD)/sum(inc*avgBD),NA),
+            conc100=ifelse(ndeps100==5,
+                           sum(repval*inc*BD16)/sum(inc*BD16),NA),
+            conc60to100=mean(repval[inc_to==100],na.rm=T),
+            BD100=ifelse(ndeps100==5,sum(avgBD*inc)/sum(inc),NA),
+            #BDsd100=ifelse(ndeps100==5,sqrt(sum(BDsd^2)),NA),
+            # weight by inc
+            suminc=sum(inc),
+            BDsd100=ifelse(ndeps100==5,sqrt(sum((BDsd^2)*inc)/sum(inc)),NA),
+            stocksd100=ifelse(ndeps100==5,sqrt(sum(stockvar*inc)/sum(inc)),NA),
+            stockratio=stock20/stock100,concratio=conc20/conc100,
+            concrat2=conc20/conc60to100)
+
+abN20.lme=lme(stock20~LU,random=~1|site,
+               data=ab2deps[ab2deps$element=='N',],na.action = na.omit)
+qqr(abN20.lme) # not very good, with or without log
+summary(abN20.lme) # native different (more N)
+
