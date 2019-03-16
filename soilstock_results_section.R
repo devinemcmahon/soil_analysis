@@ -898,7 +898,7 @@ qqline(stkchgs$budget[stkchgs$element=='K']) # not terrible
 
 t.test(stkchgs$chg20,stkchgs$lessrotbudg,paired=T) 
 t.test(stkchgs$chg20,stkchgs$woodonlybudg,paired=T) # p=.059
-# 
+# no longer signif with new, more limited data (no Bp)? 
 t.test(stkchgs$bark20budg,stkchgs$woodonlybudg,paired=T) 
 # those are different, good
 
@@ -915,7 +915,9 @@ summary(I((stkchgs3$chg20-stkchgs3$budget)/
             stkchgs3$budget))
 summary(I((stkchgs3$chg20-stkchgs3$agbbudg)/
             stkchgs3$agbbudg))
-
+stkchgs3$budget[stkchgs3$element=='N']
+stkchgs3$agbbudg[stkchgs3$element=='N']
+stkchgs3$chg20[stkchgs3$element=='N']
 
 # Deprecated Figure 5
 #######################
@@ -980,12 +982,24 @@ tapply(stkchgs3$conc*1000,stkchgs3$element,summary)
 tapply(stkchgs3$agbchg*-1000,stkchgs3$element,summary)
 tapply(chgtypes$agbbudg*1000,chgtypes$element,summary)
 
+summary(c(stkchgs3$Wood_m3_1[stkchgs3$biome=='AF'&stkchgs3$element=='N'],
+       stkchgs3$Wood_m3_2[stkchgs3$biome=='AF'&stkchgs3$element=='N'&
+                            stkchgs3$Wood_m3_2>0]))
+summary(c(stkchgs3$Wood_m3_1[stkchgs3$biome=='Cer'&stkchgs3$element=='N'],
+          stkchgs3$Wood_m3_2[stkchgs3$biome=='Cer'&stkchgs3$element=='N'&
+                               stkchgs3$Wood_m3_2>0]))
+tapply(chgtypes$fertilizer[chgtypes$biome=='AF']*1000,
+       chgtypes$element[chgtypes$biome=='AF'],summary)
+tapply(chgtypes$fertilizer[chgtypes$biome=='Cer']*1000,
+       chgtypes$element[chgtypes$biome=='Cer'],summary)
+chgtypes$budget[chgtypes$element=='N']*1000
+
 sensit=group_by(stkchgs3,element,stand)%>%
   summarise(mindivagb=minagbbudg/agbbudg, maxdivagb=maxagbbudg/agbbudg,
          mindiv=minbudg/budget, maxdiv=maxbudg/budget,
          mindivconc=minbudgconc/budget, maxdivconc=maxbudgconc/budget)
 sensitsum=group_by(sensit,element)%>%
-  summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
+  summarise_if(is.numeric,list(min,median,mean,max),na.rm=T) %>%
   mutate_if(is.numeric,round,digits=2)
 data.frame(t(sensitsum[,order(names(sensitsum))])) #TMI
 
@@ -994,7 +1008,7 @@ sensit2=group_by(stkchgs3,element,stand) %>%
          concsens=abs(maxbudgconc-minbudgconc)/abs(budget),
          agbsens=abs(maxagbbudg-minagbbudg)/abs(agbbudg))
 sensitsum=group_by(sensit2,element)%>%
-  summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
+  summarise_if(is.numeric,list(min,median,mean,max),na.rm=T) %>%
   mutate_if(is.numeric,round,digits=2)
 data.frame(t(sensitsum[,order(names(sensitsum))]))
 
@@ -1046,8 +1060,9 @@ ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
                       ymin=min),fatten=6,size=.8,
                   data=distinct(obsdifm3,element,budgtype,.keep_all=T),
                   shape=18,show.legend = T,position=position_dodge2(.3))+
-  labs(y='(Observed change in soil stock - Budget) / Budget', x=NULL) +
-  theme(legend.position=c(0.22,0.9),
+  #labs(y='(Observed change in soil stock - Budget) / Budget', x=NULL) +
+  labs(y='(Measured Δ soil stock - Budget) / Budget', x=NULL) +
+    theme(legend.position=c(0.22,0.9),
         legend.spacing.y = unit(.5,'lines'), 
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_blank(),
