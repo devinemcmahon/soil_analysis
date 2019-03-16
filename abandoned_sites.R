@@ -225,7 +225,8 @@ ggplot(aes(x=depth,y=mn,colour=LU),
     colour='black',size=6,nudge_x=-1)
 
 ab2deps=group_by(datsstk[is.element(datsstk$site,c('TM','Cr','JP'))&
-                              datsstk$stand!='JP.P',],stand,year,rep,
+                              datsstk$stand!='JP.P'&
+                           datsstk$year=='16',],stand,rep,
                    element,site,LU,biome,unit,stockunit) %>% 
   summarise(ndeps20=length(unique(inc_to[inc_to<=20])),
             stock20=ifelse(ndeps20==2,sum(stock[inc_to<=20]),NA),
@@ -233,8 +234,8 @@ ab2deps=group_by(datsstk[is.element(datsstk$site,c('TM','Cr','JP'))&
             stockhi20=ifelse(ndeps20==2,sum(stockhi[inc_to<=20]),NA),
             oldBDstock20=ifelse(ndeps20==2,sum(oldBDstock[inc_to<=20]),NA),
             conc20=ifelse(ndeps20==2,
-                          sum(repval[inc_to<=20]*inc[inc_to<=20]*BD16[inc_to<=20])/
-                            sum(inc[inc_to<=20]*BD16[inc_to<=20]),NA),
+                          sum(repval[inc_to<=20]*inc[inc_to<=20]*avgBD[inc_to<=20])/
+                            sum(inc[inc_to<=20]*avgBD[inc_to<=20]),NA),
             # weight concentrations by mass of soil in each layer
             # to get average density of the whole 1-m block of soil
             BD20=ifelse(ndeps20==2,
@@ -257,7 +258,7 @@ ab2deps=group_by(datsstk[is.element(datsstk$site,c('TM','Cr','JP'))&
             #conc100=ifelse(ndeps100==5,
             #               sum(repval*inc*avgBD)/sum(inc*avgBD),NA),
             conc100=ifelse(ndeps100==5,
-                           sum(repval*inc*BD16)/sum(inc*BD16),NA),
+                           sum(repval*inc*avgBD)/sum(inc*avgBD),NA),
             conc60to100=mean(repval[inc_to==100],na.rm=T),
             BD100=ifelse(ndeps100==5,sum(avgBD*inc)/sum(inc),NA),
             #BDsd100=ifelse(ndeps100==5,sqrt(sum(BDsd^2)),NA),
@@ -273,3 +274,64 @@ abN20.lme=lme(stock20~LU,random=~1|site,
 qqr(abN20.lme) # not very good, with or without log
 summary(abN20.lme) # native different (more N)
 
+astksum =group_by(ab2deps[ab2deps$element %in% 
+                            c('C','N','K','Ca2','P2','Al','Fe'),],
+                  stand,element,site,LU) %>%
+  summarise(stk20=mean(stock20,na.rm=T),
+            nstocks20=sum(!is.na(stock20)),
+            se20=sd(stock20,na.rm=T)/sqrt(nstocks20-1),
+            stk100=mean(stock100,na.rm=T),
+            nstocks100=sum(!is.na(stock100)),
+            se100=sd(stock100,na.rm=T)/sqrt(nstocks100-1),
+            BD20=mean(BD20),BD100=mean(BD100))
+astksum$element[astksum$element=='Ca2']='Ca'
+astksum$element[astksum$element=='P2']='P'
+astksumr=mutate_if(astksum,is.numeric,round,digits=2)
+astksumr=astksumr[,-which(names(astksumr) %in% 
+                            c('nstocks100','nstocks20'))]
+#write.csv(astksumr,'abd_stocksummaries.csv')
+
+ab2deps$LU=factor(ab2deps$LU,levels=c('E','A','N'))
+astksum2 =group_by(ab2deps[ab2deps$element %in% 
+                            c('C','N','K','Ca2','P2','Al','Fe'),],
+                  element,site) %>%
+  summarise(stk20E=mean(stock20[LU=='E'],na.rm=T),
+            stk20A=mean(stock20[LU=='A'],na.rm=T),
+            stk20N=mean(stock20[LU=='N'],na.rm=T),
+            nstocks20E=sum(!is.na(stock20[LU=='E'])),
+            nstocks20A=sum(!is.na(stock20[LU=='A'])),
+            nstocks20N=sum(!is.na(stock20[LU=='N'])),
+            se20=sd(stock20,na.rm=T)/sqrt(nstocks20-1),
+            stk100=mean(stock100,na.rm=T),
+            nstocks100=sum(!is.na(stock100)),
+            se100=sd(stock100,na.rm=T)/sqrt(nstocks100-1),
+            BD20=mean(BD20),BD100=mean(BD100))
+astksum$element[astksum$element=='Ca2']='Ca'
+astksum$element[astksum$element=='P2']='P'
+astksumr=mutate_if(astksum,is.numeric,round,digits=2)
+astksumr=astksumr[,-which(names(astksumr) %in% 
+                            c('nstocks100','nstocks20'))]
+#write.csv(astksumr,'abd_stocksummaries.csv')
+
+
+C20aov_TM=aov(stock20~LU,data=ab2deps[ab2deps$site=='TM' &
+                                        ab2deps$element=='C',])
+qqr(C20aov_TM) # not much different with log transform
+anova(C20aov_TM) # no difference
+anova20a=group_by(ab2deps[ab2deps$element %in% 
+                            c('C','N','K','Ca2','P2','Al','Fe'),],
+                  element,site) %>%
+  do(tidy(Anova(aov(stock20~LU,data = .),type="III"))) %>% filter(term=="LU")
+head(anova20a)
+anova20asig=anova20a[anova20a$p.value<0.05,]
+View(anova20asig)
+# Ca and P vary in all 3 sites (ok)
+# in TM, Fe and N also
+N20aov_TM=aov(stock20~LU,data=ab2deps[ab2deps$site=='TM' &
+                                        ab2deps$element=='N',])
+qqr(N20aov_TM) 
+TukeyHSD(N20aov_TM) # N marginally more than E and a lot more than A
+Fe20aov_TM=aov(stock20~LU,data=ab2deps[ab2deps$site=='TM' &
+                                        ab2deps$element=='Fe',])
+qqr(Fe20aov_TM) #ugh (log worse)
+TukeyHSD(Fe20aov_TM) # A has the least Fe...not enough data to tell?
