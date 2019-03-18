@@ -387,7 +387,8 @@ shorttstk$element[shorttstk$element=='Mg2']='Mg'
 #budgets=read.csv('nutrient_budg_semiupdated.csv')
 #budgets=read.csv('nutrient_budg_semi_AGB.csv')
 #budgets=read.csv('nutrient_budg_updated_1-22-19.csv')
-budgets=read.csv('nutrient_budg_updated_2-24-19.csv')
+#budgets=read.csv('nutrient_budg_updated_2-24-19.csv')
+budgets=read.csv('nutrient_budg_updated_3-18-19.csv')
 budgets=droplevels(budgets[budgets$Stand!='Bp.E2',])
 # turns out those numbers aren't real
 otherconcs=data.frame(Egrandconc=c(0.00118814,0.000030795,0.00037971,0.001193941,
@@ -416,7 +417,7 @@ budgets=merge(budgets,otherconcs,by='Nutrient')
 #   if Age_04 >=5.5, Vol* Conc_wood*Nomin_density
 # AGB_04 = Wood_04 * (1+proports$notwood_div_wood[corresponding age])
 # Same deal for Wood_16 and AGB_16
-# Budg_w_AGB = AGB_04 - AGB_16 + Budget 
+# Budg_w_AGB = AGB_04 - AGB_16 + Budget # reversed for JP until 3-18, now fixed
 # Assumes non-harvested biomass nutrients come from the soil+fertilizer
 #   and are returned to the soil if 2004 biomass > 2016 biomass
 
@@ -458,8 +459,12 @@ budgets=mutate(budgets,
                              (Conc_wood*.8+Conc_bark*.2)*511)/1000,
                bark5budg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                             (Conc_wood*.95+Conc_bark*.05)*511)/1000,
-               # Pick more probable values based on plots
-               budget=ifelse(Stand=='BO.E',bark5budg,
+               # Pick more probable values based on plots--
+               # New BO value is based on retaining all bark onsite...
+               budget=ifelse(Stand=='BO.E',#bark5budg,
+                             (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
+                                              Conc_wood*511*
+                                Nomin_bark_fraction)/1000,
                              (In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*
                                 Concentration*511)/1000),
                modconcagbbudg=(In_kgha_1+In_kgha_2-(Wood_m3_1+Wood_m3_2)*

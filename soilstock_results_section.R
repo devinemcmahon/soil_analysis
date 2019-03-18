@@ -873,11 +873,11 @@ summary(stkchgs$minbudg[stkchgs$element=='N']*1000)
 # max net N export = 478 kg ha-1 over the 12 years
 
 
-tapply(stkchgs$chgrt20,stkchgs$element,mean)
-tapply(stkchgs$chgln20,stkchgs$element,mean)
-tapply(stkchgs$budget,stkchgs$element,mean)
-tapply(stkchgs$efs20,stkchgs$element,mean)
-log(abs(tapply(stkchgs$budget,stkchgs$element,mean)))
+#tapply(stkchgs$chgrt20,stkchgs$element,mean)
+#tapply(stkchgs$chgln20,stkchgs$element,mean)
+#tapply(stkchgs$budget,stkchgs$element,mean)
+#tapply(stkchgs$efs20,stkchgs$element,mean)
+#log(abs(tapply(stkchgs$budget,stkchgs$element,mean)))
 
 t.test(stkchgs2$chg20,stkchgs2$budget,paired=T) 
 t.test(stkchgs$chg20[stkchgs$element=='N'],
@@ -904,7 +904,7 @@ t.test(stkchgs$bark20budg,stkchgs$woodonlybudg,paired=T)
 
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
-
+# Text after Figure 4
 summary(I(abs(stkchgs3$maxbudgconc-stkchgs3$minbudgconc)/
             abs(stkchgs3$budget)))
 summary(I(abs(stkchgs3$maxbudg-stkchgs3$minbudg)/
@@ -915,9 +915,12 @@ summary(I((stkchgs3$chg20-stkchgs3$budget)/
             stkchgs3$budget))
 summary(I((stkchgs3$chg20-stkchgs3$agbbudg)/
             stkchgs3$agbbudg))
+
+# Where does agb change the sign to match the observations?
 stkchgs3$budget[stkchgs3$element=='N']
 stkchgs3$agbbudg[stkchgs3$element=='N']
 stkchgs3$chg20[stkchgs3$element=='N']
+stkchgs3$stand[stkchgs3$element=='N']
 
 # Deprecated Figure 5
 #######################
@@ -975,9 +978,10 @@ chgtypes=group_by(stkchgs3,stand,element, biome, chg20,agbbudg,
             harvest=(Wood_m3_1+Wood_m3_2)*Concentration*-511/1000,
             fertilizer=(In_kgha_1+In_kgha_2)/1000)
 
-tapply(chgtypes$budget*1000,chgtypes$element,summary)
-tapply(chgtypes$harvest*1000,chgtypes$element,summary)
+# Table 1:
 tapply(chgtypes$fertilizer*1000,chgtypes$element,summary)
+tapply(chgtypes$harvest*1000,chgtypes$element,summary)
+tapply(chgtypes$budget*1000,chgtypes$element,summary)
 tapply(stkchgs3$conc*1000,stkchgs3$element,summary)
 tapply(stkchgs3$agbchg*-1000,stkchgs3$element,summary)
 tapply(chgtypes$agbbudg*1000,chgtypes$element,summary)
@@ -992,7 +996,7 @@ tapply(chgtypes$fertilizer[chgtypes$biome=='AF']*1000,
        chgtypes$element[chgtypes$biome=='AF'],summary)
 tapply(chgtypes$fertilizer[chgtypes$biome=='Cer']*1000,
        chgtypes$element[chgtypes$biome=='Cer'],summary)
-chgtypes$budget[chgtypes$element=='N']*1000
+
 
 sensit=group_by(stkchgs3,element,stand)%>%
   summarise(mindivagb=minagbbudg/agbbudg, maxdivagb=maxagbbudg/agbbudg,
@@ -1013,8 +1017,14 @@ sensitsum=group_by(sensit2,element)%>%
 data.frame(t(sensitsum[,order(names(sensitsum))]))
 
 obsdif=group_by(stkchgs3,element,stand) %>%
-  summarise(budgdif=(chg20-budget)/budget,
-            agbdif=(chg20-agbbudg)/agbbudg)
+ # summarise(budgdif=abs(chg20-budget)/budget,
+  #          agbdif=abs(chg20-agbbudg)/agbbudg) # add the abs() to show budget sign
+  summarise(budgdif=chg20/budget,
+            agbdif=chg20/agbbudg) 
+  #summarise(budgdif=budget/chg20,
+  #          agbdif=agbbudg/chg20) 
+  #summarise(budgdif=log(abs(chg20/budget)),
+  #          agbdif=log(abs(chg20/agbbudg))) 
 obsdifsum=group_by(obsdif,element)%>%
   summarise_if(is.numeric,funs(min,median,mean,max),na.rm=T) %>%
   mutate_if(is.numeric,round,digits=2)
@@ -1048,8 +1058,9 @@ ggplot(obsdifm,aes(x=element,y=disc,color=variable))+
   geom_boxplot()
 
 # Figure 4
+png(filename = 'fig4_newcen_bw.png',width=5,height=5, units='in',res=150)
 ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
-  scale_color_manual(values=c('darkblue','darkgreen'),
+  scale_color_manual(values=c('grey40','black'),#c('darkblue','darkgreen'),
                       name='Budget',
                       labels=c('Fertilizer - Harvest',
                                'Fertilizer - Harvest +\nInput from biomass change'))+
@@ -1061,25 +1072,26 @@ ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
                   data=distinct(obsdifm3,element,budgtype,.keep_all=T),
                   shape=18,show.legend = T,position=position_dodge2(.3))+
   #labs(y='(Observed change in soil stock - Budget) / Budget', x=NULL) +
-  labs(y='(Measured Δ soil stock - Budget) / Budget', x=NULL) +
-    theme(legend.position=c(0.22,0.9),
+  #labs(y='(Measured Δ soil stock - Budget) / Budget', x=NULL) +
+  labs(y='Measured Δ soil stock / Budget', x=NULL) +
+  theme(legend.position=c(0.52,0.15),#c(0.22,0.9),
         legend.spacing.y = unit(.5,'lines'), 
         panel.background = element_rect(fill='white'),
         panel.grid.major = element_blank(),
         panel.grid.minor.x = element_line(colour='grey80'),
         legend.key=element_blank(),
         legend.title=element_text(size=10)) 
-  
+dev.off()  
   
 
 
 chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
 
 tapply(chgtypes$budget,chgtypes$element,summary)
-stdlabls <- c(Eu.E1 = "Atlantic Forest example", 
-           It.E2 = "Cerrado example")
+stdlabls <- c(BO.E = "Atlantic Forest example", 
+           It.E2 = "Cerrado example") # or Eu.E1 for AF?
 
-ggplot(chgtypesm[chgtypesm$stand %in% c('Eu.E1','It.E2'),],
+ggplot(chgtypesm[chgtypesm$stand %in% c('BO.E','It.E2'),],
        #[chgtypesm$stand %in% c('Eu.E2','It.E2','JP.E2'),],
        aes(x=element,y=value,fill=variable))+
   #geom_bar(stat = "identity")+
