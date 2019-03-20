@@ -13,7 +13,15 @@ summary(clay$pct5)
 summary(clay$pct80)
 
 # Figure S2
+# Highlighting the scale of the spatial heterogeneity in Bps
+xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
+       data=dats[dats$element=='K' & dats$site=='Bp',],
+       ylim=c(90,0),xlab='K (g / kg)',as.table=T)
+
+
+# Figure S3
 #########
+png('fig_s3.png',height=6,width=9,units='in',res=300)
 par(mfrow=c(2,3))
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = F)
 legend('bottomright',bty='n',legend='a',cex=1.5)
@@ -35,6 +43,7 @@ yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],l
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='f',cex=1.5)
 par(mfrow=c(1,1))
+dev.off()
 #########
 
 # how many samples had detection limit replaced?
@@ -1020,6 +1029,121 @@ Prat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,
 qqr(Prat100simp.pql) 
 summary(Prat100simp.pql) # shallower under non-euc (if using P not P2), no change
 
+# Figure S1
+######## Row position and other heterogeneity things
+##################
+Celt.lme=lme(log(value)~elt, random=~1|stand,
+             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+                         dats$element =='C',],na.action=na.omit)
+qqr(Celt.lme) # Nice (with log) 
+summary(Celt.lme) # L significantly less than E
+xyplot(value~as.numeric(elt)|stand,groups=rep,
+       data=dats[dats$depth==5&dats$element=='C'& dats$year=='16' &
+                   dats$elt %in% c('E','L','T'),],pch=19)
+eltdats=dats[dats$elt %in% c('E','L','T') & dats$LU=='E'&dats$year=='16',]
+eltdats=mutate(eltdats,eltlong=ifelse(elt=='E','Inter-',
+                                      ifelse(elt=='L','Current','Previous')))
+eltdats$eltlong=factor(eltdats$eltlong,levels=c('Current','Previous',
+                                                'Inter-'))
+eltdats=group_by(eltdats,stand,depth,element,rep,elt)%>%
+  mutate(eltmn=mean(value,na.rm=T))
 
+eltstands=c(Bp.E1 = "Bom Despacho 1", Eu.E2 = "Eunápolis 2",
+            It.E1 = "Itacambira 1", JP.E2 = "João Pinheiro 2")
 
+ggplot(data=eltdats[eltdats$element=='C'&
+                      eltdats$stand %in% c('Bp.E1','Eu.E2','It.E1','JP.E2')&
+                      eltdats$depth==5,],
+       aes(x=eltlong,y=eltmn, color=as.factor(rep)))+
+  geom_point(shape=18,size=3,show.legend=F)+
+  geom_line(aes(group=as.factor(rep)),show.legend = F)+
+  facet_wrap(~stand,ncol=2,scales='free_y',
+             labeller = labeller(stand=eltstands))+
+  theme(panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank())+
+#  labs(y='Soil carbon content (g / 100 g), 0-10 cm',x='Row position')+
+  labs(y='Soil carbon percent, 0-10 cm',x='Row position')+
+  scale_color_brewer(palette='Dark2')
 
+# Table S1
+eltdats=ungroup(eltdats)
+eltdats=group_by(eltdats,stand,depth,element,rep)%>%
+  mutate(repmn=mean(value,na.rm=T),repvar=var(value,na.rm=T),
+         repcv=sqrt(repvar)/repmn)
+eltdats=ungroup(eltdats)
+eltdats=group_by(eltdats,stand,depth,element,elt)%>%
+  mutate(posmn=mean(value,na.rm=T),posvar=var(value,na.rm=T),
+         poscv=sqrt(posvar)/posmn)
+eltdats=ungroup(eltdats)
+eltdis=distinct(eltdats,stand,depth,element,.keep_all = T)
+eltsum=group_by(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                         eltdis$depth==5,],element) %>%
+  summarise(#mnposvar=mean(posvar,na.rm=T),mnrepvar=mean(repvar,na.rm=T),
+    #nstands=n(), #n=8
+    mnposcv=mean(poscv,na.rm=T),mnrepcv=mean(repcv,na.rm=T))
+eltsum
+#write.csv(eltsum,'eltrepcvs.csv')
+#write.csv(eltsum,'eltrepcvs_3-20-19.csv') 
+# with updated compositing/averaging procedure, no longer consistently 
+#   more variable within position than within rep
+t.test(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                eltdis$depth==5,]$poscv,
+       eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
+                eltdis$depth==5,]$repcv)
+# anova probably more appropriate--did I do that already?
+# No, because there should not be a consistent effect of rep across sites
+# It would have to be n=16 within sites, ok
+t.test(eltdis[eltdis$element =='C' & eltdis$depth==5,]$posvar,
+       eltdis[eltdis$element =='C' & eltdis$depth==5,]$repvar)
+# cv or var not significantly diff between rep and position for any element
+
+# Table S2
+# CV within 16 simple samples
+eltcvs5=eltdats[eltdats$depth==5 &eltdats$element %in%
+                  c('C','N','P2','K','Ca2'),] %>% 
+  group_by(element,stand) %>%
+  mutate(stdmn=mean(value,na.rm=T),stdvar=var(value,na.rm=T),
+         stdcv=sqrt(stdvar)/stdmn,nobs16=n())
+eltcvs5=ungroup(eltcvs5)
+eltdis5=distinct(eltcvs5,stand,element,.keep_all = T)
+table(eltdis5$nobs16[eltdis5$element=='C']) #Eu.E1 one has just 14 obs
+eltdis5$stand[eltdis5$nobs16==14] # Eu.E1
+eltsum5=group_by(eltdis5,element) %>%
+  summarise(mncv=mean(stdcv,na.rm=T),nobs=n())
+eltsum5
+# CV within depth, stand, and year
+depcvs=group_by(droplevels(dats4[dats4$site!='TM'&dats4$site!='Cr'&
+                                   dats4$LU!='A',]),
+                stand,LU,biome,depth,element,year) %>%
+  summarise(CV=sd(repval,na.rm=T)/mean(repval,na.rm=T))
+# Euc
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K')&
+                           depcvs$LU=='E',])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K')&
+                           depcvs$LU=='E',])$element,summary)
+# Native
+tapply(droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K')&
+                           depcvs$LU=='N',])$CV,
+       droplevels(depcvs[depcvs$element %in% c('C','N','P2','Ca2','K')&
+                           depcvs$LU=='N',])$element,summary)
+
+# CV of stock
+stockcvs=group_by(dats2deps,stand,LU,biome,element,year) %>%
+  summarise(CV20=sd(stock20,na.rm=T)/mean(stock20,na.rm=T),
+            CV100=sd(stock100,na.rm=T)/mean(stock100,na.rm=T))
+tapply(droplevels(stockcvs[stockcvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn')&
+                             stockcvs$LU=='E',])$CV20,
+       droplevels(stockcvs[stockcvs$element %in% 
+                             c('C','N','P2','Ca2','K','S','Zn')&
+                             stockcvs$LU=='E',])$element,summary)
+
+# Budget vs stock # skip this; not sure where my prior numbers were from
+stkchgs=mutate(stkchgs,budgrat=budget/stk20_04,
+               chgrat=chg20/stk20_04,
+               agbrat=agbbudg/stk20_04) # divide units by 100 for N?
+tapply(stkchgs$budgrat,stkchgs$element,mean)
+tapply(stkchgs$chgrat,stkchgs$element,mean)
+tapply(stkchgs$agbrat,stkchgs$element,mean)
+summary(stkchgs$stk20_04[stkchgs$element=='N'])
+summary(stkchgs$budget[stkchgs$element=='N'])

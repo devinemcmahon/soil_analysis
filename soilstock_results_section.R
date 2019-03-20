@@ -13,6 +13,13 @@ summary(clay$pct5)
 summary(clay$pct80)
 
 # Figure S2
+# Highlighting the scale of the spatial heterogeneity in Bps
+xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
+       data=dats[dats$element=='K' & dats$site=='Bp',],
+       ylim=c(90,0),xlab='K (g / kg)',as.table=T)
+
+
+# Figure S3
 par(mfrow=c(2,3))
 yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = F)
 legend('bottomright',bty='n',legend='a',cex=1.5)
@@ -668,6 +675,9 @@ eltsum=group_by(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
     mnposcv=mean(poscv,na.rm=T),mnrepcv=mean(repcv,na.rm=T))
 eltsum
 #write.csv(eltsum,'eltrepcvs.csv')
+#write.csv(eltsum,'eltrepcvs_3-20-19.csv') 
+# with updated compositing/averaging procedure, no longer consistently 
+#   more variable within position than within rep
 t.test(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
                 eltdis$depth==5,]$poscv,
        eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
@@ -678,6 +688,20 @@ t.test(eltdis[eltdis$element %in% c('C','N','P2','K','Ca2')&
 t.test(eltdis[eltdis$element =='C' & eltdis$depth==5,]$posvar,
        eltdis[eltdis$element =='C' & eltdis$depth==5,]$repvar)
 # cv or var not significantly diff between rep and position for any element
+
+# CV within 16 simple samples
+eltcvs5=eltdats[eltdats$depth==5 &eltdats$element %in%
+                  c('C','N','P2','K','Ca2'),] %>% 
+  group_by(element,stand) %>%
+  mutate(stdmn=mean(value,na.rm=T),stdvar=var(value,na.rm=T),
+         stdcv=sqrt(stdvar)/stdmn,nobs16=n())
+eltcvs5=ungroup(eltcvs5)
+eltdis5=distinct(eltcvs5,stand,element,.keep_all = T)
+table(eltdis5$nobs16[eltdis5$element=='C']) #Eu.E1 one has just 14 obs
+eltdis5$stand[eltdis5$nobs16==14] # Eu.E1
+eltsum5=group_by(eltdis5,element) %>%
+  summarise(mncv=mean(stdcv,na.rm=T),nobs=n())
+eltsum5
 
 Celtbm.lme=lme(log(value)~elt*biome, random=~1|stand,
                data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
@@ -702,9 +726,11 @@ summary(Cdepeltbm.lme) # still difference is just in L and Cerrado; driven by to
 # More plots in longer script
 
 Nelt.lme=lme(value~elt, random=~1|stand,
-             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
-                         dats$element =='N',],na.action=na.omit) # log makes qqr worse
-summary(Nelt.lme) # L lower again at p=.06
+             #data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
+            #             dats$element =='N',],na.action=na.omit) # log makes qqr worse
+            data=eltdats[eltdats$depth==5 &eltdats$element=='N',],na.action=na.omit)
+summary(Nelt.lme) # L lower again at p=.06 # now 0.09 
+# (take out JP.A, also new compositing since this was last run)
 Neltbm.lme=lme(value~elt*biome, random=~1|stand,
                data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
                            dats$element =='N',],na.action=na.omit)
@@ -712,8 +738,7 @@ summary(Neltbm.lme) # L < E for Cerrado at p=.02; T < E at .06
 
 
 Kelt.lme=lme(log(value)~elt, random=~1|stand,
-             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
-                         dats$element =='K',],na.action=na.omit)
+             data=eltdats[eltdats$depth==5 &eltdats$element =='K',],na.action=na.omit)
 qqr(Kelt.lme)
 summary(Kelt.lme) # no difference
 Pelt.lme=lme(value~elt, random=~1|stand,
