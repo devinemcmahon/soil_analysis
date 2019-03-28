@@ -989,6 +989,41 @@ segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
 text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element)
 legend('bottomleft',legend='b',cex=1.2,bty='n')
 par(mfrow=c(1,1),mar=c(4,4,1,1))
+
+# presentation version?
+cbbPalette <- c("#000000", "#009E73", "#e79f00", "#9ad0f3", "#0072B2", "#D55E00", 
+                "#CC79A7", "#F0E442")
+plot(x = 1:length(cbbPalette), y = rep(1, length(cbbPalette)), pch = 19, cex = 5, 
+     col = cbbPalette, yaxt = "n", bty = "n", xaxt = "n", xlab = "", ylab = "")
+
+stkchgs3=stkchgs[stkchgs$element!='Mg',]
+palette(cbbPalette)
+plot(chg20~budget,data=stkchgs3,type='n', 
+     xlab='Net nutrient input (fertilizer - harvest), Mg ha-1',
+     ylab='Observed change in stocks to 20 cm, Mg ha-1',
+#     xlim=c(-.2,.5),ylim=c(-.2,.5),
+     las=1)
+#rect(xleft=-.2, ybottom=-.2, xright=.5, ytop=.5,border='gray50')
+abline(h=0,lty=3)
+abline(v=0,lty=3)
+abline(0,1)
+segments(x0=stkchgs3$minbudg,x1=stkchgs3$maxbudg,y0=stkchgs3$chg20,
+         col=as.numeric(as.factor(stkchgs3$element))*2)
+#segments(x0=stkchgs3$minbudgconc,x1=stkchgs3$maxbudgconc,y0=stkchgs3$chg20,
+#         col=as.numeric(as.factor(stkchgs3$biome))+2)
+segments(x0=stkchgs3$budget,y0=stkchgs3$chg20-stkchgs3$sdchg20,
+         y1=stkchgs3$chg20+stkchgs3$sdchg20,
+         col=as.numeric(as.factor(stkchgs3$element))*2)
+text(stkchgs3$budget,stkchgs3$chg20,labels=stkchgs3$element,
+     col=as.numeric(as.factor(stkchgs3$element))*2)
+text(stkchgs3$agbbudg,stkchgs3$chg20,labels=stkchgs3$element)
+
+ggplot(aes(x=budget,y=chg20,color=stand),data=stkchgs3)+
+  facet_wrap(.~element)+
+  geom_point()+
+  geom_abline(slope=1,intercept=0)+
+  geom_vline(xintercept=0,lty=2)+
+  geom_hline(yintercept=0,lty=2)
 #######################
 
 # most recent rotation

@@ -336,7 +336,29 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
             na.rm=T,parse=F,show.legend=F,size=3.5,hjust=0)
 dev.off()
 
-
+# Presentation version
+ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  coord_flip() +
+  labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
+       x="Year", fill="Depth") +
+  theme(strip.text.y = element_text(angle = 0,size=16),
+        strip.text.x = element_text(size=16),
+        legend.position=c(0.75,0.14),
+        panel.background = element_rect(fill='white'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_blank(),
+        axis.text=element_text(size=16),
+        axis.title=element_text(size=16,margin = 
+                                  margin(t = 20, b = 5,l=20,r=20)),
+        legend.text=element_text(size=16)) +
+  geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
+  scale_fill_manual(values=c('slategray','lightblue'),
+                    labels=c('20-100 cm','0-20 cm'),
+                    guide = guide_legend(reverse=TRUE,title=NULL))+
+  geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
+             shape=18,size=3,show.legend=F)
 
 shortE = shorttstk[shorttstk$LU=='E' &
                      shorttstk$stand!='It.E1',]
@@ -627,7 +649,34 @@ ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
         legend.key=element_blank(),
         legend.title=element_text(size=10)) 
 dev.off()  
-  
+
+# Presentation size
+ggplot(obsdifm3,aes(x=element,y=disc,color=budgtype))+
+  scale_color_manual(values=c("#9ad0f3", "#0072B2"),#c('grey40','black'),#c('darkblue','darkgreen'),
+                     name='Budget',
+                     labels=c('Fertilizer - Harvest',
+                              'Fertilizer - Harvest +\nInput from biomass change'))+
+  guides(color=guide_legend())+
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_point(size=5, shape=1,position=position_dodge(.3),show.legend = F)+
+  geom_pointrange(aes(x=element,y=median,colour=budgtype,ymax=max,
+                      ymin=min),fatten=6,size=1,
+                  data=distinct(obsdifm3,element,budgtype,.keep_all=T),
+                  shape=18,show.legend = T,position=position_dodge2(.3))+
+  #labs(y='(Observed change in soil stock - Budget) / Budget', x=NULL) +
+  #labs(y='(Measured Δ soil stock - Budget) / Budget', x=NULL) +
+  labs(y='Measured Δ soil stock / Budget', x=NULL) +
+  theme(legend.position=c(0.6,0.15),#c(0.22,0.9),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(colour='grey80'),
+        legend.key=element_blank(),
+        legend.title=element_text(size=16),
+        legend.text=element_text(size=16),
+        axis.title=element_text(size=16),
+        axis.text=element_text(size=16)) 
+
 
 # Figure S4
 chgtypesm=melt(chgtypes,measure.vars = c('standing','harvest','fertilizer'))
@@ -866,6 +915,7 @@ summary(Casimp100.lme) # increase in E, N and P NOT diff with diff slopes
 
 
 # Figure 3
+mr2=rbind(mru,mrd)
 mr2=mr2[mr2$stand %in% c('BO.E','BO.P','Vg.E','Vg.N','Eu.E2','Eu.N',
                          'JP.E1','JP.N','JP.E2','JP.P','It.E1','It.N'),]
 #mr2$chgln[mr2$biome=='Cer'&mr2$LU=='N'&mr2$depth=='0-100']=NA
@@ -984,7 +1034,61 @@ ggplot(data=mr2, aes(x=depth, y=chgln,#shape=depth,
 dev.off()
 # or just export the png from the screen with dimensions of 600x600?
 
+# Big simple version
+#mr2sub=mr2[mr2$element %in% c('C','N','Ca'),]
+#png('fig3_big_CNCa.png',res=150,height=5,width=10,units='in')
 
+mr2sub=mr2[mr2$element %in% c('C','Ca'),]
+png('fig3_big_CCa.png',res=150,height=5,width=8,units='in')
+
+ggplot(data=mr2sub, aes(x=depth, y=chgln,#shape=depth,
+                     shape=LUlongish,colour=LUlongish))+
+  scale_x_discrete()+
+  scale_colour_manual(values=c('#000000','#0072B2','#e79f00'),
+                      name=NULL,
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  scale_shape_manual(values=c(1,5,0),
+                     name=NULL,
+                     labels=c('Eucalyptus','Native vegetation',
+                              'Pasture'))+
+    geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_point(size=3, position=position_dodge(.8))+
+  geom_pointrange(aes(x=depth,y=chglnmn,colour=LUlongish,ymax=chglnmax,
+                      ymin=chglnmin),fatten=8,
+                  data=distinct(mr2sub,LUlongish,element,depth,.keep_all=T),
+                  shape=16,show.legend = F,position=position_dodge2(.8))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Percent change in stock',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  labs(y='ln(Stock in 2016 / Stock in 2004)', x="Depth (cm)") +
+  theme(strip.text.x = element_text(angle = 0,size=16),
+        strip.background = element_rect(fill='grey80'),#,size=1.3),
+#        legend.position=c(0.6,0.8),
+        legend.position=c(0.85,0.8),
+        panel.spacing = unit(2, "lines"),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank(),
+        legend.title=element_text(size=16),
+        axis.title = element_text(size=16),
+        axis.text = element_text(size=14),
+        legend.text = element_text(size=12))+ 
+  geom_text(mapping = aes( y=maxchgln*1.15*!is.na(sigveg),#x=LUlongish,
+                           x=depth,#colour=LUlongish,
+                           label = sigveg),
+            size=8,na.rm=T,show.legend=F,colour='black',
+            position=position_dodge(.8))+
+  geom_text(mapping = aes(y=(maxchgln)*1.15*!is.na(sigyr),#x=LUlongish, 
+                          x=depth,#colour=LUlongish,
+                          label = sigyr),
+            size=7,na.rm=T,show.legend=F, colour='black',
+            position=position_dodge(.8))
+dev.off()
 
 
 
