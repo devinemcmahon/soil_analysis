@@ -1071,6 +1071,7 @@ budgplotsimp=function(elmt,limfac=1.01){
   segments(x0=datsub$budget,y0=datsub$chg20-datsub$sdchg20,
            y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
 }
+
 png('Nbudgplot_green.png',width=6,height=6,units='in',res=150)
 budgplot('N',1.01)
 legend('topleft',legend='Nitrogen',cex=1.5,bty='n')
@@ -1079,9 +1080,41 @@ legend('bottomleft',bty='n',cex=1.2,col=c(1,3),pch=16,#pch=c(16,1),
 'Fertilizer - Harvest +\nInput from biomass change'))
 dev.off()
 
+budgplotsimp('K',type='n')
+budgplot('K')
+
 png('Nbudgplot_simp.png',width=6,height=6,units='in',res=150)
 budgplotsimp('N',1.01)
 legend('topleft',legend='Nitrogen',cex=1.5,bty='n')
+dev.off()
+
+png('Kbudgplot_simp.png',width=6,height=6,units='in',res=150)
+budgplotsimp('K',1.01)
+legend('topleft',legend='Potassium',cex=1.5,bty='n')
+dev.off()
+
+budgplotnull=function(elmt,limfac=1.01){
+  par(mar=c(4,4,1,1))
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg20-datsub$sdchg20)*limfac
+  ymax=max(datsub$chg20+datsub$sdchg20)*limfac
+  
+  plot(chg20~budget,data=datsub,type='n', 
+       xlab='Expected budget, Mg/ha',
+       ylab='Observed stock change to 20 cm, Mg/ha',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=2,
+       las=1,cex.axis=1.3,cex.lab=1.3)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+}
+budgplotnull('K')
+
+png('Kbudgplot_null.png',width=6,height=6,units='in',res=150)
+budgplotnull('K')
+legend('topleft',legend='Potassium',cex=1.5,bty='n')
 dev.off()
 
 
