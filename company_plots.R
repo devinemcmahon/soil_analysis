@@ -186,7 +186,22 @@ shortsumr=round(shortsum,2)
 #write.csv(shortsum,'allcos_stocksummaries.csv')
 
 
+stkchgs3=stkchgs[stkchgs$element!='Mg',]
+stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
+cochgtypes=group_by(stkchgs3,stand,element) %>%
+  summarise(fertilizante=(In_kgha_1+In_kgha_2),
+            retirado=(Wood_m3_1+Wood_m3_2)*Concentration*511,
+            balanco=budget*1000,minbal=minbudg*1000,maxbal=maxbudg*1000,
+            mudanca20=chg20*1000,mudEP=sdchg20*1000,
+            mudaerea=agbchg*-1000,balaerea=agbbudg*1000,
+            minaerbal=minagbbudg*1000,maxaerbal=maxagbbudg*1000)%>%
+  mutate_if(is.numeric,round,digits=0)
+View(cochgtypes[cochgtypes$stand=='BO.E',])
+write.csv(cochgtypes,'cochgsum.csv')
+
+names(stkchgs3)
 stkchgs$element[stkchgs$stand=='BO.E']
 stkchgs$sdchg20[stkchgs$stand=='BO.E']
 stkchgs$maxbudg[stkchgs$stand=='BO.E']
 stkchgs$minbudg[stkchgs$stand=='BO.E']
+

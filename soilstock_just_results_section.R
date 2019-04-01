@@ -546,6 +546,7 @@ stkchgs3$stand[stkchgs3$element=='N']
 summary(c(budgets$In_kgha_2[budgets$In_kgha_2!=0],
           budgets$In_kgha_1[budgets$In_kgha_2==0])) # by nutrient tho
 
+# summaries by stand
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
 chgtypes=group_by(stkchgs3,stand,element, biome, chg20,agbbudg,
