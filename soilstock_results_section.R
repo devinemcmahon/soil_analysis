@@ -1071,6 +1071,35 @@ budgplotsimp=function(elmt,limfac=1.01){
   segments(x0=datsub$budget,y0=datsub$chg20-datsub$sdchg20,
            y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
 }
+budgplot100=function(elmt,limfac=1.01){
+  par(mar=c(4,4,1,1))
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg100-datsub$sdchg100)*limfac
+  ymax=max(datsub$chg100+datsub$sdchg100)*limfac
+  
+  plot(chg100~budget,data=datsub,#type='n', 
+       xlab='Expected budget, Mg/ha',
+       ylab='Observed stock change to 100 cm, Mg/ha',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=2,
+       las=1,cex.axis=1.3,cex.lab=1.3)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+  segments(x0=datsub$minbudg,x1=datsub$maxbudg,y0=datsub$chg100,
+           lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  segments(x0=datsub$budget,y0=datsub$chg100-datsub$sdchg100,
+           y1=datsub$chg100+datsub$sdchg100,lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  #text(datsub$budget,datsub$chg100,labels=datsub$element,
+  #     col=as.numeric(as.factor(datsub$element))*2)
+  #text(datsub$agbbudg,datsub$chg100,labels=datsub$element)
+  points(datsub$agbbudg,datsub$chg100,cex=2,col=3,pch=16)
+  segments(x0=datsub$minagbbudg,x1=datsub$maxagbbudg,y0=datsub$chg100,
+           lty=2,col=3,lwd=1.5)#,
+}
 
 png('Nbudgplot_green.png',width=6,height=6,units='in',res=150)
 budgplot('N',1.01)
@@ -1092,6 +1121,8 @@ png('Kbudgplot_simp.png',width=6,height=6,units='in',res=150)
 budgplotsimp('K',1.01)
 legend('topleft',legend='Potassium',cex=1.5,bty='n')
 dev.off()
+
+budgplot100('N')
 
 budgplotnull=function(elmt,limfac=1.01){
   par(mar=c(4,4,1,1))
