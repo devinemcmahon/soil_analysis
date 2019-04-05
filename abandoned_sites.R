@@ -11,7 +11,7 @@ library(car)
 #  summarise(pval=anova(aov(repval~LU,data = .))$`Pr(>F)`[1]) #no
 head(anova4a)
 
-dats4asimp=droplevels(dats4a[dats4a$element %in% c('C','N','P','K','Ca'),])
+dats4asimp=droplevels(dats4a[dats4a$element %in% c('C','N','P2','K','Ca2'),])
 anova4a=group_by(dats4asimp,depth,element,site) %>%
   do(tidy(Anova(aov(repval~LU,data = .),type="III"))) %>% filter(term=="LU")
 anova4asig=anova4a[anova4a$p.value<0.05,]
@@ -24,9 +24,10 @@ dats4asig=merge(dats4asimp,anova4a,by=c('depth','element','site'))
 
 
 library(dplyr)
-Pdepaov=aov(repval~depth*LU,data=dats4a[dats4a$element=='P',])
+Pdepaov=aov(repval~depth*LU,data=dats4a[dats4a$element=='P2',])
 qqr(Pdepaov) # pretty ok!
 summary(Pdepaov) # depth effect, no LU effect or interaction
+# with P2, almost an LU effect, fewer missing values
 
 Cdepaov_JP=aov(repval~depth*LU,data=dats4a[dats4a$element=='C' &
                                           dats4a$site=='JP',])
@@ -191,15 +192,29 @@ xyplot(depth~avgBD|site,groups=stdonly,type='l',ylab='Depth (cm)',
 # Cr: generally denser in N, except at surface, 
 #     where euc soil is densest and N and As least dense
 # TM: little variation within or among stands
+
+abdatsmn=droplevels(datsmean[is.element(datsmean$site, c('TM','Cr','JP'))&
+                               !is.element(datsmean$stand,c('JP.P'))&
+                               datsmean$year==16,])
+
 abdatsmn$mn[abdatsmn$element %in% c('C','N')]=
-  abdatsmn$mn[abdatsmn$element %in% c('C','N')]*10000
+  abdatsmn$mn[abdatsmn$element %in% c('C','N')]*10
 abdatsmn$sd[abdatsmn$element %in% c('C','N')]=
-  abdatsmn$sd[abdatsmn$element %in% c('C','N')]*10000
+  abdatsmn$sd[abdatsmn$element %in% c('C','N')]*10
+abdatsmn$mn[!is.element(abdatsmn$element, c('C','N'))]=
+  abdatsmn$mn[!is.element(abdatsmn$element, c('C','N'))]/1000
+abdatsmn$sd[!is.element(abdatsmn$element, c('C','N'))]=
+  abdatsmn$sd[!is.element(abdatsmn$element, c('C','N'))]/1000
 abdatsmn$LU=factor(abdatsmn$LU,levels=c('E','N','A'))
+# All in units of g/kg now
 
 abdatsmnsig=merge(abdatsmn,anova4a,by=c('depth','element','site'))
 abdatsmnsig=group_by(abdatsmnsig,element,site)%>%
   mutate(maxval=max(mn,na.rm=T))
+abdatsmnsig$element[abdatsmnsig$element=='Ca2']='Ca'
+abdatsmnsig$element[abdatsmnsig$element=='P2']='P'
+abdatsmnsig$element=factor(abdatsmnsig$element,
+                           levels=c('C','N','P','K','Ca'))
 
 ggplot(aes(x=depth,y=mn,colour=LU),
        data=abdatsmnsig[abdatsmnsig$site=='JP',])+
@@ -212,8 +227,11 @@ ggplot(aes(x=depth,y=mn,colour=LU),
   facet_wrap(~element,scales = 'free_x')+
   theme(legend.position=c(0.85,0.2),
         legend.background = element_blank(),
-        legend.key = element_blank())+
-  labs(y='Concentração (mg elemento / kg solo)',
+        legend.key = element_blank(),
+        panel.background = element_rect(fill='white',colour='grey80'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_line(colour='grey80'))+
+  labs(y='Concentração (g elemento / kg solo)',
        x='Profundidade (cm)')+
   geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
                 width=0.2)+ 
@@ -223,6 +241,32 @@ ggplot(aes(x=depth,y=mn,colour=LU),
   geom_text(aes(y=maxval*1.1,
     label=ifelse(p.value<0.05 &LU=='N','*','')),
     colour='black',size=6,nudge_x=-1)
+
+
+# English version
+ggplot(aes(x=depth,y=mn,colour=LU),data=abdatsmnsig)+
+  geom_line(aes(group=stand),size=1.2)+
+  coord_flip()+
+  scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+  facet_grid(site~element,scales = 'free_x')+
+  #facet_wrap(~element,scales = 'free_x')+
+  theme(legend.position=c(0.72,0.48),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        panel.background = element_rect(fill='white',colour='black'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_line(colour='grey80'))+
+  labs(y='Concentration (g/kg)',
+       x='Depth (cm)')+
+  geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                width=0.2)+ 
+  scale_colour_discrete(labels=c('Active stand','Native reserve',
+                                 'Abandoned stand'),
+                        guide = guide_legend(reverse=F,title=NULL))+
+  geom_text(aes(y=maxval*1.1,
+                label=ifelse(p.value<0.05 &LU=='N','*','')),
+            colour='black',size=6,nudge_x=-1)
+#ggsave('abdeps_all.png',device=png(height=8,width=10,units='in',res=150))
 
 ab2deps=group_by(datsstk[is.element(datsstk$site,c('TM','Cr','JP'))&
                               datsstk$stand!='JP.P'&

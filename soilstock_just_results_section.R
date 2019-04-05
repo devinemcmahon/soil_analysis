@@ -1252,3 +1252,14 @@ tapply(stkchgs$chgrat,stkchgs$element,mean)
 tapply(stkchgs$agbrat,stkchgs$element,mean)
 summary(stkchgs$stk20_04[stkchgs$element=='N'])
 summary(stkchgs$budget[stkchgs$element=='N'])
+
+# How much of plant+soil is in plant?
+plot(AGB_04~I(stk20_04*1000),data=stkchgs3,col=element)
+abline(0,1)
+text(I(stkchgs3$stk20_04*1000),stkchgs3$AGB_04,label=stkchgs3$element,
+     col=as.numeric(stkchgs3$element))
+# way more N in soil than in plants
+# sometimes they're the same for Ca, K, even P
+# K in plant ~ 1/5 of the soil stock; P less
+text(I(stkchgs3$stk20_16*1000),stkchgs3$AGB_04,label=stkchgs3$element,
+     col=as.numeric(stkchgs3$element))

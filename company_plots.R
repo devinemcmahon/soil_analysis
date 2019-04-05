@@ -128,6 +128,46 @@ mygg=function(rockder,mysite){
 }
 mygg(F,'BO')
 
+mygg_eng=function(rockder,mysite){
+  lmts=c('C','N')
+  if(rockder==T) lmts=c('K','P2','Ca2')
+  mysub=datsmnok2[datsmnok2$site==mysite & datsmnok2$element %in% lmts,]
+  mysub=mutate(mysub,element2=element)
+  mysub$element2[mysub$element=='Ca2']='Ca'
+  mysub$element2[mysub$element=='P2']='P'
+  if(rockder==T) mysub$element2=factor(mysub$element2,
+                                       levels=c('K','Ca','P'))
+  mysub=mysub[order(mysub$depth),]
+  myheight=length(unique(mysub$stand))*2
+  if(rockder==T) mywidth=6 else(mywidth=4)
+  if(rockder==T) anmethod='XRF' else(anmethod='EA')
+  myfilename=paste(mysite,anmethod,'.png',sep='')
+  ggplot(aes(x=depth,y=mn,colour=year),data=mysub)+
+    geom_line(aes(group=year),size=1.2)+
+    coord_flip()+
+    scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+    facet_grid(stand~element2,scales = 'free_x')+
+    theme(legend.position=c(0.85,0.1),
+          legend.background = element_blank(),
+          legend.key = element_blank(),
+          panel.background = element_rect(fill='white',colour='grey80'),
+          panel.grid.major.x = element_line(colour='grey80'),
+          panel.grid.major.y = element_line(colour='grey80'))+
+    labs(y=ifelse(rockder==T,'Concentration (mg/kg)',
+                  'Concentration (%)'),
+         x='Depth (cm)')+
+    geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                  width=0.2) +
+    scale_colour_discrete(labels=c('2004','2016'),
+                          guide = guide_legend(reverse=F,title=NULL))+
+    geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+      label=ifelse(pval<0.05 &year=='16','*','')),
+      colour='black',size=6,nudge_x=-1)
+  ggsave(myfilename,device=png(height=myheight,width=mywidth,units='in',res=150))
+  #dev.off()
+}
+#mygg_eng(F,'JP')
+
 ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$site=='Vg'&
                                              datsmnok2$element %in%
                                              c('K','Ca2','P2'),])+
