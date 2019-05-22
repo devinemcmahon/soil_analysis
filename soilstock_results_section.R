@@ -1148,6 +1148,104 @@ budgplotnull('K')
 legend('topleft',legend='Potassium',cex=1.5,bty='n')
 dev.off()
 
+# New Figure 4?
+
+budgplotfig=function(elmt,limfac=1.01){
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg20-datsub$sdchg20)*limfac
+  ymax=max(datsub$chg20+datsub$sdchg20)*limfac
+  
+  plot(chg20~budget,data=datsub,#type='n', 
+       xlab='',ylab='',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=1.5,
+       las=1)#,cex.axis=1.2)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+  segments(x0=datsub$minbudg,x1=datsub$maxbudg,y0=datsub$chg20,
+           lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  segments(x0=datsub$budget,y0=datsub$chg20-datsub$sdchg20,
+           y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
+}
+
+
+#dev.new(width=6,height=6,units='in',res=72)
+png('possible_fig4.png',width=6.5,height=6.5,units='in',res=150)
+
+par(mfrow=c(2,2),mar=c(1.5,4,4,1))
+budgplotfig('N')
+legend('topleft',legend='N',cex=1.2,bty='n') 
+title(ylab='Observed Δ stock to 20 cm, Mg/ha')#,cex.lab=1.2)
+budgplotfig('P')
+legend('topleft',legend='P',cex=1.2,bty='n')
+par(mar=c(4,4,1.5,1))
+budgplotfig('K')
+legend('topleft',legend='K',cex=1.2,bty='n')
+title(xlab='Expected budget (fertilizer - harvest), Mg/ha')#,cex.lab=1.2)
+budgplotfig('Ca')
+legend('topleft',legend='Ca',cex=1.2,bty='n')
+dev.off()
+
+budgplotfig2=function(elmt,limfac=1.01){
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg20-datsub$sdchg20)*limfac
+  ymax=max(datsub$chg20+datsub$sdchg20)*limfac
+  
+  plot(chg20~budget,data=datsub,#type='n', 
+       xlab='',ylab='',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=1.2,
+       las=1)#,cex.axis=1.2)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+  segments(x0=datsub$minbudg,x1=datsub$maxbudg,y0=datsub$chg20,
+           lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  segments(x0=datsub$budget,y0=datsub$chg20-datsub$sdchg20,
+           y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
+  points(datsub$agbbudg,datsub$chg20,cex=1.2,col=3,pch=16)
+  segments(x0=datsub$minagbbudg,x1=datsub$maxagbbudg,y0=datsub$chg20,
+           lty=2,col=3,lwd=1.5)
+}
+
+# Supplemental figure to accompany?
+#dev.new(width=6,height=3,units='in')
+png('possible_supplmental_fig4.png',width=6,height=3,units='in',res=150)
+par(mfrow=c(1,2),mar=c(4,4,1,1))
+budgplotfig2('N',1.03)
+legend('bottomleft',legend='N',cex=1.2,adj=c(1,1),bty='n')
+title(ylab='Observed Δ stock to 20 cm, Mg/ha',cex.lab=.9)
+title(xlab='Expected budget, Mg/ha',cex.lab=.9)
+budgplotfig2('K',1.03)
+legend('bottomleft',legend='K',adj=c(1,1),cex=1.2,bty='n')
+legend('topleft',bty='n',col=c(1,3),adj=c(0,0),pch=16,cex=.8,
+       legend=c('Fertilizer - Harvest',
+                'Fertilizer - Harvest +\nInput from biomass change'))
+dev.off()
+
+par(mfrow=c(2,2),mar=c(1,4,4,1))
+budgplotfig2('N')
+legend('topleft',legend='N',cex=1.2,bty='n')
+title(ylab='Observed stock change to 20 cm, Mg/ha',cex.lab=1.2)
+budgplotfig2('P')
+legend('topleft',legend='P',cex=1.2,bty='n')
+legend('bottomleft',bty='n',cex=1.2,col=c(1,3),pch=16,#pch=c(16,1),
+       legend=c('Fertilizer - Harvest',
+                'Fertilizer - Harvest +\nInput from biomass change'))
+
+par(mar=c(4,4,1,1))
+budgplotfig2('K')
+legend('topleft',legend='K',cex=1.2,bty='n')
+title(xlab='Expected budget, Mg/ha',cex.lab=1.2)
+budgplotfig2('Ca')
+legend('topleft',legend='Ca',cex=1.2,bty='n')
+# too much
+
 
 ggplot(aes(x=budget,y=chg20,color=stand),data=stkchgs3)+
   facet_wrap(.~element)+
