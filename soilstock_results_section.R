@@ -2176,3 +2176,84 @@ yrdiffstockplot20_LU(tstock[tstock$element=='C'&tstock$stand %in%
                               unique(simple20_2$stand),])
 points(stock20_16~stock20_04,pch=16,col='white',
        data=tstock[tstock$element=='C'&tstock$stand %in% c('JP.E2','JP.N'),])
+
+yrdiffstockplot20_LU(tstock[tstock$element=='C',])
+points(stock20_16~stock20_04,pch=16,col='white',
+       data=tstock[tstock$element=='C'&tstock$stand %in% c('JP.E2','JP.N'),])
+points(stock20_16~stock20_04,pch=16,col='white',
+       data=tstock[tstock$element=='C'&tstock$stand %in% c('It.E1','It.N'),])
+points(stock20_16~stock20_04,pch=16,col='white',
+       data=tstock[tstock$element=='C'&tstock$stand %in% c('Eu.E2','Eu.N'),])
+
+# Alternative Figure 3, showing pairs
+
+yrdiffstockplot20_LUpr=function(sub_ttests,label=T,fulllegend=F){
+  #par(mar=c(5,5,2,2))
+  par(mar=c(4,4,.5,.5))
+  palette(c('darkgoldenrod1','blue3','springgreen'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  sub_ttests$biome=factor(sub_ttests$biome,levels=c('Cer','AF'))
+  plot(stock20_16~stock20_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05))
+  abline(0,1)
+  if(label==T){legend('topleft',bty='n',#cex=1.8,
+                      legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
+                                   sep=' '))}
+  # Replace std devs by std errors
+  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-sub_ttests$sd20_16/sqrt(3),
+           sub_ttests$stock20_04,sub_ttests$stock20_16+sub_ttests$sd20_16/sqrt(3),
+           col='gray60',lwd=2)
+  segments(sub_ttests$stock20_04-sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           sub_ttests$stock20_04+sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           col='gray60',lwd=2)
+  points(stock20_16~stock20_04,data=sub_ttests[sub_ttests$biome=='AF',],
+         col=LU,pch=as.numeric(site)+19,cex=2,bg=LU)
+  points(stock20_16~stock20_04,data=sub_ttests[sub_ttests$biome=='Cer',],
+         col='black',pch=as.numeric(site)+19,cex=2,bg=LU)
+  # Differentiate paired from unpaired sites
+  points(stock20_16~stock20_04,pch=16,col='white',
+         data=sub_ttests[sub_ttests$stand %in% c('JP.E2','JP.N',
+                                                 'It.E1','It.N',
+                                                 'Eu.E2','Eu.N'),])
+  if(fulllegend==T){legend('bottomright',
+                           fill=c(NA,NA,NA,'springgreen','springgreen'),bty='n',
+                           lty=c(1,1,1,NA,NA),lwd=c(2,2,2,NA,NA),
+                           seg.len=1,
+                           col=c('blue3','springgreen','darkgoldenrod1',
+                                 NA,NA),
+                           border=c(NA,NA,NA,'springgreen','black'),
+                           legend=c('Eucalyptus','Native vegetation','Pasture',
+                                    'Atlantic Forest','Cerrado'))}
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
+png('fig_s3_pairs.png',height=6,width=9,units='in',res=300)
+par(mfrow=c(2,3))
+yrdiffstockplot20_LUpr(tstock[tstock$element=='C',],fulllegend = T)
+legend('bottomright',bty='n',legend='a',cex=1.5)
+yrdiffstockplot20_LUpr(tstock[tstock$element=='N',],fulllegend = F)
+legend('bottom')
+legend('bottomright',bty='n',legend='b',cex=1.5)
+yrdiffstockplot20_LUpr(tstock[tstock$element=='K' &
+                                   tstock$site!='Bp',],fulllegend = F)
+legend('bottomright',bty='n',legend='c',cex=1.5)
+
+yrdiffstockplot20_LUpr(tstock[tstock$element=='P2',],label=F,fulllegend = F)
+legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='d',cex=1.5)
+
+yrdiffstockplot20_LUpr(tstock[tstock$element=='Ca2',],label=F,fulllegend = F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='e',cex=1.5)
+
+yrdiffstockplot20_LUpr(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='f',cex=1.5)
+par(mfrow=c(1,1))
+dev.off()
