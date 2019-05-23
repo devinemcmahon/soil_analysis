@@ -12,6 +12,12 @@ clay = data.frame(stand=c('EuA','EuB','BO','Vg',
 summary(clay$pct5)
 summary(clay$pct80)
 
+standnums=data.frame(stand=c('Bp.E1','Bp.E2','JP.E1','JP.P','JP.E2','JP.N',
+                             'It.E1','It.N','It.E2','BO.E','BO.P','Vg.E',
+                             'Vg.N','Eu.E1','Eu.E2','Eu.N'),
+                     num=c(1,2,3,3,4,4,5,5,6,7,7,8,8,9,10,10))
+dats=merge(dats,standnums,by='stand')
+
 # Figure S2
 # Highlighting the scale of the spatial heterogeneity in Bps
 xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
@@ -1149,7 +1155,6 @@ legend('topleft',legend='Potassium',cex=1.5,bty='n')
 dev.off()
 
 # New Figure 4?
-
 budgplotfig=function(elmt,limfac=1.01){
   datsub=stkchgs[stkchgs$element==elmt,]
   xmin=min(datsub$minbudg)*limfac
@@ -1171,6 +1176,31 @@ budgplotfig=function(elmt,limfac=1.01){
            y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
 }
 
+stkchgs=merge(stkchgs,standnums,by='stand')
+budgplotfignum=function(elmt,limfac=1.01){
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg20-datsub$sdchg20)*limfac
+  ymax=max(datsub$chg20+datsub$sdchg20)*limfac
+  
+  plot(chg20~budget,data=datsub,type='n', 
+       xlab='',ylab='',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=1.5,
+       las=1)#,cex.axis=1.2)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+  segments(x0=datsub$minbudg,x1=datsub$maxbudg,y0=datsub$chg20,
+           lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  segments(x0=datsub$budget,y0=datsub$chg20-datsub$sdchg20,
+           y1=datsub$chg20+datsub$sdchg20,lwd=1.5)#,
+  text(datsub$budget,datsub$chg20,labels=datsub$num,cex=1.5)
+  text(datsub$agbbudg,datsub$chg20,cex=1.5,col=3,labels=datsub$num)
+  segments(x0=datsub$minagbbudg,x1=datsub$maxagbbudg,y0=datsub$chg20,
+           lty=2,col=3,lwd=1.5)
+}
 
 #dev.new(width=6,height=6,units='in',res=72)
 png('possible_fig4.png',width=6.5,height=6.5,units='in',res=150)
@@ -1186,6 +1216,22 @@ budgplotfig('K')
 legend('topleft',legend='K',cex=1.2,bty='n')
 title(xlab='Expected budget (fertilizer - harvest), Mg/ha')#,cex.lab=1.2)
 budgplotfig('Ca')
+legend('topleft',legend='Ca',cex=1.2,bty='n')
+dev.off()
+
+png('possible_fig4_nums2.png',width=6.5,height=6.5,units='in',res=150)
+
+par(mfrow=c(2,2),mar=c(1.5,4,4,1))
+budgplotfignum('N')
+legend('topleft',legend='N',cex=1.2,bty='n') 
+title(ylab='Observed Δ stock to 20 cm, Mg/ha')#,cex.lab=1.2)
+budgplotfignum('P')
+legend('topleft',legend='P',cex=1.2,bty='n')
+par(mar=c(4,4,1.5,1))
+budgplotfignum('K')
+legend('topleft',legend='K',cex=1.2,bty='n')
+title(xlab='Expected budget (fertilizer - harvest), Mg/ha')#,cex.lab=1.2)
+budgplotfignum('Ca')
 legend('topleft',legend='Ca',cex=1.2,bty='n')
 dev.off()
 
@@ -1245,6 +1291,32 @@ title(xlab='Expected budget, Mg/ha',cex.lab=1.2)
 budgplotfig2('Ca')
 legend('topleft',legend='Ca',cex=1.2,bty='n')
 # too much
+
+budgplotfignum100=function(elmt,limfac=1.01){
+  datsub=stkchgs[stkchgs$element==elmt,]
+  xmin=min(datsub$minbudg)*limfac
+  xmax=max(datsub$maxbudg)*limfac
+  ymin=min(datsub$chg100-datsub$sdchg100)*limfac
+  ymax=max(datsub$chg100+datsub$sdchg100)*limfac
+  
+  plot(chg100~budget,data=datsub,type='n', 
+       xlab='',ylab='',
+       xlim=c(xmin,xmax),ylim=c(ymin,ymax),pch=16,cex=1.5,
+       las=1)#,cex.axis=1.2)
+  abline(h=0,lty=3)
+  abline(v=0,lty=3)
+  abline(0,1)
+  segments(x0=datsub$minbudg,x1=datsub$maxbudg,y0=datsub$chg100,
+           lwd=1.5)#,
+  #col=as.numeric(as.factor(datsub$element))*2)
+  segments(x0=datsub$budget,y0=datsub$chg100-datsub$sdchg100,
+           y1=datsub$chg100+datsub$sdchg100,lwd=1.5)#,
+  text(datsub$budget,datsub$chg100,labels=datsub$num,cex=1.5)
+  text(datsub$agbbudg,datsub$chg100,cex=1.5,col=3,labels=datsub$num)
+  segments(x0=datsub$minagbbudg,x1=datsub$maxagbbudg,y0=datsub$chg100,
+           lty=2,col=3,lwd=1.5)
+}
+
 
 
 ggplot(aes(x=budget,y=chg20,color=stand),data=stkchgs3)+
@@ -2185,7 +2257,54 @@ points(stock20_16~stock20_04,pch=16,col='white',
 points(stock20_16~stock20_04,pch=16,col='white',
        data=tstock[tstock$element=='C'&tstock$stand %in% c('Eu.E2','Eu.N'),])
 
-# Alternative Figure 3, showing pairs
+# Alternate Figure 3
+# show the different site pairing? Not working well.
+mr22=mr2[mr2$depth=='0-20',]
+mr22$site2=factor(mr22$site2,levels = c('Eu','Vg','It','JP2','BO','JP'))
+mr22=mr22[order(mr22$site2),]
+ggplot(data=mr22, aes(x=site2, y=chgln,#shape=depth,
+                     shape=LUlongish,colour=LUlongish))+
+  scale_x_discrete()+
+  #scale_colour_manual(values=c('blue3','springgreen','darkgoldenrod1'),
+  scale_colour_manual(values=c('#000000','#0072B2','#e79f00'),
+                      name='Vegetation type',
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_point(size=2.5)+#, position=position_dodge2(.8))+
+  #geom_pointrange(aes(x=depth,y=chglnmn,colour=LUlongish,ymax=chglnmax,
+  #                    ymin=chglnmin),
+  #                data=distinct(mr2,LUlongish,element,depth,.keep_all=T),
+  #                shape=18,show.legend = F,position=position_dodge2(.8))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Percent change in stock',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  labs(y='ln(stock in 2016 / stock in 2004)', x="Depth (cm)") +
+  guides(colour=guide_legend(),shape=F)+
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(colour='grey80'),
+        legend.key=element_blank(),
+        legend.title=element_text(size=10))+ 
+  geom_text(mapping = aes( y=maxchgln*1.15*!is.na(sigveg),#x=LUlongish,
+                           x=depth,#colour=LUlongish,
+                           label = sigveg),
+            size=6,na.rm=T,show.legend=F,colour='black',
+            position=position_dodge2(.8))+
+  geom_text(mapping = aes(y=(maxchgln)*1.15*!is.na(sigyr),#x=LUlongish, 
+                          x=depth,#colour=LUlongish,
+                          label = sigyr),
+            size=5,na.rm=T,show.legend=F, colour='black',
+            position=position_dodge2(.8))
+
+# Alternative Figure S3, showing pairs
 
 yrdiffstockplot20_LUpr=function(sub_ttests,label=T,fulllegend=F){
   #par(mar=c(5,5,2,2))
@@ -2214,25 +2333,34 @@ yrdiffstockplot20_LUpr=function(sub_ttests,label=T,fulllegend=F){
            col='gray60',lwd=2)
   points(stock20_16~stock20_04,data=sub_ttests[sub_ttests$biome=='AF',],
          col=LU,pch=as.numeric(site)+19,cex=2,bg=LU)
+  points(stock20_16~stock20_04,pch=16,col='white',
+         data=sub_ttests[sub_ttests$stand %in% c('Eu.E2','Eu.N'),])
   points(stock20_16~stock20_04,data=sub_ttests[sub_ttests$biome=='Cer',],
          col='black',pch=as.numeric(site)+19,cex=2,bg=LU)
   # Differentiate paired from unpaired sites
   points(stock20_16~stock20_04,pch=16,col='white',
          data=sub_ttests[sub_ttests$stand %in% c('JP.E2','JP.N',
-                                                 'It.E1','It.N',
-                                                 'Eu.E2','Eu.N'),])
+                                                 'It.E1','It.N'),])
   if(fulllegend==T){legend('bottomright',
-                           fill=c(NA,NA,NA,'springgreen','springgreen'),bty='n',
-                           lty=c(1,1,1,NA,NA),lwd=c(2,2,2,NA,NA),
-                           seg.len=1,
-                           col=c('blue3','springgreen','darkgoldenrod1',
-                                 NA,NA),
-                           border=c(NA,NA,NA,'springgreen','black'),
+                           fill=c('blue3','springgreen','darkgoldenrod1',
+                                  'springgreen','springgreen'),bty='n',
+                           border=c(rep('white',3),'springgreen','black'),
                            legend=c('Eucalyptus','Native vegetation','Pasture',
                                     'Atlantic Forest','Cerrado'))}
   palette('default')
   par(mar=c(4,4,2,2))
 }
+
+legend('bottomright',
+       fill=c(NA,NA,NA,'springgreen','springgreen'),bty='n',
+       lty=c(1,1,1,NA,NA),lwd=c(2,2,2,NA,NA),
+       seg.len=1,
+       col=c('blue3','springgreen','darkgoldenrod1',
+             NA,NA),
+       border=c(NA,NA,NA,'springgreen','black'),
+       legend=c('Eucalyptus','Native vegetation','Pasture',
+                'Atlantic Forest','Cerrado'))
+
 png('fig_s3_pairs.png',height=6,width=9,units='in',res=300)
 par(mfrow=c(2,3))
 yrdiffstockplot20_LUpr(tstock[tstock$element=='C',],fulllegend = T)
@@ -2253,6 +2381,65 @@ legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='e',cex=1.5)
 
 yrdiffstockplot20_LUpr(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='f',cex=1.5)
+par(mfrow=c(1,1))
+dev.off()
+
+tstock=merge(tstock,standnums,by='stand')
+yrdiffstockplot20_LUnum=function(sub_ttests,label=T){
+  #par(mar=c(5,5,2,2))
+  par(mar=c(4,4,.5,.5))
+  #palette(c('darkgoldenrod1','blue3','springgreen'))
+  palette(c('#e79f00','#000000','#0072B2'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  sub_ttests$biome=factor(sub_ttests$biome,levels=c('Cer','AF'))
+  plot(stock20_16~stock20_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05))
+  abline(0,1)
+  if(label==T){legend('topleft',bty='n',#cex=1.8,
+                      legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
+                                   sep=' '))}
+  # Replace std devs by std errors
+  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-sub_ttests$sd20_16/sqrt(3),
+           sub_ttests$stock20_04,sub_ttests$stock20_16+sub_ttests$sd20_16/sqrt(3),
+           col='gray60',lwd=1.5)
+  segments(sub_ttests$stock20_04-sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           sub_ttests$stock20_04+sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           col='gray60',lwd=1.5)
+  text(sub_ttests$stock20_04,sub_ttests$stock20_16,
+         col=as.numeric(sub_ttests$LU),labels=sub_ttests$num,cex=1.8)
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
+
+png('fig_s3_nums2.png',height=6,width=9,units='in',res=300)
+par(mfrow=c(2,3))
+yrdiffstockplot20_LUnum(tstock[tstock$element=='C',])
+legend('bottomright',fill=c('#000000','#0072B2','#e79f00'),bty='n',
+    border='white',legend=c('Eucalyptus','Native vegetation','Pasture'))
+legend('bottomright',bty='n',legend='a',cex=1.5)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='N',])
+legend('bottomright',bty='n',legend='b',cex=1.5)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='K' &
+                                tstock$site!='Bp',])
+legend('bottomright',bty='n',legend='c',cex=1.5)
+
+yrdiffstockplot20_LUnum(tstock[tstock$element=='P2',],label=F)
+legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='d',cex=1.5)
+
+yrdiffstockplot20_LUnum(tstock[tstock$element=='Ca2',],label=F)
+legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
+legend('bottomright',bty='n',legend='e',cex=1.5)
+
+yrdiffstockplot20_LUnum(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='f',cex=1.5)
 par(mfrow=c(1,1))

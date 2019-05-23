@@ -929,9 +929,11 @@ mr2$chgln[mr2$site2=='JP2'&mr2$depth=='0-100']=NA
 mr2$chgln[mr2$site2=='It'&mr2$depth=='0-100']=NA
 mr2=group_by(mr2,element,LU,depth) %>%
   mutate(chglnmn = mean(chgln,na.rm=T),chglnmax=max(chgln,na.rm=T),
-         chglnmin=min(chgln,na.rm=T), newnobs=n())
+         chglnmin=min(chgln,na.rm=T), newnobs=n(),
+         chglnse=sd(chgln,na.rm=T)/sqrt(newnobs-1)) #added 5-23-19
 mr2=group_by(mr2,element) %>%
-  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T))
+  mutate(maxchgln=max(chgln,na.rm=T),minchgln=min(chgln,na.rm=T),
+         maxse=max(chglnmn+chglnse,minse=min(chglnmn-chglnse)))
 
 mr2=mutate(mr2,sigyr=rep(NA),sigveg=rep(NA))
 #mr2$sigyr[mr2$depth=='0-20'& mr2$element=='C' & mr2$LU=='E']='+'
@@ -1034,6 +1036,49 @@ ggplot(data=mr2, aes(x=depth, y=chgln,#shape=depth,
             position=position_dodge(.8))
 dev.off()
 # or just export the png from the screen with dimensions of 600x600?
+
+# Simple version, with +/- 1 SE instead of points
+png('fig3_soil_new.png',res=150,height=6,width=6,units='in')
+ggplot(data=distinct(mr2,LUlongish,element,depth,.keep_all=T),
+       aes(x=depth, y=chgln,colour=LUlongish))+
+  scale_x_discrete()+
+  scale_colour_manual(values=c('#000000','#0072B2','#e79f00'),
+                      name='Vegetation type',
+                      labels=c('Eucalyptus','Native vegetation',
+                               'Pasture'))+
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_pointrange(aes(x=depth,y=chglnmn,colour=LUlongish,ymax=chglnmn+chglnse,
+                      ymin=chglnmn-chglnse),
+                  shape=18,show.legend = T,position=position_dodge2(.8))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Percent change in stock',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  labs(y='ln(stock in 2016 / stock in 2004)', x="Depth (cm)") +
+  guides(colour=guide_legend(),shape=F)+
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_rect(fill='grey80',size=.7),
+        legend.position=c(0.9,0.2),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(colour='grey80'),
+        legend.key=element_blank(),
+        legend.title=element_text(size=10))+ 
+  geom_text(mapping = aes( y=maxse*1.15*!is.na(sigveg),#x=LUlongish,
+                           x=depth,colour=LUlongish,
+                           label = sigveg),
+            size=6,na.rm=T,show.legend=F,#colour='black',
+            position=position_dodge2(.8))+
+  geom_text(mapping = aes(y=(maxse)*1.15*!is.na(sigyr),#x=LUlongish, 
+                          x=depth,colour=LUlongish,
+                          label = sigyr),
+            size=5,na.rm=T,show.legend=F, #colour='black',
+            position=position_dodge2(.8))
+dev.off()
+
 
 # Big simple version
 #mr2sub=mr2[mr2$element %in% c('C','N','Ca'),]
