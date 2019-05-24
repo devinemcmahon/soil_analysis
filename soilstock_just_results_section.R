@@ -3,6 +3,12 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
+# reviewer 2 requested table of concentrations
+concsum=group_by(dats4[dats4$element %in% c('C','N','P2','K','Ca2'),],
+                 element,LU,depth) %>%
+  summarise(minval=min(value,na.rm=T),maxval=max(value,na.rm=T),
+            meanval=mean(value,na.rm=T),medval=median(value,na.rm=T))
+
 # clay content 0-10 cm
 clay = data.frame(stand=c('EuA','EuB','BO','Vg',
                           'BpA','BpB','ItA','ItB',
