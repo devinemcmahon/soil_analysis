@@ -18,6 +18,59 @@ standnums=data.frame(stand=c('Bp.E1','Bp.E2','JP.E1','JP.P','JP.E2','JP.N',
                      num=c(1,2,3,3,4,4,5,5,6,7,7,8,8,9,10,10))
 dats=merge(dats,standnums,by='stand')
 
+clay2 = data.frame(stand=c('Eu.E2','Eu.E1','Eu.N','BO.E','BO.P', 
+                           'Vg.E','Vg.N','Bp.E1','Bp.E2',#not sure which Bp is which
+                           'It.E1','It.E2','It.N',
+                           'JP.E1','JP.E2','JP.N','JP.P'),
+                   clay5=c(15,18,12,58,61,
+                           74,57, 85,88,
+                           77,65,74, 15,16,7,17),
+                   clay80=c(35,41,41,72,71,
+                            74,58, 77,87,
+                            79,74,76, 18,22,8,20))
+dats2deps=merge(dats2deps,clay2,by='stand')
+stkchgs=merge(stkchgs,clay2,by='stand')
+
+plot(stock20~clay5,data=dats2deps)
+
+plot(chg20~clay5,data=stkchgs)
+
+euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
+test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
+euc2deps2=droplevels(test2deps[test2deps$LU=='E',])
+
+eucC20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
+summary(eucC20bmc.lme) # increase in Cerrado only
+# clay p=0.05
+# with intrxn term, smaller change with more clay
+qqr(eucC20bmc.lme) 
+eucN20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+                 data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
+summary(eucN20bmc.lme) # no change; clay affects stock but not change in stock?
+qqr(eucN20bmc.lme) 
+
+eucK20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='K' & 
+                                  euc2deps$site!='Bp',],na.action = na.omit)
+summary(eucK20bmc.lme) # no clay effect
+qqr(eucK20bmc.lme) 
+
+eucP20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='P2',],na.action = na.omit)
+summary(eucP20bmc.lme) # greater P increase/smaller loss with more clay
+qqr(eucP20bmc.lme) # not very good
+
+eucCa20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+                  data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
+summary(eucCa20bmc.lme) 
+qqr(eucCa20bmc.lme) # a little less Ca with more clay at p=0.05; no year intrxn
+
+
+# New BD summary
+distinct(dats2deps,stand,.keep_all = T)$BD20
+distinct(dats2deps,stand,.keep_all = T)$stand
+
 # Figure S2
 # Highlighting the scale of the spatial heterogeneity in Bps
 xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
