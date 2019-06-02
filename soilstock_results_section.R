@@ -3,6 +3,15 @@
 #setwd('C:\\Users\\Devin\\Documents\\Soil data')
 source('soil_data_reader.R')
 
+# summary of BD
+data.frame(stand=shorttstk$stand[shorttstk$element=='C'&
+                                   shorttstk$LU=='E'],
+           BD=shorttstk$BD20_16[shorttstk$element=='C'&
+                    shorttstk$LU=='E'])
+
+
+
+
 # clay content 0-10 cm
 clay = data.frame(stand=c('EuA','EuB','BO','Vg',
                           'BpA','BpB','ItA','ItB',
@@ -25,51 +34,63 @@ clay2 = data.frame(stand=c('Eu.E2','Eu.E1','Eu.N','BO.E','BO.P',
                    clay5=c(15,18,12,58,61,
                            74,57, 85,88,
                            77,65,74, 15,16,7,17),
+                   clay15=c(16,21,14,61,61,
+                           64,70, 78,88,
+                           75,67,71, 16,18,6,17),
                    clay80=c(35,41,41,72,71,
                             74,58, 77,87,
                             79,74,76, 18,22,8,20))
+clay2=mutate(clay2,clay20=(clay5+clay15)/2)
+clay2$clay20
 dats2deps=merge(dats2deps,clay2,by='stand')
 stkchgs=merge(stkchgs,clay2,by='stand')
 
-plot(stock20~clay5,data=dats2deps)
+plot(stock20~clay20,data=dats2deps)
 
-plot(chg20~clay5,data=stkchgs)
+plot(chg20~clay20,data=stkchgs)
 
 euc2deps=droplevels(dats2deps[dats2deps$LU=='E',])
 test2deps=dats2deps[-which(dats2deps$stand %in% c('It.E1','It.N')),]
 euc2deps2=droplevels(test2deps[test2deps$LU=='E',])
 
-eucC20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+eucC20bmc.lme=lme(log(stock20)~year*biome+year*clay20,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='C',],na.action = na.omit)
 summary(eucC20bmc.lme) # increase in Cerrado only
 # clay p=0.05
 # with intrxn term, smaller change with more clay
 qqr(eucC20bmc.lme) 
-eucN20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+eucN20bmc.lme=lme(log(stock20)~year*biome+year*clay20,random=~1|site/stand,
                  data=euc2deps[euc2deps$element=='N',],na.action = na.omit)
 summary(eucN20bmc.lme) # no change; clay affects stock but not change in stock?
 qqr(eucN20bmc.lme) 
 
-eucK20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+eucK20bmc.lme=lme(log(stock20)~year*biome+year*clay20,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='K' & 
                                   euc2deps$site!='Bp',],na.action = na.omit)
 summary(eucK20bmc.lme) # no clay effect
 qqr(eucK20bmc.lme) 
 
-eucP20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+eucP20bmc.lme=lme(log(stock20)~year*biome+year*clay20,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='P2',],na.action = na.omit)
 summary(eucP20bmc.lme) # greater P increase/smaller loss with more clay
 qqr(eucP20bmc.lme) # not very good
 
-eucCa20bmc.lme=lme(log(stock20)~year*biome+year*clay5,random=~1|site/stand,
+eucCa20bmc.lme=lme(log(stock20)~year*biome+year*clay20,random=~1|site/stand,
                   data=euc2deps[euc2deps$element=='Ca2',],na.action = na.omit)
 summary(eucCa20bmc.lme) 
-qqr(eucCa20bmc.lme) # a little less Ca with more clay at p=0.05; no year intrxn
+qqr(eucCa20bmc.lme) # a little less Ca with more clay at p=0.06; no year intrxn
 
 
-# New BD summary
-distinct(dats2deps,stand,.keep_all = T)$BD20
-distinct(dats2deps,stand,.keep_all = T)$stand
+# New BD summary # no nvm
+unique(dats2deps$BD20[dats2deps$year=='16'])
+unique(dats2deps$stand[dats2deps$year=='16'&is.na(dats2deps$BD20)])
+data.frame(stand=distinct(ungroup(dats2deps[dats2deps$year=='16',]),
+                          stand,.keep_all = T)$stand,
+           BD=distinct(ungroup(dats2deps[dats2deps$year=='16',]),
+                       stand,.keep_all = T)$BD20)
+distinct(ungroup(dats2deps),BD20,.keep_all = T)$stand
+
+
 
 # Figure S2
 # Highlighting the scale of the spatial heterogeneity in Bps
@@ -1314,17 +1335,19 @@ budgplotfig2=function(elmt,limfac=1.01){
 
 # Supplemental figure to accompany?
 #dev.new(width=6,height=3,units='in')
-png('possible_supplmental_fig4.png',width=6,height=3,units='in',res=150)
+#png('possible_supplmental_fig4.png',width=6,height=3,units='in',res=150)
+png('supplemental_fig5.png',width=6,height=3,units='in',res=150)
 par(mfrow=c(1,2),mar=c(4,4,1,1))
-budgplotfig2('N',1.03)
+budgplotfig2('N',1.05)
 legend('bottomleft',legend='N',cex=1.2,adj=c(1,1),bty='n')
 title(ylab='Observed Δ stock to 20 cm, Mg/ha',cex.lab=.9)
 title(xlab='Expected budget, Mg/ha',cex.lab=.9)
-budgplotfig2('K',1.03)
+budgplotfig2('K',1.05)
 legend('bottomleft',legend='K',adj=c(1,1),cex=1.2,bty='n')
-legend('topleft',bty='n',col=c(1,3),adj=c(0,0),pch=16,cex=.8,
-       legend=c('Fertilizer - Harvest',
-                'Fertilizer - Harvest +\nInput from biomass change'))
+legend('topleft',bty='n',adj=c(0,0.3),col=c(1,3),pch=16,
+       lty=1,lwd=1.5,seg.len=1,cex=.7,
+       legend=c('Fertilizer - harvest',
+                'Fertilizer - harvest +\ninput from Δ biomass'))
 dev.off()
 
 par(mfrow=c(2,2),mar=c(1,4,4,1))
@@ -1345,8 +1368,8 @@ budgplotfig2('Ca')
 legend('topleft',legend='Ca',cex=1.2,bty='n')
 # too much
 
-budgplotfignum100=function(elmt,limfac=1.01){
-  datsub=stkchgs[stkchgs$element==elmt,]
+budgplotfignum100=function(elmt,limfac=1.03){
+  datsub=stkchgs[stkchgs$element==elmt & stkchgs$stand!='It.E1',]
   xmin=min(datsub$minbudg)*limfac
   xmax=max(datsub$maxbudg)*limfac
   ymin=min(datsub$chg100-datsub$sdchg100)*limfac
@@ -1369,6 +1392,25 @@ budgplotfignum100=function(elmt,limfac=1.01){
   segments(x0=datsub$minagbbudg,x1=datsub$maxagbbudg,y0=datsub$chg100,
            lty=2,col=3,lwd=1.5)
 }
+png('fig4_nums_dep100.png',width=6.5,height=6.5,units='in',res=150)
+
+par(mfrow=c(2,2),mar=c(1.5,4,4,1))
+budgplotfignum100('N')
+legend('topleft',legend='N',cex=1.2,bty='n') 
+title(ylab='Observed Δ stock to 100 cm, Mg/ha')#,cex.lab=1.2)
+budgplotfignum100('P')
+legend('topleft',legend='P',cex=1.2,bty='n')
+
+par(mar=c(4,4,1.5,1))
+budgplotfignum100('K')
+legend('topleft',legend='K',cex=1.2,bty='n')
+title(xlab='Expected budget, Mg/ha')#,cex.lab=1.2)
+budgplotfignum100('Ca')
+legend('topleft',legend='Ca',cex=1.2,bty='n')
+legend('bottomright',bty='n',cex=0.9,col=c(1,3),pch=16,#pch=c(16,1),
+       legend=c('Fertilizer - Harvest',
+                'Fertilizer - Harvest +\nInput from Δ biomass'))
+dev.off()
 
 
 
