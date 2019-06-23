@@ -10,46 +10,102 @@ concsum=group_by(dats4[dats4$element %in% c('C','N','P2','K','Ca2'),],
             meanval=mean(value,na.rm=T),medval=median(value,na.rm=T))
 #write.csv(concsum,'conc_by_depth.csv')
 
-# clay content 0-10 cm
-clay = data.frame(stand=c('EuA','EuB','BO','Vg',
-                          'BpA','BpB','ItA','ItB',
-                          'JPA','JPB'),
-                  pct5=c(15,18,58,74,85,88,77,65,15,16),
-                  pct80=c(35,41,72,74,77,87,79,74,18,22))
-summary(clay$pct5)
-summary(clay$pct80)
+standnums=data.frame(stand=c('Bp.E1','Bp.E2','JP.E1','JP.P','JP.E2','JP.N',
+                             'It.E1','It.N','It.E2','BO.E','BO.P','Vg.E',
+                             'Vg.N','Eu.E1','Eu.E2','Eu.N'),
+                     num=c(1,2,3,3,4,4,5,5,6,7,7,8,8,9,10,10))
+dats=merge(dats,standnums,by='stand')
 
-# Figure S2
-# Highlighting the scale of the spatial heterogeneity in Bps
-xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
-       data=dats[dats$element=='K' & dats$site=='Bp',],
-       ylim=c(90,0),xlab='K (g / kg)',as.table=T)
-
+clay2 = data.frame(stand=c('Eu.E2','Eu.E1','Eu.N','BO.E','BO.P', 
+                           'Vg.E','Vg.N','Bp.E1','Bp.E2',#not sure which Bp is which
+                           'It.E1','It.E2','It.N',
+                           'JP.E1','JP.E2','JP.N','JP.P'),
+                   clay5=c(15,18,12,58,61,
+                           74,57, 85,88,
+                           77,65,74, 15,16,7,17),
+                   clay15=c(16,21,14,61,61,
+                            64,70, 78,88,
+                            75,67,71, 16,18,6,17),
+                   clay80=c(35,41,41,72,71,
+                            74,58, 77,87,
+                            79,74,76, 18,22,8,20))
+clay2=mutate(clay2,clay20=(clay5+clay15)/2)
+clay2$clay20
 
 # Figure S3
+# Highlighting the scale of the spatial heterogeneity in Bps
+png('fig_s3_was_s2.png',res=100,height=5,width=6,units='in')
+ggplot(data=dats[dats$element=='K' & dats$site=='Bp',],
+       aes(x=value/1000,y=depth, color=as.factor(rep)))+
+  geom_point(shape=16,size=2.5,show.legend=F)+ 
+  scale_y_reverse()+
+  facet_wrap(year~stand)+
+  theme(panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank())+
+  labs(y='Depth (cm)',x='Soil K (g/kg)')+
+  scale_color_brewer(palette='Dark2')
+dev.off()
+
+# Figure S4
 #########
-png('fig_s3.png',height=6,width=9,units='in',res=300)
+tstock=merge(tstock,standnums,by='stand')
+yrdiffstockplot20_LUnum=function(sub_ttests,label=T){
+  #par(mar=c(5,5,2,2))
+  par(mar=c(4,4,.5,.5))
+  #palette(c('darkgoldenrod1','blue3','springgreen'))
+  palette(c('#e79f00','#000000','#0072B2'))
+  sub_ttests$LU=factor(sub_ttests$LU,levels=c('P','E','N'))
+  sub_ttests$site=factor(sub_ttests$site,
+                         levels=c('BO','Bp','It','JP','Eu','Vg'))
+  sub_ttests$biome=factor(sub_ttests$biome,levels=c('Cer','AF'))
+  plot(stock20_16~stock20_04,data=sub_ttests,type='n',las=1,
+       xlab='2004',ylab='2016',#cex.lab=1.6,cex.axis=1.5,
+       xlim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05),
+       ylim=c(min(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*.9,
+              max(c(sub_ttests$stock20_04,sub_ttests$stock20_16),na.rm=T)*1.05))
+  abline(0,1)
+  if(label==T){legend('topleft',bty='n',#cex=1.8,
+                      legend=paste(unique(sub_ttests$element),'(Mg / ha)\n0-20 cm',
+                                   sep=' '))}
+  # Replace std devs by std errors
+  segments(sub_ttests$stock20_04,sub_ttests$stock20_16-sub_ttests$sd20_16/sqrt(3),
+           sub_ttests$stock20_04,sub_ttests$stock20_16+sub_ttests$sd20_16/sqrt(3),
+           col='gray60',lwd=1.5)
+  segments(sub_ttests$stock20_04-sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           sub_ttests$stock20_04+sub_ttests$sd20_04/sqrt(3),sub_ttests$stock20_16,
+           col='gray60',lwd=1.5)
+  text(sub_ttests$stock20_04,sub_ttests$stock20_16,
+       col=as.numeric(sub_ttests$LU),labels=sub_ttests$num,cex=1.8)
+  palette('default')
+  par(mar=c(4,4,2,2))
+}
+
+#png('fig_s3_nums2.png',height=6,width=9,units='in',res=300)
 par(mfrow=c(2,3))
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='C',],fulllegend = F)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='C',])
+legend('bottomright',fill=c('#000000','#0072B2','#e79f00'),bty='n',
+       border='white',legend=c('Eucalyptus','Native vegetation','Pasture'))
 legend('bottomright',bty='n',legend='a',cex=1.5)
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='N',],fulllegend = T)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='N',])
 legend('bottomright',bty='n',legend='b',cex=1.5)
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='K' &
-                                   tstock$site!='Bp',],fulllegend = F)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='K' &
+                                 tstock$site!='Bp',])
 legend('bottomright',bty='n',legend='c',cex=1.5)
 
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='P2',],label=F,fulllegend = F)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='P2',],label=F)
 legend('topleft',bty='n',legend='P (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='d',cex=1.5)
 
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2',],label=F,fulllegend = F)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='Ca2',],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='e',cex=1.5)
 
-yrdiffstockplot20_bmLUall(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
+yrdiffstockplot20_LUnum(tstock[tstock$element=='Ca2' & tstock$stock20_16<1,],label=F)
 legend('topleft',bty='n',legend='Ca (Mg / ha)\n0-20 cm')
 legend('bottomright',bty='n',legend='f',cex=1.5)
 par(mfrow=c(1,1))
+
 dev.off()
 #########
 
@@ -366,6 +422,30 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
                     guide = guide_legend(reverse=TRUE,title=NULL))+
   geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
              shape=18,size=3,show.legend=F)
+
+# Portuguese
+labls_por <- c(AF = "Mata Atlântica", Cer = "Cerrado")
+
+png('fig2_por.png',height=6,width=6,units='in',res=500)
+ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
+  geom_bar(stat="identity") + 
+  facet_grid(element~biome,labeller = labeller(biome=labls_por)) + 
+  coord_flip() +
+  labs(y="Estoque (10 Mg/ha para C; Mg/ha para outros)",
+       x="Ano", fill="Profundidade") +
+  theme(strip.text.y = element_text(angle = 0),
+        legend.position=c(0.75,0.14),
+        panel.background = element_rect(fill='white'),
+        panel.grid.major.x = element_line(colour='grey80'),
+        panel.grid.major.y = element_blank()) +
+  geom_errorbar(aes(ymax=hibar,  ymin=lobar), width=0.15) +
+  scale_fill_manual(values=c('slategray','lightblue'),
+                    labels=c('20-100 cm','0-20 cm'),
+                    guide = guide_legend(reverse=TRUE,title=NULL))+
+  geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
+             shape=18,size=3,show.legend=F)
+dev.off()
+
 
 shortE = shorttstk[shorttstk$LU=='E' &
                      shorttstk$stand!='It.E1',]
@@ -1194,14 +1274,6 @@ summary(Prat100simp.pql) # shallower under non-euc (if using P not P2), no chang
 # Figure S1
 ######## Row position and other heterogeneity things
 ##################
-Celt.lme=lme(log(value)~elt, random=~1|stand,
-             data=dats[dats$depth==5 & dats$year=='16' & dats$elt %in% c('E','L','T') &
-                         dats$element =='C',],na.action=na.omit)
-qqr(Celt.lme) # Nice (with log) 
-summary(Celt.lme) # L significantly less than E
-xyplot(value~as.numeric(elt)|stand,groups=rep,
-       data=dats[dats$depth==5&dats$element=='C'& dats$year=='16' &
-                   dats$elt %in% c('E','L','T'),],pch=19)
 eltdats=dats[dats$elt %in% c('E','L','T') & dats$LU=='E'&dats$year=='16',]
 eltdats=mutate(eltdats,eltlong=ifelse(elt=='E','Inter-',
                                       ifelse(elt=='L','Current','Previous')))
@@ -1303,23 +1375,4 @@ tapply(droplevels(stockcvs[stockcvs$element %in%
                              c('C','N','P2','Ca2','K','S','Zn')&
                              stockcvs$LU=='E',])$element,summary)
 
-# Budget vs stock # skip this; not sure where my prior numbers were from
-stkchgs=mutate(stkchgs,budgrat=budget/stk20_04,
-               chgrat=chg20/stk20_04,
-               agbrat=agbbudg/stk20_04) # divide units by 100 for N?
-tapply(stkchgs$budgrat,stkchgs$element,mean)
-tapply(stkchgs$chgrat,stkchgs$element,mean)
-tapply(stkchgs$agbrat,stkchgs$element,mean)
-summary(stkchgs$stk20_04[stkchgs$element=='N'])
-summary(stkchgs$budget[stkchgs$element=='N'])
 
-# How much of plant+soil is in plant?
-plot(AGB_04~I(stk20_04*1000),data=stkchgs3,col=element)
-abline(0,1)
-text(I(stkchgs3$stk20_04*1000),stkchgs3$AGB_04,label=stkchgs3$element,
-     col=as.numeric(stkchgs3$element))
-# way more N in soil than in plants
-# sometimes they're the same for Ca, K, even P
-# K in plant ~ 1/5 of the soil stock; P less
-text(I(stkchgs3$stk20_16*1000),stkchgs3$AGB_04,label=stkchgs3$element,
-     col=as.numeric(stkchgs3$element))
