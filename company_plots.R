@@ -168,6 +168,46 @@ mygg_eng=function(rockder,mysite){
 }
 #mygg_eng(F,'JP')
 
+mygg_2=function(rockder,mysite){
+  lmts=c('C','N')
+  if(rockder==T) lmts=c('K','P2','Ca2')
+  mysub=datsmnok2[datsmnok2$site==mysite & datsmnok2$element %in% lmts,]
+  mysub=mutate(mysub,element2=element)
+  mysub$element2[mysub$element=='Ca2']='Ca'
+  mysub$element2[mysub$element=='P2']='P'
+  if(rockder==T) mysub$element2=factor(mysub$element2,
+                                       levels=c('K','Ca','P'))
+  mysub=mysub[order(mysub$depth),]
+  myheight=length(unique(mysub$stand))*2
+  if(rockder==T) mywidth=6 else(mywidth=4)
+  if(rockder==T) anmethod='XRF' else(anmethod='EA')
+  myfilename=paste(mysite,anmethod,'_por.png',sep='')
+  ggplot(aes(x=depth,y=mn,colour=year),data=mysub)+
+    geom_line(aes(group=year),size=1.2)+
+    coord_flip()+
+    scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
+    facet_grid(standlong~element2,scales = 'free_x')+
+    theme(legend.position=c(0.85,0.1),
+          legend.background = element_blank(),
+          legend.key = element_blank(),
+          panel.background = element_rect(fill='white',colour='grey80'),
+          panel.grid.major.x = element_line(colour='grey80'),
+          panel.grid.major.y = element_line(colour='grey80'))+
+    labs(y=ifelse(rockder==T,'Concentração (mg elemento / kg solo)',
+                  'Concentração (g elemento / 100g solo)'),
+         x='Profundidade (cm)')+
+    geom_errorbar(aes(ymax=mn+I(sd/sqrt(ndepyr)),  ymin=mn-I(sd/sqrt(ndepyr))),
+                  width=0.2) +
+    scale_colour_discrete(labels=c('2004','2016'),
+                          guide = guide_legend(reverse=F,title=NULL))+
+    geom_text(aes(#y=mn+(I(sd/sqrt(ndepyr)))*1.1,
+      label=ifelse(pval<0.05 &year=='16','*','')),
+      colour='black',size=6,nudge_x=-1)
+  ggsave(myfilename,device=png(height=myheight,width=mywidth,units='in',res=150))
+  #dev.off()
+}
+mygg_2(F,'Vg')
+
 ggplot(aes(x=depth,y=mn,colour=year),data=datsmnok2[datsmnok2$site=='Vg'&
                                              datsmnok2$element %in%
                                              c('K','Ca2','P2'),])+
@@ -218,13 +258,38 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
 shortsum=shorttstk[shorttstk$element%in%
                      c('C','N','K','Ca','P','Al','Fe','Zr'),
           c('stand','LU','biome','site','element',
-            'stock20_04','stock20_16','sd20_04','sd20_16',
-            'stock100_04','stock100_16','sd100_04','sd100_16',
+            'stock20_04','sd20_04','stock20_16','sd20_16',
+            'stock100_04','sd100_04','stock100_16','sd100_16',
+            'BD20_04','BD100_04',
             'BD20_16','BD100_16','tstat20','pval20','tstat100','pval100')]
 View(shortsum)
-shortsumr=round(shortsum,2)
-#write.csv(shortsum,'allcos_stocksummaries.csv')
+#shortsumr=mutate_if(shortsum,is.numeric,function(x){round(x,2)})
+shortsumr=shortsum %>% mutate_at(c('stock20_04','sd20_04','stock20_16','sd20_16',
+                                    'stock100_04','sd100_04','stock100_16','sd100_16'),
+                                  function(x){if_else(shortsum$element %in% c('Al','Fe'), round(x,0),
+                                          if_else(shortsum$element %in% c('C','N'),round(x,1),
+                                          round(x,2)))})
 
+shortsumr$element=factor(shortsumr$element,levels=c('C','N','K','Ca','P',
+                                                    'Al','Fe','Zr'))
+shortsumr=shortsumr[order(shortsumr$element),]
+shortsumr=shortsumr[order(shortsumr$stand),]
+
+shortsumform=data.frame(stand=shortsumr$stand,element=shortsumr$element,
+                        stock20_04s=paste(as.character(shortsumr$stock20_04),' (',
+                                          as.character(shortsumr$sd20_04),')',sep=''),
+                        stock20_16s=paste(as.character(shortsumr$stock20_16),' (',
+                                          as.character(shortsumr$sd20_16),')',sep=''),
+                        stock100_04s=paste(as.character(shortsumr$stock100_04),' (',
+                                          as.character(shortsumr$sd100_04),')',sep=''),
+                        stock100_16s=paste(as.character(shortsumr$stock100_16),' (',
+                                          as.character(shortsumr$sd100_16),')',sep=''),
+                        star20=if_else(shortsumr$pval20<0.05,1,0),
+                        star100=if_else(shortsumr$pval100<0.05,1,0)
+)
+
+#write.csv(shortsum,'allcos_stocksummaries.csv')
+#write.csv(shortsumform,'allcos_stocksummaries_pretty.csv')
 
 stkchgs3=stkchgs[stkchgs$element!='Mg',]
 stkchgs3$element=factor(stkchgs3$element,levels=c('N','P','K','Ca'))
@@ -244,4 +309,19 @@ stkchgs$element[stkchgs$stand=='BO.E']
 stkchgs$sdchg20[stkchgs$stand=='BO.E']
 stkchgs$maxbudg[stkchgs$stand=='BO.E']
 stkchgs$minbudg[stkchgs$stand=='BO.E']
+
+BDsum=shorttstk[shorttstk$element=='C',
+                c('stand','BD20_04','BD20_16',
+                'BDsd20','BD100_04','BD100_16','BDsd100')]
+View(BDsum)
+#write.csv(BDsum, 'co_BD_summary.csv')
+
+
+View(nutstkd[nutstkd$LU=='E',])
+mean(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='04'])
+sd(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='04'])/
+  sqrt(sum(!is.na(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='04'])))
+mean(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='16'],na.rm=T)
+sd(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='16'],na.rm=T)/
+  sqrt(sum(!is.na(euc2deps$stock20[euc2deps$element=='C'&euc2deps$year=='16'])))
 
