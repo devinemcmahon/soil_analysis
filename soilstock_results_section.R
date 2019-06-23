@@ -98,7 +98,7 @@ xyplot(depth~value/1000|stand+year,groups=rep,type='p',ylab='Depth (cm)',
        data=dats[dats$element=='K' & dats$site=='Bp',],
        ylim=c(90,0),xlab='K (g / kg)',as.table=T)
 
-png('fig_s2.png',res=150,height=5,width=5,units='in')
+png('fig_s3_was_s2.png',res=100,height=5,width=6,units='in')
 ggplot(data=dats[dats$element=='K' & dats$site=='Bp',],
        aes(x=value/1000,y=depth, color=as.factor(rep)))+
   geom_point(shape=16,size=2.5,show.legend=F)+ 
