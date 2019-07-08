@@ -216,8 +216,11 @@ abdatsmnsig$element[abdatsmnsig$element=='P2']='P'
 abdatsmnsig$element=factor(abdatsmnsig$element,
                            levels=c('C','N','P','K','Ca'))
 
+png('TMabs.png',height=6,width=6,units='in',res=600)
+png('JPabs.png',height=6,width=6,units='in',res=600)
+png('Cr_abs.png',height=6,width=6,units='in',res=600)
 ggplot(aes(x=depth,y=mn,colour=LU),
-       data=abdatsmnsig[abdatsmnsig$site=='JP',])+
+       data=abdatsmnsig[abdatsmnsig$site=='Cr',])+
        #data=abdatsmn[abdatsmn$element %in% c('C','N','K','P','Ca')&#,])+
         #               abdatsmn$site=='JP',])+
   geom_line(aes(group=stand),size=1.2)+
@@ -241,7 +244,7 @@ ggplot(aes(x=depth,y=mn,colour=LU),
   geom_text(aes(y=maxval*1.1,
     label=ifelse(p.value<0.05 &LU=='N','*','')),
     colour='black',size=6,nudge_x=-1)
-
+dev.off()
 
 # English version
 ggplot(aes(x=depth,y=mn,colour=LU),data=abdatsmnsig)+

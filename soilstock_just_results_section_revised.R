@@ -400,12 +400,17 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
 dev.off()
 
 # Presentation version
+png('fig2_por_pres.png',height=6.45,width=6.04,units='in',res=500)
 ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
   geom_bar(stat="identity") + 
-  facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  facet_grid(element~biome,labeller = labeller(biome=labls_por)) + 
   coord_flip() +
-  labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
-       x="Year", fill="Depth") +
+  labs(y="Estoque (10 Mg/ha para C; Mg/ha para outros)",
+       x="Ano", fill="Profundidade") +
+  #facet_grid(element~biome,labeller = labeller(biome=labls)) + 
+  #coord_flip() +
+  #labs(y="Stock (10 Mg/ha for C; Mg/ha for other elements)",
+  #     x="Year", fill="Depth") +
   theme(strip.text.y = element_text(angle = 0,size=16),
         strip.text.x = element_text(size=16),
         legend.position=c(0.75,0.14),
@@ -422,6 +427,7 @@ ggplot(data=nutstkE, aes(x=year, y=stock, fill=depth)) +
                     guide = guide_legend(reverse=TRUE,title=NULL))+
   geom_point(mapping = aes(y = (hibar+1)*(sig>0)),
              shape=18,size=3,show.legend=F)
+dev.off()
 
 # Portuguese
 labls_por <- c(AF = "Mata Atlântica", Cer = "Cerrado")
@@ -1228,6 +1234,55 @@ ggplot(data=mr2sub, aes(x=depth, y=chgln,#shape=depth,
             position=position_dodge(.8))
 dev.off()
 
+# new big simple
+png('fig3_solo_CCa.png',res=150,height=6,width=9,units='in')
+ggplot(data=distinct(mr2sub,LUlongish,element,depth,.keep_all=T),
+       aes(x=depth, y=chgln,colour=LUlongish,shape=LUlongish))+
+  scale_x_discrete()+
+  scale_colour_manual(values=c('#000000','#0072B2','#e79f00'),
+                      name=NULL,
+                      labels=c('Eucalipto','Nativa',
+                               'Pastagem'))+
+  scale_shape_manual(values=c(18,17,15),
+                     name=NULL,
+                     labels=c('Eucalipto','Nativa',
+                              'Pastagem'))+
+  geom_hline(yintercept=0,show.legend = F,colour='grey60') +
+  geom_pointrange(aes(x=depth,y=chglnmn,colour=LUlongish,ymax=chglnmn+chglnse,
+                      ymin=chglnmn-chglnse,shape=LUlongish),fatten=8,#shape=18,
+                  show.legend = T,position=position_dodge2(.8))+
+  facet_wrap(~element,ncol=3,scales='free_y') +
+  scale_y_continuous(sec.axis = 
+                       sec_axis(trans=~.,name='Δ Estoque (%)',
+                                breaks=pct_to_L(c(-75,-25,25,75,200, 1000)),
+                                labels=paste(c('-75', '-25','+25','+75',
+                                               '+200', '+1000'),'%',sep='')))+
+  labs(y='ln(Estoque 2016 / Estoque 2004)', x="Profundidade (cm)") +
+  guides(colour=guide_legend())+
+  theme(strip.text.x = element_text(angle = 0,size=16),
+        strip.background = element_rect(fill='grey80'),#,size=1.3),
+        #        legend.position=c(0.6,0.8),
+        #legend.position=c(0.9,0.2),
+        panel.spacing = unit(2, "lines"),
+        legend.spacing.y = unit(.5,'lines'), 
+        panel.background = element_rect(fill='white'),
+        panel.grid.major = element_blank(),
+        legend.key=element_blank(),
+        legend.title=element_text(size=16),
+        axis.title = element_text(size=16),
+        axis.text = element_text(size=16),
+        legend.text = element_text(size=16))+ 
+  geom_text(mapping = aes( y=maxse*1.1*!is.na(sigveg),#x=LUlongish,
+                           x=depth,colour=LUlongish,
+                           label = sigveg),
+            size=8,na.rm=T,show.legend=F,#colour='black',
+            position=position_dodge2(.8))+
+  geom_text(mapping = aes(y=(maxse)*1.1*!is.na(sigyr),#x=LUlongish, 
+                          x=depth,colour=LUlongish,
+                          label = sigyr),
+            size=7,na.rm=T,show.legend=F, #colour='black',
+            position=position_dodge2(.8))
+dev.off()
 
 
 Krat100simp.pql=glmmPQL(stockratio~year*LU,random=~1|site,

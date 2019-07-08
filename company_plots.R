@@ -186,7 +186,7 @@ mygg_2=function(rockder,mysite){
     geom_line(aes(group=year),size=1.2)+
     coord_flip()+
     scale_x_reverse(breaks=c(100,60,40,20,10,0),minor_breaks=NULL)+
-    facet_grid(standlong~element2,scales = 'free_x')+
+    facet_grid(standlong~element2,scales = 'free_x',as.table = F)+#,switch='y')+
     theme(legend.position=c(0.85,0.1),
           legend.background = element_blank(),
           legend.key = element_blank(),
@@ -302,7 +302,21 @@ cochgtypes=group_by(stkchgs3,stand,element) %>%
             minaerbal=minagbbudg*1000,maxaerbal=maxagbbudg*1000)%>%
   mutate_if(is.numeric,round,digits=0)
 View(cochgtypes[cochgtypes$stand=='BO.E',])
+
+cochgform=data.frame(stand=cochgtypes$stand,element=cochgtypes$element,
+                     fertilizante=cochgtypes$fertilizante,retirado=cochgtypes$retirado,
+                     balrange=paste(as.character(cochgtypes$balanco),' (',
+                                    as.character(cochgtypes$minbal),', ',
+                                    as.character(cochgtypes$maxbal),')',sep=''),
+                     mudaerea=cochgtypes$mudaerea,
+                     aerbalrange=paste(as.character(cochgtypes$balaerea),' (',
+                                       as.character(cochgtypes$minaerbal),', ',
+                                       as.character(cochgtypes$maxaerbal),')',sep=''),
+                     mud20range=paste(as.character(cochgtypes$mudanca20),' (',
+                                      as.character(cochgtypes$mudEP),')',sep=''))
+
 write.csv(cochgtypes,'cochgsum.csv')
+write.csv(cochgform,'cochgsum_pretty.csv')
 
 names(stkchgs3)
 stkchgs$element[stkchgs$stand=='BO.E']
